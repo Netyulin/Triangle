@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e121]
+  - main [ref=e123]:
+    - generic [ref=e124]:
+      - complementary [ref=e125]:
+        - generic [ref=e126]:
+          - link "后台概览" [ref=e127] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e128]
+            - generic [ref=e133]: 后台概览
+          - link "软件管理" [ref=e134] [cursor=pointer]:
+            - /url: /admin/apps
+            - img [ref=e135]
+            - generic [ref=e137]: 软件管理
+          - link "文章管理" [ref=e138] [cursor=pointer]:
+            - /url: /admin/posts
+            - img [ref=e139]
+            - generic [ref=e142]: 文章管理
+          - link "专题管理" [ref=e143] [cursor=pointer]:
+            - /url: /admin/topics
+            - img [ref=e144]
+            - generic [ref=e148]: 专题管理
+          - link "用户需求" [ref=e149] [cursor=pointer]:
+            - /url: /admin/submissions
+            - img [ref=e150]
+            - generic [ref=e152]: 用户需求
+          - link "邀请码管理" [ref=e153] [cursor=pointer]:
+            - /url: /admin/invite-codes
+            - img [ref=e154]
+            - generic [ref=e157]: 邀请码管理
+          - link "系统设置" [ref=e158] [cursor=pointer]:
+            - /url: /admin/settings
+            - img [ref=e159]
+            - generic [ref=e162]: 系统设置
+          - link "账号设置" [ref=e163] [cursor=pointer]:
+            - /url: /admin/account
+            - img [ref=e164]
+            - generic [ref=e176]: 账号设置
+      - generic [ref=e178]:
+        - heading "系统设置" [level=1] [ref=e179]
+        - paragraph [ref=e180]: 控制站点名称、首页文章数量，以及注册开关和邀请码要求。
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - generic [ref=e183]: 站点名称
+            - textbox [ref=e184]: Triangle
+          - generic [ref=e185]:
+            - generic [ref=e186]: 站点描述
+            - textbox [ref=e187]: 汇聚精品软件工具，一站式安全下载
+          - generic [ref=e188]:
+            - generic [ref=e189]: 首页精选文章数量
+            - combobox [ref=e190]:
+              - option "4"
+              - option "6"
+              - option "8" [selected]
+              - option "10"
+          - generic [ref=e191]:
+            - generic [ref=e192]: 是否开放注册
+            - generic [ref=e193]:
+              - generic [ref=e194]:
+                - radio "开放" [checked] [ref=e195]
+                - generic [ref=e196]: 开放
+              - generic [ref=e197]:
+                - radio "关闭" [ref=e198]
+                - generic [ref=e199]: 关闭
+          - generic [ref=e200]:
+            - generic [ref=e201]: 注册是否要求邀请码
+            - generic [ref=e202]:
+              - generic [ref=e203]:
+                - radio "必须填写邀请码" [ref=e204]
+                - generic [ref=e205]: 必须填写邀请码
+              - generic [ref=e206]:
+                - radio "不需要邀请码" [checked] [ref=e207]
+                - generic [ref=e208]: 不需要邀请码
+          - generic [ref=e209]: 当注册开关关闭时，前台注册页会直接提示未开放；如果要求邀请码，前后端会同时校验，没有邀请码就不能注册。
+          - button "保存设置" [ref=e210]

@@ -1,0 +1,139 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "TRIANGLE 软件 / 文章 / 需求" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - img [ref=e7]
+          - generic [ref=e9]:
+            - generic [ref=e10]: TRIANGLE
+            - generic [ref=e11]: 软件 / 文章 / 需求
+        - navigation [ref=e12]:
+          - link "首页" [ref=e13] [cursor=pointer]:
+            - /url: /
+          - link "软件库" [ref=e14] [cursor=pointer]:
+            - /url: /software
+          - link "文章" [ref=e15] [cursor=pointer]:
+            - /url: /articles
+          - link "需求墙" [ref=e16] [cursor=pointer]:
+            - /url: /requests
+          - link "搜索" [ref=e17] [cursor=pointer]:
+            - /url: /search
+        - generic [ref=e19]:
+          - img [ref=e20]
+          - textbox "搜索软件、文章或需求" [ref=e23]
+        - generic [ref=e24]:
+          - button "切换到深色模式" [ref=e25]:
+            - img [ref=e26]
+          - generic [ref=e28]:
+            - link "登录" [ref=e29] [cursor=pointer]:
+              - /url: /login
+            - link "注册" [ref=e30] [cursor=pointer]:
+              - /url: /register
+    - main [ref=e31]:
+      - generic [ref=e33]: 首页内容加载中...
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - paragraph [ref=e36]: 软件总数
+          - paragraph [ref=e37]: "0"
+        - generic [ref=e38]:
+          - paragraph [ref=e39]: 文章总数
+          - paragraph [ref=e40]: "0"
+        - generic [ref=e41]:
+          - paragraph [ref=e42]: 公开需求
+          - paragraph [ref=e43]: "0"
+        - generic [ref=e44]:
+          - paragraph [ref=e45]: 已处理需求
+          - paragraph [ref=e46]: "0"
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - paragraph [ref=e51]: Latest Picks
+              - heading "编辑推荐" [level=2] [ref=e52]
+            - link "查看全部文章" [ref=e53] [cursor=pointer]:
+              - /url: /articles
+              - text: 查看全部文章
+              - img [ref=e54]
+          - generic [ref=e56]:
+            - paragraph [ref=e57]: 还没有可展示的文章
+            - paragraph [ref=e58]: 等后台发布文章后，这里会自动更新。
+        - complementary [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - img [ref=e62]
+              - heading "编辑推荐" [level=3] [ref=e64]
+            - generic [ref=e65]: 暂无推荐内容
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - img [ref=e68]
+              - heading "快速入口" [level=3] [ref=e70]
+            - generic [ref=e71]:
+              - link "需求墙 0 条公开需求" [ref=e72] [cursor=pointer]:
+                - /url: /requests
+                - img [ref=e73]
+                - paragraph [ref=e75]: 需求墙
+                - paragraph [ref=e76]: 0 条公开需求
+              - link "软件库 0 个已发布软件" [ref=e77] [cursor=pointer]:
+                - /url: /software
+                - img [ref=e78]
+                - paragraph [ref=e81]: 软件库
+                - paragraph [ref=e82]: 0 个已发布软件
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - heading "阅读推荐" [level=3] [ref=e88]
+            - generic [ref=e89]: 暂无阅读推荐
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - img [ref=e92]
+              - heading "软件下载排行" [level=3] [ref=e95]
+            - generic [ref=e96]: 暂无排行数据
+    - contentinfo [ref=e97]:
+      - generic [ref=e99]:
+        - generic [ref=e100]:
+          - link "Triangle 软件 / 文章 / 需求" [ref=e101] [cursor=pointer]:
+            - /url: /
+            - img [ref=e103]
+            - generic [ref=e105]:
+              - generic [ref=e106]: Triangle
+              - generic [ref=e107]: 软件 / 文章 / 需求
+          - paragraph [ref=e108]: 把软件、文章和真实需求放到一个清楚的入口里。
+        - generic [ref=e109]:
+          - heading "站点入口" [level=3] [ref=e110]
+          - list [ref=e111]:
+            - listitem [ref=e112]:
+              - link "首页" [ref=e113] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e114]:
+              - link "软件库" [ref=e115] [cursor=pointer]:
+                - /url: /software
+            - listitem [ref=e116]:
+              - link "文章" [ref=e117] [cursor=pointer]:
+                - /url: /articles
+            - listitem [ref=e118]:
+              - link "需求墙" [ref=e119] [cursor=pointer]:
+                - /url: /requests
+        - generic [ref=e120]:
+          - heading "账号功能" [level=3] [ref=e121]
+          - list [ref=e122]:
+            - listitem [ref=e123]:
+              - link "登录" [ref=e124] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e125]:
+              - link "注册" [ref=e126] [cursor=pointer]:
+                - /url: /register
+            - listitem [ref=e127]:
+              - link "个人中心" [ref=e128] [cursor=pointer]:
+                - /url: /profile
+            - listitem [ref=e129]:
+              - link "搜索" [ref=e130] [cursor=pointer]:
+                - /url: /search
+        - generic [ref=e131]:
+          - heading "页面语言" [level=3] [ref=e132]
+          - generic [ref=e133]:
+            - button "简体中文" [ref=e134]
+            - button "繁體中文" [ref=e135]
+            - button "English" [ref=e136]
+  - button "Open Next.js Dev Tools" [ref=e142] [cursor=pointer]:
+    - img [ref=e143]

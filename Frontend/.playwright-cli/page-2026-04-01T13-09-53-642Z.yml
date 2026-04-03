@@ -1,0 +1,105 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - generic [ref=e5]:
+          - link "后台概览" [ref=e6] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e7]
+            - generic [ref=e12]: 后台概览
+          - link "软件管理" [ref=e13] [cursor=pointer]:
+            - /url: /admin/apps
+            - img [ref=e14]
+            - generic [ref=e16]: 软件管理
+          - link "文章管理" [ref=e17] [cursor=pointer]:
+            - /url: /admin/posts
+            - img [ref=e18]
+            - generic [ref=e21]: 文章管理
+          - link "专题管理" [ref=e22] [cursor=pointer]:
+            - /url: /admin/topics
+            - img [ref=e23]
+            - generic [ref=e27]: 专题管理
+          - link "用户需求" [ref=e28] [cursor=pointer]:
+            - /url: /admin/submissions
+            - img [ref=e29]
+            - generic [ref=e31]: 用户需求
+          - link "邀请码管理" [ref=e32] [cursor=pointer]:
+            - /url: /admin/invite-codes
+            - img [ref=e33]
+            - generic [ref=e36]: 邀请码管理
+          - link "系统设置" [ref=e37] [cursor=pointer]:
+            - /url: /admin/settings
+            - img [ref=e38]
+            - generic [ref=e41]: 系统设置
+          - link "账号设置" [ref=e42] [cursor=pointer]:
+            - /url: /admin/account
+            - img [ref=e43]
+            - generic [ref=e55]: 账号设置
+      - main [ref=e57]:
+        - link "返回软件列表" [ref=e59] [cursor=pointer]:
+          - /url: /admin/apps
+          - img [ref=e60]
+          - text: 返回软件列表
+        - generic [ref=e62]:
+          - heading "新建软件" [level=1] [ref=e63]
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - generic [ref=e67]: 软件名称
+                - textbox [ref=e68]
+              - generic [ref=e69]:
+                - generic [ref=e70]: URL 别名
+                - textbox [ref=e71]
+            - generic [ref=e72]:
+              - generic [ref=e73]: 副标题 / 简介
+              - textbox [ref=e74]
+            - generic [ref=e75]:
+              - generic [ref=e76]:
+                - generic [ref=e77]: 分类
+                - combobox [ref=e78]:
+                  - option "选择分类" [selected]
+                  - option "开发"
+                  - option "设计"
+                  - option "效率"
+                  - option "视频"
+                  - option "工具"
+              - generic [ref=e79]:
+                - generic [ref=e80]: 当前版本
+                - textbox [ref=e81]
+              - generic [ref=e82]:
+                - generic [ref=e83]: 文件大小
+                - textbox [ref=e84]
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - generic [ref=e87]: 价格模式
+                - textbox [ref=e88]
+              - generic [ref=e89]:
+                - generic [ref=e90]: 下载地址
+                - textbox [ref=e91]
+            - generic [ref=e92]:
+              - generic [ref=e93]: 封面图
+              - generic [ref=e94]:
+                - generic [ref=e95]:
+                  - button "上传本地封面" [ref=e96]:
+                    - img [ref=e97]
+                    - text: 上传本地封面
+                  - generic [ref=e100]: 也可以直接在下面填图片地址或服务端相对路径。
+                - textbox "封面图地址" [ref=e101]
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - generic [ref=e104]: 状态
+                - combobox [ref=e105]:
+                  - option "已发布" [selected]
+                  - option "已归档"
+                  - option "待发布"
+              - generic [ref=e106]:
+                - generic [ref=e107]: 图标字母
+                - textbox [ref=e108]: A
+            - generic [ref=e109]:
+              - generic [ref=e110]: 摘要说明
+              - textbox [ref=e111]
+            - generic [ref=e112]:
+              - checkbox "官方认证" [checked] [ref=e113]
+              - generic [ref=e114]: 官方认证
+            - button "保存软件" [ref=e115]
+  - alert [ref=e116]

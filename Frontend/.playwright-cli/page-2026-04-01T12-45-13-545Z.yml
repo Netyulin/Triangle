@@ -1,0 +1,178 @@
+- generic [ref=e1]:
+  - alert [ref=e164]
+  - generic [ref=e177]:
+    - banner [ref=e178]:
+      - generic [ref=e179]:
+        - link "TRIANGLE 软件 / 文章 / 需求" [ref=e180] [cursor=pointer]:
+          - /url: /
+          - img [ref=e182]
+          - generic [ref=e184]:
+            - generic [ref=e185]: TRIANGLE
+            - generic [ref=e186]: 软件 / 文章 / 需求
+        - navigation [ref=e187]:
+          - link "首页" [ref=e188] [cursor=pointer]:
+            - /url: /
+          - link "软件库" [ref=e189] [cursor=pointer]:
+            - /url: /software
+          - link "文章" [ref=e190] [cursor=pointer]:
+            - /url: /articles
+          - link "需求墙" [ref=e191] [cursor=pointer]:
+            - /url: /requests
+          - link "搜索" [ref=e192] [cursor=pointer]:
+            - /url: /search
+        - generic [ref=e194]:
+          - img [ref=e195]
+          - textbox "搜索软件、文章或需求" [ref=e198]
+        - generic [ref=e199]:
+          - button "切换到深色模式" [ref=e200]:
+            - img [ref=e201]
+          - button "头 头像验收账号" [ref=e204]:
+            - generic [ref=e205]: 头
+            - generic [ref=e206]: 头像验收账号
+            - img [ref=e207]
+    - main [ref=e209]:
+      - generic [ref=e210]:
+        - complementary [ref=e211]:
+          - generic [ref=e212]:
+            - img "头像验收账号" [ref=e213]
+            - heading "头像验收账号" [level=1] [ref=e214]
+            - paragraph [ref=e215]: "@avatarverify2604011243"
+            - paragraph [ref=e216]: free 会员，今日剩余下载 3
+          - generic [ref=e217]:
+            - generic [ref=e218]:
+              - paragraph [ref=e219]: 收藏
+              - paragraph [ref=e220]: "0"
+            - generic [ref=e221]:
+              - paragraph [ref=e222]: 需求
+              - paragraph [ref=e223]: "0"
+            - generic [ref=e224]:
+              - paragraph [ref=e225]: 评论
+              - paragraph [ref=e226]: "0"
+            - generic [ref=e227]:
+              - paragraph [ref=e228]: 充值记录
+              - paragraph [ref=e229]: "0"
+          - generic [ref=e231]:
+            - button "资料" [ref=e232]
+            - button "收藏" [ref=e233]
+            - button "需求" [ref=e234]
+            - button "充值" [ref=e235]
+          - button "退出登录" [ref=e236]:
+            - img [ref=e237]
+            - text: 退出登录
+        - generic [ref=e241]:
+          - generic [ref=e242]:
+            - heading "个人资料" [level=2] [ref=e243]
+            - paragraph [ref=e244]: 这里可以修改头像、显示名称、性别和密码。
+          - generic [ref=e245]:
+            - generic [ref=e246]: 更换头像
+            - generic [ref=e247]:
+              - generic [ref=e248]:
+                - generic [ref=e249]:
+                  - img "当前头像" [ref=e251]
+                  - generic [ref=e252]:
+                    - paragraph [ref=e253]: 已选头像
+                    - paragraph [ref=e254]: 默认头像照旧保留，你也可以直接随机换一个，或者上传自己的图片。
+                    - paragraph [ref=e359]: 本地头像已经选好，保存后就会生效。
+                - generic [ref=e255]:
+                  - button "随机生成头像" [ref=e256]:
+                    - img [ref=e257]
+                    - text: 随机生成头像
+                  - generic [ref=e263] [cursor=pointer]:
+                    - img [ref=e264]
+                    - text: 上传本地头像
+                  - button "上传本地头像" [active] [ref=e267]
+              - generic [ref=e268]:
+                - button "默认头像 1" [ref=e269]:
+                  - img "默认头像 1" [ref=e270]
+                - button "默认头像 2" [ref=e271]:
+                  - img "默认头像 2" [ref=e272]
+                - button "默认头像 3" [ref=e273]:
+                  - img "默认头像 3" [ref=e274]
+                - button "默认头像 4" [ref=e275]:
+                  - img "默认头像 4" [ref=e276]
+                - button "默认头像 5" [ref=e277]:
+                  - img "默认头像 5" [ref=e278]
+                - button "默认头像 6" [ref=e279]:
+                  - img "默认头像 6" [ref=e280]
+                - button "默认头像 7" [ref=e281]:
+                  - img "默认头像 7" [ref=e282]
+                - button "默认头像 8" [ref=e283]:
+                  - img "默认头像 8" [ref=e284]
+                - button "默认头像 9" [ref=e285]:
+                  - img "默认头像 9" [ref=e286]
+                - button "默认头像 10" [ref=e287]:
+                  - img "默认头像 10" [ref=e288]
+              - generic [ref=e289]:
+                - img [ref=e290]
+                - text: 上传头像时会自动裁成方形，避免图片过大或者比例不合适。
+          - generic [ref=e294]:
+            - generic [ref=e295]:
+              - generic [ref=e296]: 用户名
+              - textbox [disabled] [ref=e297]: avatarverify2604011243
+            - generic [ref=e298]:
+              - generic [ref=e299]: 邮箱
+              - textbox [disabled] [ref=e300]: avatarverify2604011243@example.com
+          - generic [ref=e301]:
+            - generic [ref=e302]:
+              - generic [ref=e303]: 显示名称
+              - textbox [ref=e304]: 头像验收账号
+            - generic [ref=e305]:
+              - generic [ref=e306]: 性别
+              - generic [ref=e307]:
+                - button "男" [ref=e308]
+                - button "女" [ref=e309]
+                - button "其他" [ref=e310]
+          - generic [ref=e311]:
+            - generic [ref=e312]:
+              - generic [ref=e313]: 当前密码
+              - textbox [ref=e314]
+            - generic [ref=e315]:
+              - generic [ref=e316]: 新密码
+              - textbox [ref=e317]
+          - button "保存资料" [ref=e318]
+    - contentinfo [ref=e319]:
+      - generic [ref=e321]:
+        - generic [ref=e322]:
+          - link "Triangle 软件 / 文章 / 需求" [ref=e323] [cursor=pointer]:
+            - /url: /
+            - img [ref=e325]
+            - generic [ref=e327]:
+              - generic [ref=e328]: Triangle
+              - generic [ref=e329]: 软件 / 文章 / 需求
+          - paragraph [ref=e330]: Software, articles, and real requests for Mac users.
+        - generic [ref=e331]:
+          - heading "站点入口" [level=3] [ref=e332]
+          - list [ref=e333]:
+            - listitem [ref=e334]:
+              - link "首页" [ref=e335] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e336]:
+              - link "软件库" [ref=e337] [cursor=pointer]:
+                - /url: /software
+            - listitem [ref=e338]:
+              - link "文章" [ref=e339] [cursor=pointer]:
+                - /url: /articles
+            - listitem [ref=e340]:
+              - link "需求墙" [ref=e341] [cursor=pointer]:
+                - /url: /requests
+        - generic [ref=e342]:
+          - heading "账号功能" [level=3] [ref=e343]
+          - list [ref=e344]:
+            - listitem [ref=e345]:
+              - link "登录" [ref=e346] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e347]:
+              - link "注册" [ref=e348] [cursor=pointer]:
+                - /url: /register
+            - listitem [ref=e349]:
+              - link "个人中心" [ref=e350] [cursor=pointer]:
+                - /url: /profile
+            - listitem [ref=e351]:
+              - link "搜索" [ref=e352] [cursor=pointer]:
+                - /url: /search
+        - generic [ref=e353]:
+          - heading "页面语言" [level=3] [ref=e354]
+          - generic [ref=e355]:
+            - button "简体中文" [ref=e356]
+            - button "繁體中文" [ref=e357]
+            - button "English" [ref=e358]

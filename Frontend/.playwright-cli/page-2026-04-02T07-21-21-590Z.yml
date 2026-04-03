@@ -1,0 +1,125 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Triangle TRIANGLE 软件 / 文章 / 需求" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - img "Triangle" [ref=e6]
+          - generic [ref=e7]:
+            - generic [ref=e8]: TRIANGLE
+            - generic [ref=e9]: 软件 / 文章 / 需求
+        - navigation [ref=e10]:
+          - link "首页" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "软件库" [ref=e12] [cursor=pointer]:
+            - /url: /software
+          - link "文章" [ref=e13] [cursor=pointer]:
+            - /url: /articles
+          - link "需求墙" [ref=e14] [cursor=pointer]:
+            - /url: /requests
+          - link "搜索" [ref=e15] [cursor=pointer]:
+            - /url: /search
+        - generic [ref=e17]:
+          - img [ref=e18]
+          - textbox "搜索软件、文章或需求" [ref=e21]
+        - generic [ref=e22]:
+          - button "切换到深色模式" [ref=e23]:
+            - img [ref=e24]
+          - generic [ref=e26]:
+            - link "登录" [ref=e27] [cursor=pointer]:
+              - /url: /login
+            - link "注册" [ref=e28] [cursor=pointer]:
+              - /url: /register
+    - main [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - img "Triangle" [ref=e33]
+            - generic [ref=e34]: TRIANGLE ACCOUNT
+          - heading "登录后继续管理你的收藏、需求和下载权限" [level=1] [ref=e35]
+          - paragraph [ref=e36]: 这里已经接上真实登录接口。登录成功后会直接进入个人页，继续查看收藏、我的需求、下载额度和充值记录。
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - img [ref=e39]
+              - paragraph [ref=e41]: 收藏同步
+              - paragraph [ref=e42]: 登录后可以把收藏的软件和文章统一带到个人页里查看。
+            - generic [ref=e43]:
+              - img [ref=e44]
+              - paragraph [ref=e45]: 需求记录
+              - paragraph [ref=e46]: 查看自己提过的需求和最新处理进度。
+            - generic [ref=e47]:
+              - img [ref=e48]
+              - paragraph [ref=e50]: 互动记录
+              - paragraph [ref=e51]: 投票、评论和阅读记录都会回到自己的账号下。
+            - generic [ref=e52]:
+              - img [ref=e53]
+              - paragraph [ref=e55]: 会员信息
+              - paragraph [ref=e56]: 查看等级、剩余下载次数和充值记录。
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - paragraph [ref=e59]: Welcome Back
+            - heading "登录" [level=2] [ref=e60]
+            - paragraph [ref=e61]: 输入账号信息后，就能继续查看个人数据和会员状态。
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]: 用户名
+              - textbox "请输入用户名" [ref=e65]
+            - generic [ref=e66]:
+              - generic [ref=e67]: 密码
+              - generic [ref=e68]:
+                - textbox "请输入密码" [ref=e69]
+                - button [ref=e70]:
+                  - img [ref=e71]
+            - button "立即登录" [ref=e74]
+            - paragraph [ref=e75]:
+              - text: 还没有账号？
+              - link "去注册" [ref=e76] [cursor=pointer]:
+                - /url: /register
+    - contentinfo [ref=e77]:
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - link "Triangle Triangle 软件 / 文章 / 需求" [ref=e81] [cursor=pointer]:
+            - /url: /
+            - img "Triangle" [ref=e82]
+            - generic [ref=e83]:
+              - generic [ref=e84]: Triangle
+              - generic [ref=e85]: 软件 / 文章 / 需求
+          - paragraph [ref=e86]: 把软件、文章和真实需求放到一个清楚的入口里。
+        - generic [ref=e87]:
+          - heading "站点入口" [level=3] [ref=e88]
+          - list [ref=e89]:
+            - listitem [ref=e90]:
+              - link "首页" [ref=e91] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e92]:
+              - link "软件库" [ref=e93] [cursor=pointer]:
+                - /url: /software
+            - listitem [ref=e94]:
+              - link "文章" [ref=e95] [cursor=pointer]:
+                - /url: /articles
+            - listitem [ref=e96]:
+              - link "需求墙" [ref=e97] [cursor=pointer]:
+                - /url: /requests
+        - generic [ref=e98]:
+          - heading "账号功能" [level=3] [ref=e99]
+          - list [ref=e100]:
+            - listitem [ref=e101]:
+              - link "登录" [ref=e102] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e103]:
+              - link "注册" [ref=e104] [cursor=pointer]:
+                - /url: /register
+            - listitem [ref=e105]:
+              - link "个人中心" [ref=e106] [cursor=pointer]:
+                - /url: /profile
+            - listitem [ref=e107]:
+              - link "搜索" [ref=e108] [cursor=pointer]:
+                - /url: /search
+        - generic [ref=e109]:
+          - heading "页面语言" [level=3] [ref=e110]
+          - generic [ref=e111]:
+            - button "简体中文" [ref=e112]
+            - button "繁體中文" [ref=e113]
+            - button "English" [ref=e114]
+  - button "Open Next.js Dev Tools" [ref=e120] [cursor=pointer]:
+    - img [ref=e121]

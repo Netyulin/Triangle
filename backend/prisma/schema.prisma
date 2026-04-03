@@ -1,0 +1,188 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                 Int               @id @default(autoincrement())
+  username           String            @unique
+  email              String?           @unique
+  password           String
+  name               String?
+  avatar             String?
+  gender             String            @default("other")
+  phone              String?
+  wechatOpenId       String?           @unique
+  role               String            @default("reader")
+  status             String            @default("active")
+  membershipLevel    String            @default("free")
+  membershipExpireAt DateTime?
+  downloadQuotaDaily Int               @default(3)
+  downloadCountDaily Int               @default(0)
+  canComment         Boolean           @default(true)
+  canSubmitRequest   Boolean           @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  apps               App[]
+  posts              Post[]
+  comments           Comment[]
+  requests           SoftwareRequest[]
+}
+
+model App {
+  id             Int      @id @default(autoincrement())
+  slug           String   @unique
+  name           String
+  subtitle       String
+  category       String
+  icon           String?
+  version        String
+  size           String
+  rating         Float    @default(0)
+  downloads      String
+  updatedAt      String
+  compatibility  Json
+  platforms      Json
+  heroImage      String?
+  gallery        Json
+  tags           Json
+  verified       Boolean  @default(false)
+  editorialScore Int      @default(0)
+  pricing        String
+  summary        String
+  highlights     Json
+  requirements   Json
+  review         String?
+  featured       Boolean  @default(false)
+  status         String   @default("published")
+  accessLevel    String   @default("free")
+  isDownloadable Boolean  @default(true)
+  downloadUrl    String?
+  downloadLinks  Json?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  authorId       Int?
+  author         User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  posts          Post[]
+  comments       Comment[]
+  topics         TopicApp[]
+  netdiskReports NetdiskReport[]
+}
+
+model Post {
+  id             Int      @id @default(autoincrement())
+  slug           String   @unique
+  title          String
+  excerpt        String
+  content        String?
+  category       String
+  author         String
+  authorId       Int?
+  adminAuthor    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  coverImage     String
+  relatedAppSlug String?
+  relatedApp     App?     @relation(fields: [relatedAppSlug], references: [slug], onDelete: SetNull)
+  featured       Boolean  @default(false)
+  readingTime    String
+  dateLabel      String
+  publishedAt    String
+  status         String   @default("draft")
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  comments       Comment[]
+  topics         TopicPost[]
+}
+
+model Topic {
+  id           Int         @id @default(autoincrement())
+  slug         String      @unique
+  title        String
+  description  String
+  coverImage   String?
+  status       String      @default("draft")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  relatedApps  TopicApp[]
+  relatedPosts TopicPost[]
+}
+
+model TopicApp {
+  topicId Int
+  appSlug String
+  topic   Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  app     App   @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+
+  @@id([topicId, appSlug])
+}
+
+model TopicPost {
+  topicId  Int
+  postSlug String
+  topic    Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  post     Post  @relation(fields: [postSlug], references: [slug], onDelete: Cascade)
+
+  @@id([topicId, postSlug])
+}
+
+model Comment {
+  id           String    @id @default(uuid())
+  contentId    String
+  contentType  String
+  authorName   String
+  authorAvatar String?
+  content      String
+  parentId     String?
+  parent       Comment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[] @relation("Replies")
+  createdAt    DateTime  @default(now())
+  likes        Int       @default(0)
+  dislikes     Int       @default(0)
+  userId       Int?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appSlug      String?
+  app          App?      @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+  postSlug     String?
+  post         Post?     @relation(fields: [postSlug], references: [slug], onDelete: Cascade)
+}
+
+model SoftwareRequest {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  authorName  String
+  authorEmail String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  adminReply  String?
+  repliedAt   DateTime?
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model NetdiskReport {
+  id           Int      @id @default(autoincrement())
+  appSlug      String
+  app          App      @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+  netdiskName  String
+  downloadUrl  String?
+  reason       String
+  contact      String?
+  status       String   @default("pending")
+  adminNote    String?
+  createdAt    DateTime @default(now())
+  handledAt    DateTime?
+}
+
+model HotSearch {
+  id      Int    @id @default(autoincrement())
+  keyword String @unique
+  type    String @default("all")
+  count   Int    @default(1)
+}

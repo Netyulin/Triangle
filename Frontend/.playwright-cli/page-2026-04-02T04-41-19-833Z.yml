@@ -1,0 +1,228 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - link:
+          - /url: /
+          - generic:
+            - img
+          - generic:
+            - generic: TRIANGLE
+            - generic: 软件 / 文章 / 需求
+        - navigation:
+          - link:
+            - /url: /
+            - text: 首页
+          - generic:
+            - link:
+              - /url: /software
+              - text: 软件库
+              - img
+          - generic:
+            - link:
+              - /url: /articles
+              - text: 文章
+              - img
+          - link:
+            - /url: /requests
+            - text: 需求墙
+          - link:
+            - /url: /search
+            - text: 搜索
+        - generic:
+          - generic:
+            - img
+            - textbox:
+              - /placeholder: 搜索软件、文章或需求
+        - generic:
+          - button:
+            - img
+          - generic:
+            - button:
+              - generic: 系
+              - generic: 系统管理员
+              - img
+    - main:
+      - link:
+        - /url: /software
+        - img
+        - text: 返回软件库
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic: 🎨
+              - generic:
+                - generic:
+                  - generic: 设计
+                  - generic: 会员
+                  - generic:
+                    - img
+                    - text: 已认证
+                - heading [level=1]: Figma
+                - paragraph: 在线协作设计工具
+                - generic:
+                  - generic: 版本 Web
+                  - generic: 大小 Cloud
+                  - generic: 1.8M 下载
+                  - generic:
+                    - img
+                    - text: "4.8"
+            - generic:
+              - button:
+                - img
+                - text: 收藏
+              - button:
+                - img
+                - text: 立即下载
+          - generic: 可以正常下载。
+        - generic:
+          - generic:
+            - generic:
+              - heading [level=2]: 软件简介
+              - generic: 以协作为核心的界面设计工具，适合产品、设计和开发团队一起使用。
+            - generic:
+              - heading [level=2]: 亮点
+              - list:
+                - listitem:
+                  - img
+                  - generic: 实时协作
+                - listitem:
+                  - img
+                  - generic: 组件系统
+                - listitem:
+                  - img
+                  - generic: 原型预览
+                - listitem:
+                  - img
+                  - generic: 浏览器可用
+            - generic:
+              - heading [level=2]: 编辑点评
+              - paragraph: 团队协作体验非常强，是设计流程里很稳的一环。
+            - generic:
+              - heading [level=2]: 相关文章
+              - generic:
+                - link:
+                  - /url: /articles/figma-beginner-guide
+                  - paragraph: Figma 入门完全指南
+                  - paragraph: 从零开始认识 Figma 的核心用法和团队协作方式。
+          - complementary:
+            - generic:
+              - heading [level=3]: 基础信息
+              - generic:
+                - paragraph: 收费方式：免费/Pro
+                - paragraph: 更新时间：2026-03-18
+                - paragraph: 适用平台：macOS / Web
+                - paragraph: 兼容环境：All Platforms
+            - generic:
+              - heading [level=3]: 使用要求
+              - list:
+                - listitem: 现代浏览器
+            - generic:
+              - heading [level=3]: 标签
+              - generic:
+                - generic: 设计
+                - generic: 协作
+                - generic: 界面
+    - contentinfo:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic:
+                - generic: Triangle
+                - generic: 软件 / 文章 / 需求
+            - paragraph: Software, articles, and real requests for Mac users.
+          - generic:
+            - heading [level=3]: 站点入口
+            - list:
+              - listitem:
+                - link:
+                  - /url: /
+                  - text: 首页
+              - listitem:
+                - link:
+                  - /url: /software
+                  - text: 软件库
+              - listitem:
+                - link:
+                  - /url: /articles
+                  - text: 文章
+              - listitem:
+                - link:
+                  - /url: /requests
+                  - text: 需求墙
+          - generic:
+            - heading [level=3]: 账号功能
+            - list:
+              - listitem:
+                - link:
+                  - /url: /login
+                  - text: 登录
+              - listitem:
+                - link:
+                  - /url: /register
+                  - text: 注册
+              - listitem:
+                - link:
+                  - /url: /profile
+                  - text: 个人中心
+              - listitem:
+                - link:
+                  - /url: /search
+                  - text: 搜索
+          - generic:
+            - heading [level=3]: 页面语言
+            - generic:
+              - button: 简体中文
+              - button: 繁體中文
+              - button: English
+  - button "Open Next.js Dev Tools" [ref=e185] [cursor=pointer]:
+    - generic [ref=e201]:
+      - text: Compiling
+      - generic [ref=e202]:
+        - generic [ref=e203]: .
+        - generic [ref=e204]: .
+        - generic [ref=e205]: .
+  - alert: Triangle
+  - dialog "下载链接" [ref=e207]:
+    - generic [ref=e208]:
+      - heading "下载链接" [level=2] [ref=e209]
+      - paragraph [ref=e210]: 先选择一个网盘下载，如果链接失效，可以直接在下面反馈。
+    - generic [ref=e211]:
+      - generic [ref=e212]:
+        - link "百度网盘下载" [ref=e213] [cursor=pointer]:
+          - /url: https://example.com/download/figma/baidu
+        - link "夸克网盘下载" [ref=e214] [cursor=pointer]:
+          - /url: https://example.com/download/figma/kuaike
+        - link "迅雷网盘下载" [ref=e215] [cursor=pointer]:
+          - /url: https://example.com/download/figma/xunlei
+      - generic [ref=e216]:
+        - generic [ref=e217]:
+          - generic [ref=e218]:
+            - paragraph [ref=e219]: 链接失效反馈
+            - paragraph [ref=e220]: 如果某个网盘失效，告诉我们一声就行。
+          - button "反馈失效" [active] [ref=e221] [cursor=pointer]
+        - generic [ref=e222]:
+          - generic [ref=e223]:
+            - generic [ref=e224]: 网盘名称
+            - combobox "网盘名称" [ref=e225]:
+              - option "百度网盘" [selected]
+              - option "夸克网盘"
+              - option "迅雷网盘"
+          - generic [ref=e226]:
+            - generic [ref=e227]: 失效说明
+            - textbox "失效说明" [ref=e228]:
+              - /placeholder: "For example: the link is dead, inaccessible, or the file no longer exists"
+          - generic [ref=e229]:
+            - generic [ref=e230]: 联系方式（可选）
+            - textbox "联系方式（可选）" [ref=e231]:
+              - /placeholder: 方便我们回你处理结果
+          - button "提交反馈" [ref=e232]
+    - button "Close" [ref=e233]:
+      - img
+      - generic [ref=e234]: Close

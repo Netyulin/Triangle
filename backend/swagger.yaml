@@ -1,0 +1,415 @@
+openapi: 3.0.3
+info:
+  title: Triangle Portal CMS API
+  version: 1.1.0
+  description: REST API for the Triangle Portal public site and CMS admin backend.
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+
+tags:
+  - name: System
+  - name: Auth
+  - name: Apps
+  - name: Posts
+  - name: Topics
+  - name: Comments
+  - name: Requests
+  - name: Search
+  - name: Admin
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          nullable: true
+        timestamp:
+          type: integer
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200':
+          description: Service and database are healthy
+          content:
+            application/json:
+              example:
+                success: true
+                code: 0
+                message: service healthy
+                data:
+                  status: ok
+                  database: connected
+                timestamp: 1710000000000
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              username: admin
+              password: admin123
+      responses:
+        '200':
+          description: Login success
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user profile
+      responses:
+        '200':
+          description: Current user info
+
+  /api/apps:
+    get:
+      tags: [Apps]
+      summary: App list
+      responses:
+        '200':
+          description: App list
+    post:
+      tags: [Apps]
+      summary: Create app
+      responses:
+        '201':
+          description: App created
+
+  /api/apps/{slug}:
+    get:
+      tags: [Apps]
+      summary: App detail
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: App detail
+    put:
+      tags: [Apps]
+      summary: Update app
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: App updated
+    delete:
+      tags: [Apps]
+      summary: Delete app
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: App deleted
+
+  /api/posts:
+    get:
+      tags: [Posts]
+      summary: Post list
+      responses:
+        '200':
+          description: Post list
+    post:
+      tags: [Posts]
+      summary: Create post
+      responses:
+        '201':
+          description: Post created
+
+  /api/posts/import-from-url:
+    post:
+      tags: [Posts]
+      summary: Import post draft data from a public URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              url: https://example.com/article
+      responses:
+        '200':
+          description: Imported markdown draft
+          content:
+            application/json:
+              example:
+                success: true
+                code: 0
+                message: imported
+                data:
+                  url: https://example.com/article
+                  finalUrl: https://example.com/article
+                  title: 示例文章标题
+                  slug: sample-article
+                  excerpt: 自动提取的文章摘要
+                  author: 示例作者
+                  coverImage: https://example.com/cover.jpg
+                  markdown: "# 示例正文"
+                  readingTime: 5 分钟
+                  siteName: Example
+                  publishedAt: 2026-03-30
+                  warnings:
+                    - 未识别到作者，请手动补全。
+                timestamp: 1710000000000
+
+  /api/posts/{slug}:
+    get:
+      tags: [Posts]
+      summary: Post detail
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post detail
+    put:
+      tags: [Posts]
+      summary: Update post
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post updated
+    delete:
+      tags: [Posts]
+      summary: Delete post
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post deleted
+
+  /api/topics:
+    get:
+      tags: [Topics]
+      summary: Topic list
+      responses:
+        '200':
+          description: Topic list
+    post:
+      tags: [Topics]
+      summary: Create topic
+      responses:
+        '201':
+          description: Topic created
+
+  /api/topics/all:
+    get:
+      tags: [Topics]
+      summary: Published topic list
+      responses:
+        '200':
+          description: Published topics
+
+  /api/topics/{slug}:
+    get:
+      tags: [Topics]
+      summary: Topic detail
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Topic detail
+    put:
+      tags: [Topics]
+      summary: Update topic
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Topic updated
+    delete:
+      tags: [Topics]
+      summary: Delete topic
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Topic deleted
+
+  /api/comments:
+    get:
+      tags: [Comments]
+      summary: Comment list
+      responses:
+        '200':
+          description: Comment list
+    post:
+      tags: [Comments]
+      summary: Create comment
+      responses:
+        '201':
+          description: Comment created
+
+  /api/comments/{id}/like:
+    post:
+      tags: [Comments]
+      summary: Like comment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Like success
+
+  /api/comments/{id}/dislike:
+    post:
+      tags: [Comments]
+      summary: Dislike comment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dislike success
+
+  /api/requests:
+    get:
+      tags: [Requests]
+      summary: Public request list
+      responses:
+        '200':
+          description: Public request list
+    post:
+      tags: [Requests]
+      summary: Create request
+      responses:
+        '201':
+          description: Request created
+
+  /api/requests/admin/list:
+    get:
+      tags: [Requests]
+      summary: Admin request list
+      responses:
+        '200':
+          description: Admin request list
+
+  /api/requests/admin/{id}:
+    put:
+      tags: [Requests]
+      summary: Update request
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Request updated
+    delete:
+      tags: [Requests]
+      summary: Delete request
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Request deleted
+
+  /api/search:
+    get:
+      tags: [Search]
+      summary: Site search
+      responses:
+        '200':
+          description: Search result
+
+  /api/search/hot:
+    get:
+      tags: [Search]
+      summary: Hot search keywords
+      responses:
+        '200':
+          description: Hot keywords
+
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      summary: Dashboard stats
+      responses:
+        '200':
+          description: Dashboard stats
+
+  /api/admin/trends:
+    get:
+      tags: [Admin]
+      summary: Content trends
+      responses:
+        '200':
+          description: Trend data
+
+  /api/admin/recent:
+    get:
+      tags: [Admin]
+      summary: Recent content
+      responses:
+        '200':
+          description: Recent content

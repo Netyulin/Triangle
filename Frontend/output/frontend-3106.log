@@ -1,0 +1,8 @@
+
+> my-project@0.1.0 start
+> next start --port 3106
+
+▲ Next.js 16.2.0
+- Local:         http://localhost:3106
+- Network:       http://192.168.168.62:3106
+✓ Ready in 144ms

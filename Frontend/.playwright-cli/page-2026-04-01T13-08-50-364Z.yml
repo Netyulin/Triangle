@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - generic [ref=e5]:
+          - link "后台概览" [ref=e6] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e7]
+            - generic [ref=e12]: 后台概览
+          - link "软件管理" [ref=e13] [cursor=pointer]:
+            - /url: /admin/apps
+            - img [ref=e14]
+            - generic [ref=e16]: 软件管理
+          - link "文章管理" [ref=e17] [cursor=pointer]:
+            - /url: /admin/posts
+            - img [ref=e18]
+            - generic [ref=e21]: 文章管理
+          - link "专题管理" [ref=e22] [cursor=pointer]:
+            - /url: /admin/topics
+            - img [ref=e23]
+            - generic [ref=e27]: 专题管理
+          - link "用户需求" [ref=e28] [cursor=pointer]:
+            - /url: /admin/submissions
+            - img [ref=e29]
+            - generic [ref=e31]: 用户需求
+          - link "邀请码管理" [ref=e32] [cursor=pointer]:
+            - /url: /admin/invite-codes
+            - img [ref=e33]
+            - generic [ref=e36]: 邀请码管理
+          - link "系统设置" [ref=e37] [cursor=pointer]:
+            - /url: /admin/settings
+            - img [ref=e38]
+            - generic [ref=e41]: 系统设置
+          - link "账号设置" [ref=e42] [cursor=pointer]:
+            - /url: /admin/account
+            - img [ref=e43]
+            - generic [ref=e55]: 账号设置
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - heading "软件管理" [level=2] [ref=e60]
+            - paragraph [ref=e61]: 查看、编辑和维护站内软件条目。
+          - button "新建软件" [ref=e62]
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e65]: 标题
+            - generic [ref=e66]: 类型
+            - generic [ref=e67]: 作者
+            - generic [ref=e68]: 状态
+            - generic [ref=e69]: 操作
+          - generic [ref=e70]:
+            - generic [ref=e71]: Visual Studio Code
+            - generic [ref=e72]: 软件
+            - generic [ref=e73]: 管理员
+            - generic [ref=e75]: published
+            - button "编辑" [ref=e77]:
+              - img [ref=e78]
+              - text: 编辑
+          - generic [ref=e81]:
+            - generic [ref=e82]: Figma
+            - generic [ref=e83]: 软件
+            - generic [ref=e84]: 管理员
+            - generic [ref=e86]: published
+            - button "编辑" [ref=e88]:
+              - img [ref=e89]
+              - text: 编辑
+          - generic [ref=e92]:
+            - generic [ref=e93]: Notion
+            - generic [ref=e94]: 软件
+            - generic [ref=e95]: 管理员
+            - generic [ref=e97]: published
+            - button "编辑" [ref=e99]:
+              - img [ref=e100]
+              - text: 编辑
+  - alert [ref=e103]

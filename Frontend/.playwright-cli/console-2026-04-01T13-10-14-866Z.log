@@ -1,0 +1,11 @@
+[      85ms] TypeError: Cannot read properties of undefined (reading 'map')
+    at http://127.0.0.1:3106/_next/static/chunks/061i85.u4hxvy.js:1:1222
+    at Array.map (<anonymous>)
+    at http://127.0.0.1:3106/_next/static/chunks/061i85.u4hxvy.js:1:1181
+    at Object.ol [as useMemo] (http://127.0.0.1:3106/_next/static/chunks/00ilazh50sdzh.js:1:72697)
+    at r.useMemo (http://127.0.0.1:3106/_next/static/chunks/0gscbv2oo_ix7.js:1:18695)
+    at http://127.0.0.1:3106/_next/static/chunks/061i85.u4hxvy.js:1:1174
+    at ay (http://127.0.0.1:3106/_next/static/chunks/00ilazh50sdzh.js:1:63845)
+    at oJ (http://127.0.0.1:3106/_next/static/chunks/00ilazh50sdzh.js:1:84102)
+    at iu (http://127.0.0.1:3106/_next/static/chunks/00ilazh50sdzh.js:1:95704)
+    at sd (http://127.0.0.1:3106/_next/static/chunks/00ilazh50sdzh.js:1:138944)

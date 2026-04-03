@@ -1,0 +1,215 @@
+[browser] Uncaught Error: Internal Next.js error: Router action dispatched before initialization.
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⨯ ./components/admin/admin-sidebar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\admin\admin-sidebar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/admin/admin-sidebar.tsx
+./components/admin/admin-auth-guard.tsx
+[browser] ./components/admin/admin-sidebar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\admin\admin-sidebar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/admin/admin-sidebar.tsx
+./components/admin/admin-auth-guard.tsx 
+[browser] ./components/admin/admin-sidebar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\admin\admin-sidebar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/admin/admin-sidebar.tsx
+./components/admin/admin-auth-guard.tsx 
+⨯ ./components/admin/admin-sidebar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\admin\admin-sidebar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/admin/admin-sidebar.tsx
+./components/admin/admin-auth-guard.tsx
+[browser] ./components/admin/admin-sidebar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\admin\admin-sidebar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/admin/admin-sidebar.tsx
+./components/admin/admin-auth-guard.tsx 
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] ./components/navbar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\navbar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/navbar.tsx
+./app/software/page.tsx 
+⨯ ./components/navbar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\navbar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/navbar.tsx
+./app/page.tsx
+[browser] ./components/navbar.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\V3\components\navbar.tsx
+    1: 系统找不到指定的文件。 (os error 2)
+
+Import trace for requested module:
+./components/navbar.tsx
+./app/page.tsx 
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a {
+  digest: '229574359'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[browser] Uncaught TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a {
+  digest: '229574359'
+}
+[browser] Uncaught TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a {
+  digest: '229574359'
+}
+[browser] Uncaught TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a {
+  digest: '229574359'
+}
+[browser] Uncaught TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a {
+  digest: '229574359'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a {
+  digest: '229574359'
+}
+⨯ TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a {
+  digest: '229574359'
+}
+[browser] Uncaught TypeError: Cannot read properties of null (reading 'downloadPermission')
+    at SoftwareDetailPage (app\software\[slug]\page.tsx:344:21)
+  342 |
+  343 |           <div className="space-y-4">
+> 344 |             {access.downloadPermission.allowed && access.downloadLinks.length > 0 ? (
+      |                     ^
+  345 |               <div className="flex flex-col items-start gap-2">
+  346 |                 {access.downloadLinks.map((link) => (
+  347 |                   <a

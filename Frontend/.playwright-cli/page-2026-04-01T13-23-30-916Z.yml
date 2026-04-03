@@ -1,0 +1,6 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - paragraph [ref=e4]: 正在检查后台权限...
+      - paragraph [ref=e5]: 未登录或权限不足时会自动跳回登录页。
+  - alert [ref=e6]

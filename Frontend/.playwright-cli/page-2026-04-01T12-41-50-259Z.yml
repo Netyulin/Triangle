@@ -1,0 +1,166 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "TRIANGLE 软件 / 文章 / 需求" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - img [ref=e7]
+          - generic [ref=e9]:
+            - generic [ref=e10]: TRIANGLE
+            - generic [ref=e11]: 软件 / 文章 / 需求
+        - navigation [ref=e12]:
+          - link "首页" [ref=e13] [cursor=pointer]:
+            - /url: /
+          - link "软件库" [ref=e14] [cursor=pointer]:
+            - /url: /software
+          - link "文章" [ref=e15] [cursor=pointer]:
+            - /url: /articles
+          - link "需求墙" [ref=e16] [cursor=pointer]:
+            - /url: /requests
+          - link "搜索" [ref=e17] [cursor=pointer]:
+            - /url: /search
+        - generic [ref=e19]:
+          - img [ref=e20]
+          - textbox "搜索软件、文章或需求" [ref=e23]
+        - generic [ref=e24]:
+          - button "切换到深色模式" [ref=e25]:
+            - img [ref=e26]
+          - generic [ref=e28]:
+            - link "登录" [ref=e29] [cursor=pointer]:
+              - /url: /login
+            - link "注册" [ref=e30] [cursor=pointer]:
+              - /url: /register
+    - main [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - paragraph [ref=e34]: Create Account
+          - heading "注册账号" [level=1] [ref=e35]
+          - paragraph [ref=e36]: 注册成功后会自动登录，并直接进入个人页。你可以先从默认头像里选，也可以随机生成一个，或者上传自己的头像。
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]: 选择头像
+            - generic [ref=e40]:
+              - generic [ref=e41]:
+                - generic [ref=e42]:
+                  - img "当前头像" [ref=e44]
+                  - generic [ref=e45]:
+                    - paragraph [ref=e46]: 已选头像
+                    - paragraph [ref=e47]: 默认头像照旧保留，你也可以直接随机换一个，或者上传自己的图片。
+                    - paragraph [ref=e168]: 已经换成随机生成的头像。
+                - generic [ref=e48]:
+                  - button "随机生成头像" [active] [ref=e49]:
+                    - img [ref=e50]
+                    - text: 随机生成头像
+                  - generic [ref=e56] [cursor=pointer]:
+                    - img [ref=e57]
+                    - text: 上传本地头像
+                  - button "上传本地头像" [ref=e60]
+              - generic [ref=e61]:
+                - button "默认头像 1" [ref=e62]:
+                  - img "默认头像 1" [ref=e63]
+                - button "默认头像 2" [ref=e64]:
+                  - img "默认头像 2" [ref=e65]
+                - button "默认头像 3" [ref=e66]:
+                  - img "默认头像 3" [ref=e67]
+                - button "默认头像 4" [ref=e68]:
+                  - img "默认头像 4" [ref=e69]
+                - button "默认头像 5" [ref=e70]:
+                  - img "默认头像 5" [ref=e71]
+                - button "默认头像 6" [ref=e72]:
+                  - img "默认头像 6" [ref=e73]
+                - button "默认头像 7" [ref=e74]:
+                  - img "默认头像 7" [ref=e75]
+                - button "默认头像 8" [ref=e76]:
+                  - img "默认头像 8" [ref=e77]
+                - button "默认头像 9" [ref=e78]:
+                  - img "默认头像 9" [ref=e79]
+                - button "默认头像 10" [ref=e80]:
+                  - img "默认头像 10" [ref=e81]
+              - generic [ref=e82]:
+                - img [ref=e83]
+                - text: 上传头像时会自动裁成方形，避免图片过大或者比例不合适。
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - generic [ref=e89]: 用户名
+              - textbox "3 到 30 个字符" [ref=e90]
+            - generic [ref=e91]:
+              - generic [ref=e92]: 显示名称
+              - textbox "你希望展示出来的名字" [ref=e93]
+          - generic [ref=e94]:
+            - generic [ref=e95]:
+              - generic [ref=e96]: 邮箱
+              - textbox "name@example.com" [ref=e97]
+            - generic [ref=e98]:
+              - generic [ref=e99]: 性别
+              - generic [ref=e100]:
+                - button "男" [ref=e101]
+                - button "女" [ref=e102]
+                - button "其他" [ref=e103]
+          - generic [ref=e165]:
+            - generic [ref=e166]: 邀请码
+            - textbox "请输入邀请码" [ref=e167]
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - generic [ref=e106]: 密码
+              - generic [ref=e107]:
+                - textbox "至少 8 位" [ref=e108]
+                - button [ref=e109]:
+                  - img [ref=e110]
+            - generic [ref=e113]:
+              - generic [ref=e114]: 确认密码
+              - generic [ref=e115]:
+                - textbox "再输入一次密码" [ref=e116]
+                - button [ref=e117]:
+                  - img [ref=e118]
+          - button "立即注册" [ref=e121]
+          - paragraph [ref=e122]:
+            - text: 已经有账号？
+            - link "去登录" [ref=e123] [cursor=pointer]:
+              - /url: /login
+    - contentinfo [ref=e124]:
+      - generic [ref=e126]:
+        - generic [ref=e127]:
+          - link "Triangle 软件 / 文章 / 需求" [ref=e128] [cursor=pointer]:
+            - /url: /
+            - img [ref=e130]
+            - generic [ref=e132]:
+              - generic [ref=e133]: Triangle
+              - generic [ref=e134]: 软件 / 文章 / 需求
+          - paragraph [ref=e135]: Software, articles, and real requests for Mac users.
+        - generic [ref=e136]:
+          - heading "站点入口" [level=3] [ref=e137]
+          - list [ref=e138]:
+            - listitem [ref=e139]:
+              - link "首页" [ref=e140] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e141]:
+              - link "软件库" [ref=e142] [cursor=pointer]:
+                - /url: /software
+            - listitem [ref=e143]:
+              - link "文章" [ref=e144] [cursor=pointer]:
+                - /url: /articles
+            - listitem [ref=e145]:
+              - link "需求墙" [ref=e146] [cursor=pointer]:
+                - /url: /requests
+        - generic [ref=e147]:
+          - heading "账号功能" [level=3] [ref=e148]
+          - list [ref=e149]:
+            - listitem [ref=e150]:
+              - link "登录" [ref=e151] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e152]:
+              - link "注册" [ref=e153] [cursor=pointer]:
+                - /url: /register
+            - listitem [ref=e154]:
+              - link "个人中心" [ref=e155] [cursor=pointer]:
+                - /url: /profile
+            - listitem [ref=e156]:
+              - link "搜索" [ref=e157] [cursor=pointer]:
+                - /url: /search
+        - generic [ref=e158]:
+          - heading "页面语言" [level=3] [ref=e159]
+          - generic [ref=e160]:
+            - button "简体中文" [ref=e161]
+            - button "繁體中文" [ref=e162]
+            - button "English" [ref=e163]
+  - alert [ref=e164]

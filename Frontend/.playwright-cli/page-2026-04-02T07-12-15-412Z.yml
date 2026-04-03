@@ -1,0 +1,226 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - link:
+          - /url: /
+          - generic:
+            - img
+          - generic:
+            - generic: TRIANGLE
+            - generic: 软件 / 文章 / 需求
+        - navigation:
+          - link:
+            - /url: /
+            - text: 首页
+          - generic:
+            - link:
+              - /url: /software
+              - text: 软件库
+              - img
+          - generic:
+            - link:
+              - /url: /articles
+              - text: 文章
+              - img
+          - link:
+            - /url: /requests
+            - text: 需求墙
+          - link:
+            - /url: /search
+            - text: 搜索
+        - generic:
+          - generic:
+            - img
+            - textbox:
+              - /placeholder: 搜索软件、文章或需求
+        - generic:
+          - button:
+            - img
+          - generic:
+            - link:
+              - /url: /login
+              - text: 登录
+            - link:
+              - /url: /register
+              - text: 注册
+    - main:
+      - link:
+        - /url: /software
+        - img
+        - text: 返回软件库
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - generic:
+                  - generic: test
+                  - generic: 免费
+                  - generic:
+                    - img
+                    - text: 已认证
+                - heading [level=1]: 抢滩登陆战2000+2002
+                - paragraph: 《抢滩登陆战2000(Beach landings 2000)》是由Wizard Works制作的一款射击类游戏，游戏采用的是多年未变的《拯救大兵瑞恩》式抢滩登陆战的场面，玩家不是要攻坚，而是要坚守阵地，防止敌人冲过来。因为场景固定敌人很多炮火漫天所以画面极其火爆，也十分吸引人。
+                - generic:
+                  - generic: 版本 2000
+                  - generic: 大小 44.57MB
+                  - generic: 下载 0
+                  - generic:
+                    - img
+                    - text: "0.0"
+            - generic:
+              - button:
+                - img
+                - text: 收藏
+              - button:
+                - img
+                - text: 立即下载
+        - generic:
+          - generic:
+            - generic:
+              - heading [level=2]: 软件简介
+              - generic:
+                - paragraph: 游戏介绍
+                - paragraph: 《抢滩登陆战2000(Beach landings 2000)》是由Wizard Works制作的一款射击类游戏，游戏采用的是多年未变的《拯救大兵瑞恩》式抢滩登陆战的场面，玩家不是要攻坚，而是要坚守阵地，防止敌人冲过来。因为场景固定敌人很多炮火漫天所以画面极其火爆，也十分吸引人。
+                - heading [level=3]: 游戏秘籍
+                - paragraph: 照常进入游戏 之后按F9开启游戏调试控制台
+                - paragraph: 输入以下代码即可实现相应效果(已经测试了 通关 加农炮打得叫个爽阿 小日本的飞机像苍蝇一样乱飞 一通猛突突世界安静了 都掉到海里喂海龟了 哈哈)
+                - paragraph: 无敌：god (很多朋友都纳闷 set god怎么没用啊?也是 都是秘籍 这个还和其他的不同格式 搞什么飞机?哦 忘了这个就是空战相关的游戏 是要搞几下飞机的 呵呵)
+                - paragraph: 弹药修改：set bullet xxxx(随便改数 99999999吧 苍蝇太多 打不过来 哈)
+                - paragraph: 修改导弹：set missile xxxxx(小样 叫你跑 放个追踪 跑啊 怎么下来了?呵呵)
+                - paragraph: 深水炸弹修改：set dc xxxxx(感觉 意义不大 主要就是防鱼雷)
+                - paragraph: 直接过关：destroy all (小日本自己掉下来了 还打个屁阿 不爽 不推荐)
+                - paragraph: 读取指定关卡：load levelxx(1-99关任选一个 前面的玩得没意思 选个难得 哈哈 不用一关关过了)
+                - paragraph: 游戏里还支持电影效果模式(宽银幕) 按F3 实现 再次按返回。
+                - heading [level=3]: 版本说明
+                - paragraph: Wizard Works工作室只制作过Beach Head 2000、Beach Head 2002、Beach Head Desert War这三款PC端抢滩登陆战游戏。具体可去http://www.ign.com/companies/wizardworks查看。
+                - heading [level=3]: 安装信息
+                - paragraph: 1. 解压缩
+                - paragraph: 2. 运行游戏
+                - paragraph: 注：由于2000资源太过古老，小编一直没找到，用2002的资源，如果玩家手上有2000版本的，可分享出来。
+                - paragraph: 游戏打不开请安装3DM游戏运行库合集安装包v2.8：https://dl.3dmgame.com/201608/77290.html
+                - paragraph: 游戏图片
+                - list:
+                  - listitem:
+                    - generic:
+                      - img
+                - paragraph
+            - generic:
+              - heading [level=2]: 亮点
+              - list:
+                - listitem:
+                  - img
+                  - generic: 1. 解压缩
+                - listitem:
+                  - img
+                  - generic: 2. 运行游戏
+                - listitem:
+                  - img
+                  - generic: 注：由于2000资源太过古老，小编一直没找到，用2002的资源，如果玩家手上有2000版本的，可分享出来。
+                - listitem:
+                  - img
+                  - generic: 游戏打不开请安装3DM游戏运行库合集安装包v2.8：https://dl.3dmgame.com/201608/77290.html
+            - generic:
+              - heading [level=2]: 编辑点评
+              - paragraph: 照常进入游戏 之后按F9开启游戏调试控制台
+          - complementary:
+            - generic:
+              - heading [level=3]: 基础信息
+              - generic:
+                - paragraph: 收费方式：免费
+                - paragraph: 更新时间：2026-04-02
+                - paragraph: 适用平台：Windows
+                - paragraph: 兼容环境：PC
+            - generic:
+              - heading [level=3]: 标签
+              - generic:
+                - generic: test
+    - contentinfo:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic:
+                - generic: Triangle
+                - generic: 软件 / 文章 / 需求
+            - paragraph: Software, articles, and real requests for Mac users.
+          - generic:
+            - heading [level=3]: 站点入口
+            - list:
+              - listitem:
+                - link:
+                  - /url: /
+                  - text: 首页
+              - listitem:
+                - link:
+                  - /url: /software
+                  - text: 软件库
+              - listitem:
+                - link:
+                  - /url: /articles
+                  - text: 文章
+              - listitem:
+                - link:
+                  - /url: /requests
+                  - text: 需求墙
+          - generic:
+            - heading [level=3]: 账号功能
+            - list:
+              - listitem:
+                - link:
+                  - /url: /login
+                  - text: 登录
+              - listitem:
+                - link:
+                  - /url: /register
+                  - text: 注册
+              - listitem:
+                - link:
+                  - /url: /profile
+                  - text: 个人中心
+              - listitem:
+                - link:
+                  - /url: /search
+                  - text: 搜索
+          - generic:
+            - heading [level=3]: 页面语言
+            - generic:
+              - button: 简体中文
+              - button: 繁體中文
+              - button: English
+  - button "Open Next.js Dev Tools" [ref=e185] [cursor=pointer]:
+    - generic [ref=e195]:
+      - text: Compiling
+      - generic [ref=e196]:
+        - generic [ref=e197]: .
+        - generic [ref=e198]: .
+        - generic [ref=e199]: .
+  - alert: Triangle
+  - dialog "下载链接" [ref=e201]:
+    - generic [ref=e202]:
+      - heading "下载链接" [level=2] [ref=e203]
+      - paragraph [ref=e204]: 先选择一个网盘下载，如果链接失效，可以直接在下面反馈。
+    - generic [ref=e205]:
+      - generic [ref=e206]:
+        - link "百度网盘下载" [ref=e207] [cursor=pointer]:
+          - /url: https://pan.baidu.com/s/1siryK-uG1l2CkAX6A_PxDg?pwd=0375
+        - link "夸克网盘下载" [ref=e208] [cursor=pointer]:
+          - /url: https://pan.baidu.com/s/1siryK-uG1l2CkAX6A_PxDg?pwd=0375
+        - link "迅雷网盘下载" [ref=e209] [cursor=pointer]:
+          - /url: https://pan.baidu.com/s/1siryK-uG1l2CkAX6A_PxDg?pwd=0375
+        - link "11333下载" [ref=e210] [cursor=pointer]:
+          - /url: https://pan.baidu.com/s/1siryK-uG1l2CkAX6A_PxDg?pwd=0375
+      - generic [ref=e212]:
+        - generic [ref=e213]:
+          - paragraph [ref=e214]: 链接失效反馈
+          - paragraph [ref=e215]: 如果某个网盘失效，告诉我们一声就行。
+        - button "反馈失效" [active] [ref=e216] [cursor=pointer]
+    - button "Close" [ref=e217]:
+      - img
+      - generic [ref=e218]: Close

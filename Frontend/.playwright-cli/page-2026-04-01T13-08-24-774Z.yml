@@ -1,0 +1,132 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e6]
+  - main [ref=e126]:
+    - generic [ref=e127]:
+      - complementary [ref=e128]:
+        - generic [ref=e129]:
+          - link "后台概览" [ref=e130] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e131]
+            - generic [ref=e136]: 后台概览
+          - link "软件管理" [ref=e137] [cursor=pointer]:
+            - /url: /admin/apps
+            - img [ref=e138]
+            - generic [ref=e140]: 软件管理
+          - link "文章管理" [ref=e141] [cursor=pointer]:
+            - /url: /admin/posts
+            - img [ref=e142]
+            - generic [ref=e145]: 文章管理
+          - link "专题管理" [ref=e146] [cursor=pointer]:
+            - /url: /admin/topics
+            - img [ref=e147]
+            - generic [ref=e151]: 专题管理
+          - link "用户需求" [ref=e152] [cursor=pointer]:
+            - /url: /admin/submissions
+            - img [ref=e153]
+            - generic [ref=e155]: 用户需求
+          - link "邀请码管理" [ref=e156] [cursor=pointer]:
+            - /url: /admin/invite-codes
+            - img [ref=e157]
+            - generic [ref=e160]: 邀请码管理
+          - link "系统设置" [ref=e161] [cursor=pointer]:
+            - /url: /admin/settings
+            - img [ref=e162]
+            - generic [ref=e165]: 系统设置
+          - link "账号设置" [ref=e166] [cursor=pointer]:
+            - /url: /admin/account
+            - img [ref=e167]
+            - generic [ref=e179]: 账号设置
+      - generic [ref=e180]:
+        - generic [ref=e181]:
+          - paragraph [ref=e182]: Admin
+          - heading "后台概览" [level=1] [ref=e183]
+          - paragraph [ref=e184]: 把软件、文章、专题、需求和站点设置放到同一个入口里统一管理。
+        - generic [ref=e185]:
+          - link "待处理需求 1 快速查看还没回复的用户需求" [ref=e186] [cursor=pointer]:
+            - /url: /admin/submissions?status=pending
+            - paragraph [ref=e187]: 待处理需求
+            - paragraph [ref=e188]: "1"
+            - generic [ref=e189]:
+              - generic [ref=e190]: 快速查看还没回复的用户需求
+              - img [ref=e191]
+          - link "本周新增软件 3 查看最近新增的软件条目" [ref=e193] [cursor=pointer]:
+            - /url: /admin/apps
+            - paragraph [ref=e194]: 本周新增软件
+            - paragraph [ref=e195]: "3"
+            - generic [ref=e196]:
+              - generic [ref=e197]: 查看最近新增的软件条目
+              - img [ref=e198]
+          - link "已发布文章 3 继续维护站内文章内容" [ref=e200] [cursor=pointer]:
+            - /url: /admin/posts
+            - paragraph [ref=e201]: 已发布文章
+            - paragraph [ref=e202]: "3"
+            - generic [ref=e203]:
+              - generic [ref=e204]: 继续维护站内文章内容
+              - img [ref=e205]
+          - link "总需求数 2 查看全部需求与处理记录" [ref=e207] [cursor=pointer]:
+            - /url: /admin/submissions
+            - paragraph [ref=e208]: 总需求数
+            - paragraph [ref=e209]: "2"
+            - generic [ref=e210]:
+              - generic [ref=e211]: 查看全部需求与处理记录
+              - img [ref=e212]
+        - generic [ref=e214]:
+          - heading "最近 7 天趋势" [level=2] [ref=e215]
+          - paragraph [ref=e216]: 用一张图快速看后台最近新增的软件、文章和需求。
+          - img [ref=e221]:
+            - generic [ref=e226]:
+              - generic [ref=e228]: 03-25
+              - generic [ref=e230]: 03-26
+              - generic [ref=e232]: 03-27
+              - generic [ref=e234]: 03-28
+              - generic [ref=e236]: 03-29
+              - generic [ref=e238]: 03-30
+              - generic [ref=e240]: 03-31
+            - generic [ref=e242]:
+              - generic [ref=e244]: "0"
+              - generic [ref=e246]: "1"
+              - generic [ref=e248]: "2"
+              - generic [ref=e250]: "3"
+              - generic [ref=e252]: "4"
+        - generic [ref=e283]:
+          - generic [ref=e285]:
+            - heading "最近内容" [level=2] [ref=e286]
+            - paragraph [ref=e287]: 这里展示最近同步到后台的软件和文章。
+          - generic [ref=e288]:
+            - generic [ref=e289]:
+              - generic [ref=e290]: 标题
+              - generic [ref=e291]: 类型
+              - generic [ref=e292]: 作者
+              - generic [ref=e293]: 状态
+              - generic [ref=e294]: 操作
+            - generic [ref=e295]:
+              - generic [ref=e296]: 2026 年开发者最值得装的 Mac 应用
+              - generic [ref=e297]: 文章
+              - generic [ref=e298]: 系统管理员
+              - generic [ref=e300]: published
+            - generic [ref=e301]:
+              - generic [ref=e302]: Figma 入门完全指南
+              - generic [ref=e303]: 文章
+              - generic [ref=e304]: 系统管理员
+              - generic [ref=e306]: published
+            - generic [ref=e307]:
+              - generic [ref=e308]: Notion 适合怎样的工作流
+              - generic [ref=e309]: 文章
+              - generic [ref=e310]: 系统管理员
+              - generic [ref=e312]: published
+            - generic [ref=e313]:
+              - generic [ref=e314]: Visual Studio Code
+              - generic [ref=e315]: 软件
+              - generic [ref=e316]: 管理员
+              - generic [ref=e318]: published
+            - generic [ref=e319]:
+              - generic [ref=e320]: Figma
+              - generic [ref=e321]: 软件
+              - generic [ref=e322]: 管理员
+              - generic [ref=e324]: published
+            - generic [ref=e325]:
+              - generic [ref=e326]: Notion
+              - generic [ref=e327]: 软件
+              - generic [ref=e328]: 管理员
+              - generic [ref=e330]: published
+  - generic [ref=e331]: "0"
