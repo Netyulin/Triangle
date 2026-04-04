@@ -50,6 +50,13 @@ router.post(
   appCategoryController.create
 );
 router.put(
+  '/app-categories/order',
+  authenticate,
+  requireAdmin,
+  appCategoryController.reorderValidation,
+  appCategoryController.reorder
+);
+router.put(
   '/app-categories/:name',
   authenticate,
   requireAdmin,
@@ -72,6 +79,13 @@ router.post(
   requireAdmin,
   postCategoryController.createValidation,
   postCategoryController.create
+);
+router.put(
+  '/post-categories/order',
+  authenticate,
+  requireAdmin,
+  postCategoryController.reorderValidation,
+  postCategoryController.reorder
 );
 router.put(
   '/post-categories/:name',

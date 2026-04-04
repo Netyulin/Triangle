@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 // Go up 3 levels: backend/src/utils → backend/src → backend → project root → V3/public/uploads
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadsRoot = path.resolve(__dirname, '../../../V3/public/uploads');
+const uploadsRoot = path.resolve(__dirname, '../../../Frontend/public/uploads');
 
 console.log('[assetStorage] uploadsRoot =', uploadsRoot);
 
@@ -56,4 +56,3 @@ export async function saveBufferToUploads(buffer, options = {}) {
 export function getUploadsRoot() {
   return uploadsRoot;
 }
-

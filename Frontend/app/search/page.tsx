@@ -67,7 +67,7 @@ function SearchContent() {
       const data = await request<SearchPayload>(`/api/search?q=${encodeURIComponent(trimmed)}&type=${apiType}&page=1&pageSize=12`)
       setResults(data)
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "搜索失败")
+      setError(nextError instanceof Error ? nextError.message : "搜索失败，请稍后再试。")
       setResults(null)
     } finally {
       setLoading(false)
@@ -118,9 +118,9 @@ function SearchContent() {
 
       <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Site Search</p>
-          <h1 className="mt-2 text-4xl font-black text-foreground">站内搜索</h1>
-          <p className="mt-3 text-sm text-muted-foreground">软件、文章和需求现在都接到了同一套搜索结果里。</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">站内搜索</p>
+          <h1 className="mt-2 text-4xl font-black text-foreground">搜索内容</h1>
+          <p className="mt-3 text-sm text-muted-foreground">支持统一搜索软件、文章和需求，找内容更直接。</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 rounded-3xl border border-border bg-card p-4 shadow-sm">
@@ -181,13 +181,13 @@ function SearchContent() {
                   </button>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">暂时还没有热门记录，先搜一次就会慢慢积累。</p>
+                <p className="text-sm text-muted-foreground">暂时还没有热门搜索，先搜一次就会慢慢积累。</p>
               )}
             </div>
           </section>
         ) : loading ? (
           <section className="mt-8 rounded-3xl border border-border bg-card p-8 text-sm text-muted-foreground">
-            正在搜索 “{submittedKeyword}”...
+            正在搜索“{submittedKeyword}”...
           </section>
         ) : error ? (
           <section className="mt-8 rounded-3xl border border-border bg-card p-8 text-center">
@@ -204,7 +204,7 @@ function SearchContent() {
           <section className="mt-8 rounded-3xl border border-dashed border-border bg-card p-10 text-center">
             <Search className="mx-auto h-8 w-8 text-muted-foreground" />
             <p className="mt-4 text-base font-semibold text-foreground">没有找到相关结果</p>
-            <p className="mt-2 text-sm text-muted-foreground">可以换个关键词，或者切换搜索类型再试一次。</p>
+            <p className="mt-2 text-sm text-muted-foreground">可以换个关键词，或切换搜索范围再试一次。</p>
           </section>
         ) : (
           <section className="mt-8 space-y-8">
@@ -287,7 +287,7 @@ function SearchContent() {
                       <h3 className="mt-3 text-base font-bold text-foreground">{item.title}</h3>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
                       {item.adminReply ? (
-                        <div className="mt-3 rounded-2xl bg-secondary/60 p-3 text-sm text-muted-foreground">管理员回复：{item.adminReply}</div>
+                        <div className="mt-3 rounded-2xl bg-secondary/60 p-3 text-sm text-muted-foreground">站内回复：{item.adminReply}</div>
                       ) : null}
                     </div>
                   ))}

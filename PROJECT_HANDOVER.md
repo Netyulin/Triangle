@@ -26,6 +26,7 @@
 4.  Todo 必须标注优先级、难度、涉及文件、是否影响盈利。
 5.  输出格式为 Markdown，结构清晰，方便长期维护。
 6.  后续对话中，让改代码就直接给完整代码；让加功能就给方案+代码。
+7.  页面上所有用户可见文字必须使用简体中文；除非用户明确要求其他语言，否则禁止输出英文、繁体中文或混合语言页面文案。
 
 ---
 
@@ -64,6 +65,21 @@
 | **SEO** | 支持Meta标签、结构化数据、站点地图 | 搜索引擎友好 |
 | **环境依赖** | Node.js 20+ + npm 10+ | 不推荐使用pnpm/yarn，避免虚拟路径冲突 |
 | **已知问题解决** | 1. 前端启动报错: 模块找不到/PostCSS配置错误 → 先清理`Frontend/.next`缓存再重启<br>2. TURBOPACK与webpack冲突 → 清理环境变量`TURBOPACK=1`<br>3. Tailwind v4与webpack不兼容 → 已降级到v3.4.0<br>4. CORS跨域问题 → 后端`.env`配置`CORS_ORIGIN=http://localhost:3004` | 常见启动问题解决方法 |
+
+---
+
+## 三点五、2026-04-03 本地启动补充记录
+
+1.  **后端依赖修复**：本地 `backend/node_modules` 曾出现缺失 `tsx` 可执行文件的情况，表现为执行 `npm run dev` / `npm start` 时提示 `'tsx' 不是内部或外部命令`。已在 `backend/` 目录重新执行 `npm install` 修复。
+    同时 `backend/package-lock.json` 已随本次安装刷新，若后续提交代码请一并关注该文件变更是否保留。
+2.  **前后端联调地址同步**：前端环境变量文件 `Frontend/.env.local` 已将 `NEXT_PUBLIC_API_BASE_URL` 从 `http://localhost:56197` 更新为 `http://localhost:58085`，与后端 `.env` 中的 `PORT=58085` 保持一致。
+3.  **前端启动副作用**：首次执行 Next.js 开发服务后，框架会自动更新 `Frontend/tsconfig.json` 与 `Frontend/next-env.d.ts`。这不是业务代码调整，但属于运行后产生的本地文件变更。
+4.  **当前本地启动结果**：前端开发服务地址为 `http://localhost:3004`，后端服务地址为 `http://localhost:58085`，健康检查地址为 `http://localhost:58085/health`。
+5.  **SQLite 路径解析修正**：为避免项目换目录后出现“像是数据丢失”的情况，`backend/prisma.config.ts` 与 `backend/src/utils/prisma.js` 已统一改为基于 `backend/` 目录解析 `DATABASE_URL=file:./prisma/dev.db`。现在无论从哪个工作目录启动，只要项目整体搬迁，都会稳定指向 `backend/prisma/dev.db`。
+6.  **前端深色模式修复**：`Frontend/app/software/layout.tsx` 和 `Frontend/app/software/[slug]/layout.tsx` 已移除嵌套的 `html/body`，避免进入软件库时把根布局主题类弄乱。
+7.  **分类拖拽修复**：`Frontend/app/admin/app-categories/page.tsx` 的拖拽保存改为同时依赖 `dataTransfer` 和 ref，降低 `dragend`/`drop` 事件顺序导致的丢源问题。
+8.  **样式编译修复**：`Frontend/app/globals.css` 的 `.admin-panel` 不再使用 `bg-card/88`，改为显式 `background-color`，避免 Tailwind/PostCSS 编译报错。
+9.  **导航分类菜单修复**：`Frontend/components/navbar.tsx` 的软件库/文章分类下拉已改成“当前位于该栏目时默认展开”，避免进入 `/software` 或 `/articles` 后看不到分类子菜单。
 
 ---
 
@@ -367,6 +383,7 @@ D:\Claudecode\Triangle\
 6.  代码风格保持项目统一，符合Next.js+React规范
 7.  若无必要，勿增实体，保持简洁
 8.  所有回复使用简体中文，代码保持原始语言
+9.  所有页面上的显示文字必须使用简体中文；包括标题、导航、按钮、表单标签、占位符、提示文案、空状态、错误提示、弹窗文案与表格表头。除非用户明确要求多语言或其他语言，否则不要输出英文或繁体中文页面文案。
 
 ---
 
@@ -410,6 +427,13 @@ D:\Claudecode\Triangle\
 - 说明文字不够贴合项目业务定位
 
 ---
+
+## 十二、未修复问题
+
+
+**前端页面** 深色模式下点击导航栏软件库或者软件库下方的任意菜单，就会变成浅色模式，这时候再点击其他导航页同样也是浅色模式。
+**管理后台** 分类管理中拖动会报错，不能保存。
+
 
 ## 十三、开发环境与生产环境
 

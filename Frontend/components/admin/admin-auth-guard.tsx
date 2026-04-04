@@ -49,7 +49,7 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-10 sm:px-6">
-        <div className="rounded-3xl border border-border bg-card px-8 py-10 text-center">
+        <div className="admin-panel px-8 py-10 text-center">
           <p className="text-lg font-black text-foreground">正在检查后台权限...</p>
           <p className="mt-2 text-sm text-muted-foreground">未登录或权限不足时会自动跳回登录页。</p>
         </div>
@@ -59,7 +59,7 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="admin-shell grid gap-6 p-4 md:p-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:p-6">
         <AdminSidebar />
         <section className="space-y-6">{children}</section>
       </div>

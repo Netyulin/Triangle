@@ -11,10 +11,10 @@ import { request, type AuthPayload } from "@/lib/api"
 import { CreditCard, Eye, EyeOff, Heart, List, MessageSquare } from "lucide-react"
 
 const features = [
-  { icon: Heart, title: "收藏同步", desc: "登录后可以把收藏的软件和文章统一带到个人页里查看。" },
-  { icon: List, title: "需求记录", desc: "查看自己提过的需求和最新处理进度。" },
-  { icon: MessageSquare, title: "互动记录", desc: "投票、评论和阅读记录都会回到自己的账号下。" },
-  { icon: CreditCard, title: "会员信息", desc: "查看等级、剩余下载次数和充值记录。" },
+  { icon: Heart, title: "收藏同步", desc: "登录后可以统一查看自己收藏的软件和文章。" },
+  { icon: List, title: "需求记录", desc: "随时查看自己提交过的需求和处理进度。" },
+  { icon: MessageSquare, title: "互动记录", desc: "投票、评论和浏览记录都会保存在账号里。" },
+  { icon: CreditCard, title: "会员信息", desc: "可查看会员状态、下载次数和充值记录。" },
 ]
 
 function LoginContent() {
@@ -31,7 +31,7 @@ function LoginContent() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (!username.trim() || !password.trim()) {
-      setError("请先填写用户名和密码。")
+      setError("请先填写账号和密码。")
       return
     }
 
@@ -50,7 +50,7 @@ function LoginContent() {
       const redirect = searchParams.get("redirect")
       router.push(redirect || "/profile")
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "登录失败")
+      setError(nextError instanceof Error ? nextError.message : "登录失败，请稍后再试。")
     } finally {
       setSubmitting(false)
     }
@@ -68,9 +68,9 @@ function LoginContent() {
               <span className="text-sm font-semibold tracking-[0.18em] opacity-75">TRIANGLE ACCOUNT</span>
             </div>
 
-            <h1 className="mt-8 text-4xl font-black leading-tight">登录后继续管理你的收藏、需求和下载权限</h1>
+            <h1 className="mt-8 text-4xl font-black leading-tight">登录后继续管理你的收藏、需求和下载记录</h1>
             <p className="mt-4 text-sm leading-7 opacity-80">
-              这里已经接上真实登录接口。登录成功后会直接进入个人页，继续查看收藏、我的需求、下载额度和充值记录。
+              登录成功后会直接进入个人中心。你可以继续查看收藏内容、自己的需求记录、下载次数和账号信息。
             </p>
 
             <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -89,9 +89,9 @@ function LoginContent() {
 
           <section className="rounded-3xl border border-border bg-card p-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Welcome Back</p>
-              <h2 className="mt-2 text-3xl font-black text-foreground">登录</h2>
-              <p className="mt-2 text-sm text-muted-foreground">输入账号信息后，就能继续查看个人数据和会员状态。</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">欢迎回来</p>
+              <h2 className="mt-2 text-3xl font-black text-foreground">登录账号</h2>
+              <p className="mt-2 text-sm text-muted-foreground">输入账号信息后，即可继续使用个人中心相关功能。</p>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">

@@ -68,6 +68,7 @@ export type AppSummary = {
   compatibility: string[]
   platforms: string[]
   heroImage: string
+  displayMode?: "cover" | "icon"
   gallery: string[]
   tags: string[]
   verified: boolean
@@ -84,6 +85,8 @@ export type AppSummary = {
   isDownloadable: boolean
   downloadUrl: string | null
   downloadLinks: Array<{ name: string; url: string }>
+  seoTitle?: string | null
+  seoDescription?: string | null
 }
 
 export type PostSummary = {
@@ -95,11 +98,15 @@ export type PostSummary = {
   category: string
   author: string
   coverImage: string
+  icon?: string | null
+  displayMode?: "cover" | "icon"
   featured: boolean
   readingTime: string
   dateLabel: string
   publishedAt: string
   status: string
+  seoTitle?: string | null
+  seoDescription?: string | null
   relatedApp?: {
     slug: string
     name: string

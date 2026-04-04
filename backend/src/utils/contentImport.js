@@ -336,6 +336,14 @@ function extractFromHtml(html, sourceUrl = '') {
     body = $('body').html() || '';
   }
 
+  if (!title) {
+    title =
+      $('article h1').first().text()?.trim() ||
+      $('main h1').first().text()?.trim() ||
+      $('h1').first().text()?.trim() ||
+      '';
+  }
+
   // Clean up the content
   body = body.replace(/<script[\s\S]*?<\/script>/gi, '');
   body = body.replace(/<style[\s\S]*?<\/style>/gi, '');

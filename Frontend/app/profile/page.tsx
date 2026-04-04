@@ -46,6 +46,12 @@ function genderText(value: string) {
   return "其他"
 }
 
+function membershipLabel(level: string) {
+  if (level === "premium") return "高级会员"
+  if (level === "member") return "会员"
+  return "普通用户"
+}
+
 function FavoriteApps({ items }: { items: AppSummary[] }) {
   if (!items.length) {
     return <p className="text-sm text-muted-foreground">还没有收藏的软件。</p>
@@ -85,6 +91,13 @@ function FavoritePosts({ items }: { items: PostSummary[] }) {
       ))}
     </div>
   )
+}
+
+function rechargeStatusLabel(status: string) {
+  if (status === "success") return "已完成"
+  if (status === "pending") return "处理中"
+  if (status === "failed") return "失败"
+  return status
 }
 
 function ProfileContent() {
@@ -218,7 +231,7 @@ function ProfileContent() {
           <section className="rounded-3xl border border-border bg-card p-10">
             <UserIcon className="mx-auto h-10 w-10 text-muted-foreground" />
             <h1 className="mt-4 text-2xl font-black text-foreground">请先登录</h1>
-            <p className="mt-2 text-sm text-muted-foreground">登录后才能查看和修改自己的头像、资料和记录。</p>
+            <p className="mt-2 text-sm text-muted-foreground">登录后才能查看和修改自己的头像、资料与记录。</p>
             <Link href="/login" className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
               去登录
             </Link>
@@ -251,12 +264,11 @@ function ProfileContent() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside className="space-y-4">
               <section className="rounded-3xl border border-border bg-card p-6 text-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={form.avatar} alt={profile.user.name || profile.user.username} className="mx-auto h-20 w-20 rounded-3xl object-cover" />
                 <h1 className="mt-4 text-xl font-black text-foreground">{profile.user.name || profile.user.username}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">@{profile.user.username}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {profile.user.membershipLevel} 会员，今日剩余下载 {profile.permissions.remainingDownloads}
+                  {membershipLabel(profile.user.membershipLevel)}，今日剩余下载 {profile.permissions.remainingDownloads}
                 </p>
               </section>
 
@@ -436,7 +448,7 @@ function ProfileContent() {
                         </div>
                         <p className="mt-3 text-base font-bold text-foreground">{item.title}</p>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-                        {item.adminReply ? <p className="mt-3 rounded-2xl bg-secondary/60 p-3 text-sm text-muted-foreground">管理员回复：{item.adminReply}</p> : null}
+                        {item.adminReply ? <p className="mt-3 rounded-2xl bg-secondary/60 p-3 text-sm text-muted-foreground">站内回复：{item.adminReply}</p> : null}
                       </div>
                     ))
                   ) : (
@@ -451,6 +463,7 @@ function ProfileContent() {
                     <CreditCard className="h-5 w-5 text-accent" />
                     <h2 className="text-2xl font-black text-foreground">充值与记录</h2>
                   </div>
+                  <p className="text-sm text-muted-foreground">选择金额后提交，页面会同步更新你的充值记录。</p>
                   <div className="flex flex-wrap gap-3">
                     {rechargeOptions.map((amount, index) => (
                       <button
@@ -483,7 +496,7 @@ function ProfileContent() {
                               <p className="mt-1 text-sm text-muted-foreground">{record.description}</p>
                             </div>
                             <div className="text-right text-sm text-muted-foreground">
-                              <p>{record.status}</p>
+                              <p>{rechargeStatusLabel(record.status)}</p>
                               <p className="mt-1">{record.createdAt}</p>
                             </div>
                           </div>

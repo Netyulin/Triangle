@@ -49,6 +49,7 @@ model App {
   compatibility  Json
   platforms      Json
   heroImage      String?
+  displayMode    String   @default("cover")
   gallery        Json
   tags           Json
   verified       Boolean  @default(false)
@@ -86,6 +87,8 @@ model Post {
   authorId       Int?
   adminAuthor    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   coverImage     String
+  icon           String?
+  displayMode    String   @default("cover")
   relatedAppSlug String?
   relatedApp     App?     @relation(fields: [relatedAppSlug], references: [slug], onDelete: SetNull)
   featured       Boolean  @default(false)

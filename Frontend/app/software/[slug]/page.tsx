@@ -15,7 +15,7 @@ import { request, type AppAccessPayload, type AppSummary, type FavoritesPayload 
 function accessMessage(reason: string) {
   if (reason === "login required") return "登录后才能查看下载链接。"
   if (reason === "membership not enough") return "当前账号权限不足，暂时还不能下载。"
-  if (reason === "daily quota exhausted") return "今天的下载次数已经用完了。"
+  if (reason === "daily quota exhausted") return "今天的下载次数已经用完。"
   if (reason === "download disabled") return "这个软件暂时关闭了下载。"
   return "可以正常下载。"
 }
@@ -26,7 +26,13 @@ function accessLabel(level: string) {
   return "免费"
 }
 
-const reportReasonOptions = ["分享过期", "提取码错误", "压缩密码错误"] as const
+function netdiskButtonClass(name: string) {
+  return `inline-flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition ${
+    name.includes("百度") ? "bg-primary text-primary-foreground" : "border border-border bg-background text-foreground"
+  }`
+}
+
+const reportReasonOptions = ["链接已失效", "提取信息有误", "压缩密码不对"] as const
 
 export default function SoftwareDetailPage() {
   const pathname = usePathname()
@@ -42,7 +48,7 @@ export default function SoftwareDetailPage() {
   const [downloadOpen, setDownloadOpen] = useState(false)
   const [reportExpanded, setReportExpanded] = useState(false)
   const [reportNetdisk, setReportNetdisk] = useState("")
-  const [reportReason, setReportReason] = useState(reportReasonOptions[0])
+  const [reportReason, setReportReason] = useState<string>(reportReasonOptions[0])
   const [reporting, setReporting] = useState(false)
   const [reportMessage, setReportMessage] = useState("")
   const [reportError, setReportError] = useState("")
@@ -142,7 +148,7 @@ export default function SoftwareDetailPage() {
           reason,
         }),
       })
-      setReportMessage("已收到，我们会尽快查看。")
+      setReportMessage("已经收到，我们会尽快核查。")
       setReportReason(reportReasonOptions[0])
     } catch (nextError) {
       setReportError(nextError instanceof Error ? nextError.message : "反馈提交失败")
@@ -156,7 +162,7 @@ export default function SoftwareDetailPage() {
       <Navbar />
 
       <main className="container-custom px-4 py-8 sm:px-6">
-        <Link href="/software" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/software" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           返回软件库
         </Link>
@@ -166,49 +172,30 @@ export default function SoftwareDetailPage() {
         ) : error || !app || !access ? (
           <section className="mt-6 card-custom p-8 text-center">
             <p className="text-sm text-muted-foreground">{error || "没有找到这条软件记录。"}</p>
-            <button
-              onClick={loadDetail}
-              className="mt-4 btn-primary"
-            >
+            <button onClick={loadDetail} className="mt-4 btn-primary">
               <RefreshCw className="h-4 w-4" />
               重新加载
             </button>
           </section>
         ) : (
           <div className="mt-6 space-y-6">
-            {/* Hero Cover Image - show if exists */}
-            {app.heroImage ? (
+            {app.displayMode !== "icon" && app.heroImage ? (
               <div className="overflow-hidden rounded-2xl border border-border">
-                <img
-                  src={resolveAssetUrl(app.heroImage)}
-                  alt={app.name}
-                  className="h-[320px] w-full object-cover"
-                />
+                <img src={resolveAssetUrl(app.heroImage)} alt={app.name} className="h-[320px] w-full object-cover" />
               </div>
             ) : null}
 
             <section className="card-custom p-6 md:p-8">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 flex-1 gap-5 lg:max-w-[760px]">
-                  {!app.heroImage ? (
-                    <div className="flex h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-secondary text-2xl font-black text-foreground">
-                      <AppIcon
-                        value={app.icon}
-                        name={app.name}
-                        className="flex h-full w-full items-center justify-center"
-                        imageClassName="h-full w-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-secondary text-2xl font-black text-foreground">
-                      <AppIcon
-                        value={app.icon}
-                        name={app.name}
-                        className="flex h-full w-full items-center justify-center"
-                        imageClassName="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
+                  <div className="flex h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-secondary text-2xl font-black text-foreground">
+                    <AppIcon
+                      value={app.icon}
+                      name={app.name}
+                      className="flex h-full w-full items-center justify-center"
+                      imageClassName="h-full w-full object-cover"
+                    />
+                  </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="badge badge-secondary">{app.category}</span>
@@ -240,12 +227,12 @@ export default function SoftwareDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 rounded-[26px] border border-border/70 bg-secondary/35 p-2.5 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)] backdrop-blur-sm">
                   <button
                     onClick={handleFavorite}
                     disabled={favoriteLoading}
-                    className={`btn-secondary inline-flex items-center gap-2 whitespace-nowrap ${
-                      favorited ? "bg-primary text-primary-foreground" : ""
+                    className={`detail-action-btn detail-action-btn-secondary whitespace-nowrap ${
+                      favorited ? "border-slate-900/10 bg-slate-900 text-slate-50 dark:border-sky-400/20 dark:bg-slate-100 dark:text-slate-950" : ""
                     }`}
                   >
                     <Bookmark className="h-4 w-4" />
@@ -261,7 +248,7 @@ export default function SoftwareDetailPage() {
                       setReportMessage("")
                       setReportError("")
                     }}
-                    className="btn-primary inline-flex items-center gap-2 whitespace-nowrap"
+                    className="detail-action-btn detail-action-btn-primary min-w-[148px] whitespace-nowrap"
                   >
                     <Download className="h-4 w-4" />
                     立即下载
@@ -276,7 +263,7 @@ export default function SoftwareDetailPage() {
                   <h2 className="heading-3 text-foreground">软件简介</h2>
                   <div
                     className="prose prose-neutral dark:prose-invert mt-4 max-w-none text-muted-foreground prose-headings:text-foreground prose-p:text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: app.summary || "<p>暂无简介</p>" }}
+                    dangerouslySetInnerHTML={{ __html: app.summary || "<p>暂时还没有简介。</p>" }}
                   />
                 </div>
 
@@ -324,10 +311,10 @@ export default function SoftwareDetailPage() {
                 <div className="card-custom p-5">
                   <h3 className="text-base font-bold text-foreground">基础信息</h3>
                   <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                    <p><span className="text-foreground font-medium">收费方式：</span> {app.pricing}</p>
-                    <p><span className="text-foreground font-medium">更新时间：</span> {app.updatedAt}</p>
-                    <p><span className="text-foreground font-medium">适用平台：</span> {app.platforms.join(" / ") || "待补充"}</p>
-                    <p><span className="text-foreground font-medium">兼容环境：</span> {app.compatibility.join(" / ") || "待补充"}</p>
+                    <p><span className="font-medium text-foreground">收费方式：</span>{app.pricing}</p>
+                    <p><span className="font-medium text-foreground">更新时间：</span>{app.updatedAt}</p>
+                    <p><span className="font-medium text-foreground">适用平台：</span>{app.platforms.join(" / ") || "待补充"}</p>
+                    <p><span className="font-medium text-foreground">兼容环境：</span>{app.compatibility.join(" / ") || "待补充"}</p>
                   </div>
                 </div>
 
@@ -370,7 +357,7 @@ export default function SoftwareDetailPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>下载链接</DialogTitle>
-            <DialogDescription>先选择一个网盘下载，如果链接失效，可以直接在下面反馈。</DialogDescription>
+            <DialogDescription>先选择一个网盘下载。如果链接失效，也可以直接在下面反馈。</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
@@ -378,20 +365,14 @@ export default function SoftwareDetailPage() {
               downloadPermission.allowed && downloadLinks.length > 0 ? (
                 <div className="flex flex-col items-start gap-3">
                   {downloadLinks.map((link) => (
-                    <a
-                      key={`${link.name}-${link.url}`}
-                      href={link.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={netdiskButtonClass(link.name)}
-                    >
+                    <a key={`${link.name}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className={netdiskButtonClass(link.name)}>
                       {link.name}下载
                     </a>
                   ))}
                 </div>
               ) : (
                 <div className="rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">
-                  {downloadPermission.requiresLogin ? "需要登录后才能查看下载链接。" : "暂无可用下载链接。"}
+                  {accessMessage(downloadPermission.reason)}
                 </div>
               )
             ) : (
@@ -459,7 +440,7 @@ export default function SoftwareDetailPage() {
                     type="button"
                     onClick={() => void handleReportSubmit()}
                     disabled={reporting}
-                    className="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-70 w-full"
+                    className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-70"
                   >
                     {reporting ? "提交中..." : "提交反馈"}
                   </button>

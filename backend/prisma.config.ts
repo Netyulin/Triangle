@@ -2,6 +2,27 @@
 // npm install --save-dev prisma dotenv
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function resolveSqliteUrl(databaseUrl?: string) {
+  const fallbackUrl = "file:./prisma/dev.db";
+  const rawUrl = databaseUrl?.trim() || fallbackUrl;
+
+  if (!rawUrl.startsWith("file:")) {
+    return rawUrl;
+  }
+
+  const sqlitePath = rawUrl.slice("file:".length);
+  const absolutePath = path.isAbsolute(sqlitePath)
+    ? sqlitePath
+    : path.resolve(__dirname, sqlitePath);
+
+  return `file:${absolutePath.replace(/\\/g, "/")}`;
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -9,6 +30,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: resolveSqliteUrl(process.env["DATABASE_URL"]),
   },
 });

@@ -6,6 +6,7 @@ import {
   deleteAppCategory,
   getAppCategory,
   listAppCategories,
+  reorderAppCategories,
   renameAppCategory,
   upsertAppCategory
 } from '../utils/appCategories.js';
@@ -18,7 +19,12 @@ export const createValidation = validate([
 ]);
 
 export const updateValidation = validate([
-  body('name').trim().notEmpty().isLength({ min: 1, max: 40 }).withMessage('name is invalid')
+  body('name').optional().trim().notEmpty().isLength({ min: 1, max: 40 }).withMessage('name is invalid'),
+  body('sortOrder').optional().isInt({ min: 0 }).withMessage('sortOrder is invalid'),
+]);
+
+export const reorderValidation = validate([
+  body('names').isArray({ min: 1 }).withMessage('names is invalid')
 ]);
 
 export const nameParamValidation = validate([
@@ -43,7 +49,9 @@ export async function create(req, res) {
 
 export async function update(req, res) {
   const currentName = normalizeString(req.params.name).trim();
-  const nextName = normalizeString(req.body?.name).trim();
+  const nextName = normalizeString(req.body?.name ?? currentName).trim();
+  const hasSortOrder = req.body?.sortOrder !== undefined;
+  const nextSortOrder = hasSortOrder ? Number.parseInt(req.body.sortOrder, 10) : null;
 
   const current = await getAppCategory(currentName);
   if (!current) {
@@ -58,7 +66,22 @@ export async function update(req, res) {
   }
 
   const item = await renameAppCategory(currentName, nextName);
+  if (nextSortOrder !== null && Number.isFinite(nextSortOrder)) {
+    await reorderAppCategories(
+      (await listAppCategories({ publishedOnly: false }))
+        .sort((left, right) => left.sortOrder - right.sortOrder)
+        .map((category) => category.name)
+        .filter((name) => name !== nextName)
+        .toSpliced(nextSortOrder, 0, nextName)
+    );
+  }
   return sendSuccess(res, item, 'updated');
+}
+
+export async function reorder(req, res) {
+  const names = Array.isArray(req.body?.names) ? req.body.names : [];
+  const items = await reorderAppCategories(names);
+  return sendSuccess(res, items, 'updated');
 }
 
 export async function remove(req, res) {

@@ -13,7 +13,7 @@
     "seed": "tsx src/prisma/seed.ts",
     "smoke": "node scripts/smoke.test.mjs",
     "regression": "node scripts/regression.test.mjs",
-    "test": "npm run smoke && npm run regression"
+    "test": "node scripts/run-tests.mjs"
   },
   "keywords": [
     "cms",

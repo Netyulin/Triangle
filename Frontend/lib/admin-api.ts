@@ -22,6 +22,7 @@ export type TopicItem = {
 
 export type AppCategoryItem = {
   name: string
+  sortOrder?: number
   count: number
   createdAt?: string
   updatedAt?: string
@@ -29,6 +30,7 @@ export type AppCategoryItem = {
 
 export type PostCategoryItem = {
   name: string
+  sortOrder?: number
   count: number
   createdAt?: string
   updatedAt?: string
@@ -269,6 +271,13 @@ export async function deleteAdminAppCategory(name: string) {
   })
 }
 
+export async function reorderAdminAppCategories(names: string[]) {
+  return adminRequest<AppCategoryItem[]>("/api/admin/app-categories/order", {
+    method: "PUT",
+    body: JSON.stringify({ names }),
+  })
+}
+
 export async function fetchAdminPostCategories() {
   return adminRequest<PostCategoryItem[]>("/api/admin/post-categories")
 }
@@ -290,6 +299,13 @@ export async function updateAdminPostCategory(name: string, payload: { name: str
 export async function deleteAdminPostCategory(name: string) {
   return adminRequest<null>(`/api/admin/post-categories/${encodeURIComponent(name)}`, {
     method: "DELETE",
+  })
+}
+
+export async function reorderAdminPostCategories(names: string[]) {
+  return adminRequest<PostCategoryItem[]>("/api/admin/post-categories/order", {
+    method: "PUT",
+    body: JSON.stringify({ names }),
   })
 }
 

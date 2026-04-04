@@ -36,6 +36,7 @@ const writeValidationRules = [
   body('size').optional().trim().notEmpty().withMessage('size is required'),
   body('pricing').optional().trim().notEmpty().withMessage('pricing is required'),
   body('summary').optional().trim().notEmpty().withMessage('summary is required'),
+  body('displayMode').optional().isIn(['cover', 'icon']).withMessage('displayMode is invalid'),
   body('rating').optional().isFloat({ min: 0, max: 5 }).withMessage('rating must be between 0 and 5'),
   body('editorialScore').optional().isInt({ min: 0, max: 100 }).withMessage('editorialScore must be between 0 and 100'),
   body('status').optional().isIn(appStatuses).withMessage('status is invalid'),
@@ -116,12 +117,14 @@ function buildWhere(queryArgs, isAuthenticated) {
 
 function buildAppData(body) {
   const downloadLinks = normalizeDownloadLinks(body.downloadLinks, body.downloadUrl);
+  const heroImage = body.heroImage !== undefined ? normalizeString(body.heroImage, '') : '';
+  const icon = body.icon !== undefined ? normalizeString(body.icon, '') : '';
   return {
     slug: normalizeString(body.slug).trim(),
     name: normalizeString(body.name).trim(),
     subtitle: normalizeString(body.subtitle).trim(),
     category: normalizeString(body.category).trim(),
-    icon: body.icon !== undefined ? normalizeString(body.icon, '') : '',
+    icon,
     version: normalizeString(body.version).trim(),
     size: normalizeString(body.size).trim(),
     rating: body.rating !== undefined ? Number(body.rating) : 0,
@@ -129,7 +132,8 @@ function buildAppData(body) {
     updatedAt: body.updatedAt !== undefined ? normalizeString(body.updatedAt).trim() : new Date().toISOString().slice(0, 10),
     compatibility: normalizeJsonInput(body.compatibility, []),
     platforms: normalizeJsonInput(body.platforms, []),
-    heroImage: body.heroImage !== undefined ? normalizeString(body.heroImage, '') : '',
+    heroImage,
+    displayMode: body.displayMode !== undefined ? normalizeString(body.displayMode, 'cover').trim() : (heroImage ? 'cover' : 'icon'),
     gallery: normalizeJsonInput(body.gallery, []),
     tags: normalizeJsonInput(body.tags, []),
     verified: normalizeBoolean(body.verified),
@@ -153,12 +157,14 @@ function buildAppData(body) {
 function patchAppData(current, body) {
   const nextSlug = body.slug ? normalizeString(body.slug).trim() : current.slug;
   const downloadLinks = body.downloadLinks !== undefined ? normalizeDownloadLinks(body.downloadLinks, body.downloadUrl ?? current.downloadUrl) : normalizeDownloadLinks(current.downloadLinks, current.downloadUrl);
+  const heroImage = body.heroImage !== undefined ? normalizeString(body.heroImage, '') : current.heroImage;
+  const icon = body.icon !== undefined ? normalizeString(body.icon, '') : current.icon;
   return {
     slug: nextSlug,
     name: body.name !== undefined ? normalizeString(body.name).trim() : current.name,
     subtitle: body.subtitle !== undefined ? normalizeString(body.subtitle).trim() : current.subtitle,
     category: body.category !== undefined ? normalizeString(body.category).trim() : current.category,
-    icon: body.icon !== undefined ? normalizeString(body.icon, '') : current.icon,
+    icon,
     version: body.version !== undefined ? normalizeString(body.version).trim() : current.version,
     size: body.size !== undefined ? normalizeString(body.size).trim() : current.size,
     rating: body.rating !== undefined ? Number(body.rating) : current.rating,
@@ -166,7 +172,11 @@ function patchAppData(current, body) {
     updatedAt: body.updatedAt !== undefined ? normalizeString(body.updatedAt).trim() : current.updatedAt,
     compatibility: body.compatibility !== undefined ? normalizeJsonInput(body.compatibility, []) : current.compatibility,
     platforms: body.platforms !== undefined ? normalizeJsonInput(body.platforms, []) : current.platforms,
-    heroImage: body.heroImage !== undefined ? normalizeString(body.heroImage, '') : current.heroImage,
+    heroImage,
+    displayMode:
+      body.displayMode !== undefined
+        ? normalizeString(body.displayMode, 'cover').trim()
+        : current.displayMode || (heroImage ? 'cover' : 'icon'),
     gallery: body.gallery !== undefined ? normalizeJsonInput(body.gallery, []) : current.gallery,
     tags: body.tags !== undefined ? normalizeJsonInput(body.tags, []) : current.tags,
     verified: body.verified !== undefined ? normalizeBoolean(body.verified) : current.verified,

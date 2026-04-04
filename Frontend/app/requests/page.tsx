@@ -19,15 +19,9 @@ const filterTabs: Array<{ key: FilterKey; label: string }> = [
 ]
 
 function statusMeta(status: RequestItem["status"]) {
-  if (status === "done") {
-    return { label: "已完成", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 }
-  }
-  if (status === "processing") {
-    return { label: "处理中", color: "bg-amber-100 text-amber-700", icon: LoaderCircle }
-  }
-  if (status === "rejected") {
-    return { label: "已关闭", color: "bg-rose-100 text-rose-700", icon: XCircle }
-  }
+  if (status === "done") return { label: "已完成", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 }
+  if (status === "processing") return { label: "处理中", color: "bg-amber-100 text-amber-700", icon: LoaderCircle }
+  if (status === "rejected") return { label: "已关闭", color: "bg-rose-100 text-rose-700", icon: XCircle }
   return { label: "待回复", color: "bg-secondary text-muted-foreground", icon: Clock3 }
 }
 
@@ -63,13 +57,12 @@ export default function RequestsPage() {
   const loadRequests = async (mode = showMine) => {
     setLoading(true)
     setError("")
-
     try {
       const path = mode && token ? "/api/requests/mine?page=1&pageSize=50" : "/api/requests?page=1&pageSize=50"
       const data = await request<RequestListPayload>(path, token ? { token } : {})
       setItems(data.list)
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "需求数据加载失败")
+      setError(nextError instanceof Error ? nextError.message : "需求数据加载失败。")
     } finally {
       setLoading(false)
     }
@@ -123,7 +116,7 @@ export default function RequestsPage() {
         current.map((entry) => (entry.id === item.id ? { ...entry, voteCount: result.voteCount, userVoted: result.userVoted } : entry)),
       )
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "投票失败")
+      setError(nextError instanceof Error ? nextError.message : "支持失败，请稍后再试。")
     } finally {
       setVoteLoadingId(null)
     }
@@ -131,12 +124,12 @@ export default function RequestsPage() {
 
   const handleSubmit = async () => {
     if (!form.title.trim() || !form.description.trim()) {
-      setFormError("请先把标题和描述填完整。")
+      setFormError("请先把标题和说明填写完整。")
       return
     }
 
     if (!token && (!form.authorName.trim() || !form.authorEmail.trim())) {
-      setFormError("游客提交需要填写姓名和邮箱。")
+      setFormError("未登录提交时，需要填写姓名和邮箱。")
       return
     }
 
@@ -166,12 +159,10 @@ export default function RequestsPage() {
         authorEmail: user?.email || "",
       })
       setShowModal(false)
-      if (token) {
-        await refreshSession()
-      }
+      if (token) await refreshSession()
       await loadRequests(showMine)
     } catch (nextError) {
-      setFormError(nextError instanceof Error ? nextError.message : "提交失败")
+      setFormError(nextError instanceof Error ? nextError.message : "提交失败，请稍后再试。")
     } finally {
       setSubmitting(false)
     }
@@ -185,10 +176,10 @@ export default function RequestsPage() {
         <section className="rounded-3xl border border-border bg-card p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Request Board</p>
-              <h1 className="mt-2 text-4xl font-black text-foreground">需求墙</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">需求墙</p>
+              <h1 className="mt-2 text-4xl font-black text-foreground">提交需求</h1>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                公开需求、我的需求、投票支持和提交流程都已经接到了后端。游客也能提交，登录后可以查看自己的记录和投票状态。
+                这里用于收集大家想找的软件、工具和内容。你可以公开提交，也可以登录后查看自己的记录和处理进度。
               </p>
             </div>
 
@@ -240,7 +231,7 @@ export default function RequestsPage() {
               <input
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
-                placeholder="搜索需求标题、描述或提交人"
+                placeholder="搜索需求标题、说明或提交人"
                 className="w-full rounded-2xl border border-border bg-background px-10 py-3 text-sm outline-none transition focus:border-primary/40"
               />
             </div>
@@ -281,7 +272,7 @@ export default function RequestsPage() {
           <div className="mt-8 rounded-3xl border border-dashed border-border bg-card p-10 text-center">
             <MessageSquare className="mx-auto h-8 w-8 text-muted-foreground" />
             <p className="mt-4 text-base font-semibold text-foreground">当前没有符合条件的需求</p>
-            <p className="mt-2 text-sm text-muted-foreground">可以换个筛选条件，或者直接提交一个新需求。</p>
+            <p className="mt-2 text-sm text-muted-foreground">可以换个筛选条件，或直接提交一个新需求。</p>
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_320px]">
@@ -305,7 +296,7 @@ export default function RequestsPage() {
                         <h2 className="mt-3 text-xl font-black text-foreground">{item.title}</h2>
                         <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
                         {item.adminReply ? (
-                          <div className="mt-4 rounded-2xl bg-secondary/60 p-4 text-sm text-muted-foreground">管理员回复：{item.adminReply}</div>
+                          <div className="mt-4 rounded-2xl bg-secondary/60 p-4 text-sm text-muted-foreground">站内回复：{item.adminReply}</div>
                         ) : null}
                       </div>
 
@@ -332,13 +323,13 @@ export default function RequestsPage() {
               <section className="rounded-3xl border border-border bg-card p-5">
                 <h3 className="text-sm font-bold text-foreground">提交说明</h3>
                 <ul className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
-                  <li>标题尽量说清楚你要什么软件或内容。</li>
-                  <li>描述里写上用途、平台和关键限制。</li>
-                  <li>登录后可以更方便地查看自己的记录。</li>
+                  <li>标题尽量写清楚你想找什么内容。</li>
+                  <li>说明里可以写上用途、平台和必须满足的条件。</li>
+                  <li>登录后更方便查看自己的记录和处理进度。</li>
                 </ul>
               </section>
               <section className="rounded-3xl border border-border bg-card p-5">
-                <h3 className="text-sm font-bold text-foreground">当前状态</h3>
+                <h3 className="text-sm font-bold text-foreground">当前统计</h3>
                 <div className="mt-4 space-y-3 text-sm text-muted-foreground">
                   <p>公开需求：{stats.total}</p>
                   <p>已完成：{stats.done}</p>
@@ -355,7 +346,7 @@ export default function RequestsPage() {
           <div className="w-full max-w-xl rounded-3xl bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">New Request</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">新需求</p>
                 <h2 className="mt-2 text-2xl font-black text-foreground">发布需求</h2>
               </div>
               <button onClick={() => setShowModal(false)} className="rounded-full p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground">
@@ -369,18 +360,18 @@ export default function RequestsPage() {
                 <input
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                  placeholder="例如：想找一款 Windows 上可离线使用的 OCR 工具"
+                  placeholder="例如：想找一款可离线使用的文字识别工具"
                   className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">描述</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">需求说明</label>
                 <textarea
                   value={form.description}
                   onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
                   rows={5}
-                  placeholder="说清楚你的用途、预算、系统平台和必须满足的条件。"
+                  placeholder="请写清用途、预算、设备平台和必须满足的条件。"
                   className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
                 />
               </div>

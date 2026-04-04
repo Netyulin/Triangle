@@ -119,22 +119,20 @@ export default function AdminDashboardPage() {
 
   return (
     <>
-      {/* Page Header */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100/80 dark:from-slate-900/60 dark:to-slate-800/40 border border-slate-200 dark:border-slate-800 p-6">
+      <div className="admin-hero p-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">后台概览</h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">把软件、文章、专题、需求和站点设置放到同一个入口里统一管理。</p>
       </div>
 
       {error ? (
-        <div className="rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-4 py-3 text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
-          <svg className="h-5 w-5 flex-shrink-0 mt-[-1px]" viewBox="0 0 20 20" fill="currentColor">
+        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+          <svg className="mt-[-1px] h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 011.06 0L10 8.94l.66-.66a.75.75 0 111.06 1.06L11.06 10l.66.66a.75.75 0 11-1.06 1.06L10 11.06l-.66.66a.75.75 0 01-1.06-1.06L8.94 10l-.66-.66a.75.75 0 010-1.06z" clipRule="evenodd" />
           </svg>
           {error}
         </div>
       ) : null}
 
-      {/* Stats Cards */}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon
@@ -164,8 +162,7 @@ export default function AdminDashboardPage() {
         })}
       </section>
 
-      {/* Trend Chart */}
-      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-sm">
+      <section className="admin-panel p-5">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">最近 7 天趋势</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">用一张图快速看后台最近新增的软件、文章和需求。</p>
@@ -173,7 +170,6 @@ export default function AdminDashboardPage() {
         <div>{trendData.length ? <AdminTrendChart data={trendData} /> : <div className="h-[280px] rounded-xl bg-slate-100/50 dark:bg-slate-900/50" />}</div>
       </section>
 
-      {/* Recent Content */}
       <AdminTable title="最近内容" description="这里展示最近同步到后台的软件和文章。" rows={recentRows} emptyText="最近还没有新增内容。" />
     </>
   )

@@ -23,12 +23,16 @@ const writeValidationRules = [
   body('excerpt').optional().trim().notEmpty().withMessage('excerpt is required'),
   body('category').optional().trim().notEmpty().withMessage('category is required'),
   body('author').optional().trim().notEmpty().withMessage('author is required'),
-  body('coverImage').optional().trim().notEmpty().withMessage('coverImage is required'),
+  body('coverImage').optional().isString().withMessage('coverImage must be a string'),
+  body('icon').optional().isString().withMessage('icon must be a string'),
+  body('displayMode').optional().isIn(['cover', 'icon']).withMessage('displayMode is invalid'),
   body('readingTime').optional().trim().notEmpty().withMessage('readingTime is required'),
   body('dateLabel').optional().trim().notEmpty().withMessage('dateLabel is required'),
   body('publishedAt').optional().trim().notEmpty().withMessage('publishedAt is required'),
   body('featured').optional().isBoolean().withMessage('featured must be a boolean'),
-  body('status').optional().isIn(postStatuses).withMessage('status is invalid')
+  body('status').optional().isIn(postStatuses).withMessage('status is invalid'),
+  body('seoTitle').optional().isString().withMessage('seoTitle must be a string'),
+  body('seoDescription').optional().isString().withMessage('seoDescription must be a string')
 ];
 
 const createValidation = validate([
@@ -37,7 +41,7 @@ const createValidation = validate([
   body('excerpt').trim().notEmpty().withMessage('excerpt is required'),
   body('category').trim().notEmpty().withMessage('category is required'),
   body('author').trim().notEmpty().withMessage('author is required'),
-  body('coverImage').trim().notEmpty().withMessage('coverImage is required'),
+  body('coverImage').optional().isString().withMessage('coverImage must be a string'),
   body('readingTime').trim().notEmpty().withMessage('readingTime is required'),
   body('dateLabel').trim().notEmpty().withMessage('dateLabel is required'),
   body('publishedAt').trim().notEmpty().withMessage('publishedAt is required'),
@@ -93,6 +97,8 @@ function buildWhere(queryArgs, isAuthenticated) {
 }
 
 function buildPostData(body) {
+  const coverImage = body.coverImage !== undefined ? normalizeString(body.coverImage, '') : '';
+  const icon = body.icon !== undefined ? normalizeString(body.icon, '') : '';
   return {
     slug: normalizeString(body.slug).trim(),
     title: normalizeString(body.title).trim(),
@@ -100,7 +106,9 @@ function buildPostData(body) {
     content: body.content !== undefined ? normalizeString(body.content, '') : '',
     category: normalizeString(body.category).trim(),
     author: normalizeString(body.author, '\u585e\u5c14\u8fbe').trim() || '\u585e\u5c14\u8fbe',
-    coverImage: normalizeString(body.coverImage).trim(),
+    coverImage,
+    icon,
+    displayMode: body.displayMode !== undefined ? normalizeString(body.displayMode, 'cover').trim() : (coverImage ? 'cover' : 'icon'),
     relatedAppSlug: body.relatedAppSlug ? normalizeString(body.relatedAppSlug).trim() : null,
     featured: normalizeBoolean(body.featured),
     readingTime: normalizeString(body.readingTime).trim(),
@@ -147,6 +155,8 @@ async function ensureRelatedAppExists(relatedAppSlug) {
 
 function patchPostData(current, body) {
   const nextSlug = body.slug ? normalizeString(body.slug).trim() : current.slug;
+  const coverImage = body.coverImage !== undefined ? normalizeString(body.coverImage, '') : current.coverImage;
+  const icon = body.icon !== undefined ? normalizeString(body.icon, '') : current.icon;
   return {
     slug: nextSlug,
     title: body.title !== undefined ? normalizeString(body.title).trim() : current.title,
@@ -157,7 +167,12 @@ function patchPostData(current, body) {
       body.author !== undefined
         ? normalizeString(body.author, '\u585e\u5c14\u8fbe').trim() || current.author || '\u585e\u5c14\u8fbe'
         : current.author,
-    coverImage: body.coverImage !== undefined ? normalizeString(body.coverImage).trim() : current.coverImage,
+    coverImage,
+    icon,
+    displayMode:
+      body.displayMode !== undefined
+        ? normalizeString(body.displayMode, 'cover').trim()
+        : current.displayMode || (coverImage ? 'cover' : 'icon'),
     relatedAppSlug: body.relatedAppSlug !== undefined ? (body.relatedAppSlug ? normalizeString(body.relatedAppSlug).trim() : null) : current.relatedAppSlug,
     featured: body.featured !== undefined ? normalizeBoolean(body.featured) : current.featured,
     readingTime: body.readingTime !== undefined ? normalizeString(body.readingTime).trim() : current.readingTime,

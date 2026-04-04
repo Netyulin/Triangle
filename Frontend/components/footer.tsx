@@ -24,61 +24,61 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t border-border bg-card mt-12">
-      <div className="container-custom py-12">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
-          <div className="md:col-span-1">
-            <Link href="/" className="mb-4 flex items-center gap-3 transition-opacity hover:opacity-80 w-fit">
-              <SiteLogo className="h-9 w-auto" tone="auto" />
-              <div>
-                <div className="text-base font-black leading-none text-foreground font-mono">{siteSettings?.siteName ?? "Triangle"}</div>
-                <div className="mt-1 text-[10px] text-muted-foreground">{t.brandTagline}</div>
+    <footer className="footer-shell">
+      <div className="container-custom py-10 md:py-12">
+        <div className="footer-panel">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.35fr)_repeat(3,minmax(0,0.8fr))]">
+            <div>
+              <Link href="/" className="mb-5 flex w-fit items-center gap-3 transition-opacity hover:opacity-80">
+                <SiteLogo className="h-9 w-auto" tone="auto" />
+                <div>
+                  <div className="font-mono text-lg font-black leading-none text-foreground">{siteSettings?.siteName ?? "Triangle"}</div>
+                  <div className="mt-1 text-[11px] tracking-[0.18em] text-muted-foreground">{t.brandTagline}</div>
+                </div>
+              </Link>
+              <p className="max-w-sm text-[15px] leading-7 text-muted-foreground">
+                {siteSettings?.siteDescription ?? "把软件、工具、文章和真实需求放到一个清楚、好找、值得信赖的入口里。"}
+              </p>
+            </div>
+
+            {Object.entries(footerLinks).map(([category, links]) => (
+              <div key={category}>
+                <h3 className="footer-title">{category}</h3>
+                <ul className="space-y-3.5">
+                  {links.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="footer-link">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </Link>
-            <p className="text-sm leading-relaxed text-muted-foreground max-w-xs">
-              {siteSettings?.siteDescription ?? "把软件、文章和真实需求放到一个清楚的入口里。"}
+            ))}
+
+            <div>
+              <h3 className="footer-title">{t.footerLanguage}</h3>
+              <div className="flex flex-col items-start gap-2">
+                {languageOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setLanguage(option.value)}
+                    className={`footer-language-btn ${
+                      option.value === language ? "footer-language-btn-active" : "footer-language-btn-idle"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-border/70 pt-5">
+            <p className="text-center text-sm text-muted-foreground">
+              © {new Date().getFullYear()} {siteSettings?.siteName ?? "Triangle"}。保留所有权利。
             </p>
           </div>
-
-          {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{category}</h3>
-              <ul className="space-y-3">
-                {links.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-foreground transition-colors hover:text-accent">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-
-          <div>
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{t.footerLanguage}</h3>
-            <div className="flex flex-col items-start gap-1">
-              {languageOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setLanguage(option.value)}
-                  className={`w-full rounded-full px-3 py-1.5 text-left text-sm transition-colors ${
-                    option.value === language
-                      ? "bg-accent font-medium text-accent-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-10 pt-6 border-t border-border">
-          <p className="text-xs text-center text-muted-foreground">
-            © {new Date().getFullYear()} {siteSettings?.siteName ?? "Triangle"}. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>

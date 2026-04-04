@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ChevronDown, Menu, Moon, Search, Sun, X } from "lucide-react"
+import { useTheme } from "next-themes"
 import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { request } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -26,12 +28,15 @@ export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { t, user, logout } = useAppContext()
+  const { resolvedTheme, setTheme } = useTheme()
+  const userMenuRef = useRef<HTMLDivElement | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const [mounted, setMounted] = useState(false)
   const [softwareCategories, setSoftwareCategories] = useState<CategoryItem[]>([])
   const [articleCategories, setArticleCategories] = useState<CategoryItem[]>([])
+  const [openDropdownHref, setOpenDropdownHref] = useState<string | null>(null)
 
   const navItems: NavItem[] = [
     { label: t.navHome, href: "/" },
@@ -54,17 +59,24 @@ export function Navbar() {
   ]
 
   useEffect(() => {
-    const stored = localStorage.getItem("triangle-theme")
-    if (stored === "dark") {
-      setTheme("dark")
-      document.documentElement.classList.add("dark")
-    } else if (stored === "light") {
-      setTheme("light")
-      document.documentElement.classList.remove("dark")
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark")
-      document.documentElement.classList.add("dark")
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    setMobileOpen(false)
+    setUserMenuOpen(false)
+    setOpenDropdownHref(null)
+  }, [pathname])
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
     }
+
+    window.addEventListener("pointerdown", handlePointerDown)
+    return () => window.removeEventListener("pointerdown", handlePointerDown)
   }, [])
 
   useEffect(() => {
@@ -91,11 +103,10 @@ export function Navbar() {
   }, [])
 
   const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light"
-    setTheme(next)
-    localStorage.setItem("triangle-theme", next)
-    document.documentElement.classList.toggle("dark", next === "dark")
+    setTheme(resolvedTheme === "dark" ? "light" : "dark")
   }
+
+  const isDark = mounted && resolvedTheme === "dark"
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault()
@@ -105,31 +116,36 @@ export function Navbar() {
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const displayName = user ? user.name || user.username : ""
+  const displayInitial = displayName.slice(0, 1).toUpperCase()
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="container-custom flex h-16 items-center gap-4">
+    <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(248,250,252,0.82))] shadow-[0_12px_28px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl supports-[backdrop-filter]:bg-[linear-gradient(180deg,rgba(248,250,252,0.9),rgba(248,250,252,0.74))] dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(15,23,42,0.76))] dark:shadow-[0_16px_36px_-26px_rgba(2,6,23,0.8)] supports-[backdrop-filter]:dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.86),rgba(15,23,42,0.68))]">
+      <div className="container-custom flex min-h-[4.5rem] items-center gap-3 py-3 md:gap-4">
         <Link href="/" className="flex flex-shrink-0 items-center gap-3 transition-opacity hover:opacity-80">
-          <SiteLogo className="h-9 w-auto" tone="auto" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-background/80 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.55)]">
+            <SiteLogo className="h-8 w-auto" tone="auto" />
+          </div>
           <div className="hidden sm:block">
-            <div className="text-base font-black leading-none text-foreground font-mono">TRIANGLE</div>
-            <div className="mt-1 text-[10px] leading-none tracking-[0.2em] text-muted-foreground">{t.brandTagline}</div>
+            <div className="font-mono text-[15px] font-black leading-none tracking-[0.16em] text-foreground">TRIANGLE</div>
+            <div className="mt-1 text-[10px] leading-none tracking-[0.22em] text-muted-foreground">{t.brandTagline}</div>
           </div>
         </Link>
 
-        <nav className="ml-4 hidden items-center gap-1 md:flex">
+        <nav className="ml-2 hidden items-center gap-1 rounded-full border border-border/70 bg-background/70 p-1.5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.45)] md:flex">
           {navItems.map((item) => {
             const active = isActive(item.href)
+            const dropdownOpen = active || openDropdownHref === item.href
             if (!item.categories?.length) {
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "rounded-full px-4 py-2 text-sm font-medium transition-all",
                     active
-                      ? "bg-secondary font-semibold text-foreground"
-                      : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                      ? "bg-foreground text-background shadow-[0_10px_24px_-18px_rgba(15,23,42,0.85)]"
+                      : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
                   )}
                 >
                   {item.label}
@@ -138,25 +154,39 @@ export function Navbar() {
             }
 
             return (
-              <div key={item.href} className="group relative">
+              <div
+                key={item.href}
+                className="group relative"
+                onMouseEnter={() => setOpenDropdownHref(item.href)}
+                onMouseLeave={() => {
+                  if (!active) setOpenDropdownHref(null)
+                }}
+              >
                 <Link
                   href={item.href}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-all",
                     active
-                      ? "bg-secondary font-semibold text-foreground"
-                      : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                      ? "bg-foreground text-background shadow-[0_10px_24px_-18px_rgba(15,23,42,0.85)]"
+                      : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
                   )}
-                >
+                  >
                   {item.label}
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Link>
 
-                <div className="invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  <div className="w-64 overflow-hidden rounded-xl border border-border bg-card p-2 shadow-elevated">
+                <div
+                  className={cn(
+                    "absolute left-0 top-full z-50 pt-2 transition",
+                    dropdownOpen
+                      ? "visible opacity-100"
+                      : "invisible pointer-events-none opacity-0",
+                  )}
+                >
+                  <div className="w-64 overflow-hidden rounded-2xl border border-border bg-card/95 p-2 shadow-elevated backdrop-blur-sm">
                     <Link
                       href={item.href}
-                      className="mb-1 block rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary"
+                      className="mb-1 block rounded-xl px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary"
                     >
                       {item.categoryFallbackLabel}
                     </Link>
@@ -165,10 +195,10 @@ export function Navbar() {
                         <Link
                           key={category.name}
                           href={`${item.categoryHrefPrefix}${encodeURIComponent(category.name)}`}
-                          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                          className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                         >
                           <span>{category.name}</span>
-                          <span className="text-xs font-mono">{category.count}</span>
+                          <span className="font-mono text-xs">{category.count}</span>
                         </Link>
                       ))}
                     </div>
@@ -179,16 +209,16 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="hidden max-w-xs flex-1 sm:block">
+        <div className="hidden max-w-sm flex-1 sm:block">
           <form onSubmit={submitSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               name="q"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder={t.searchPlaceholder}
-              className="w-full rounded-full border border-border bg-secondary py-2 pl-9 pr-4 text-sm transition-all placeholder:text-muted-foreground focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-ring/40"
+              className="w-full rounded-full border border-border/80 bg-background/78 py-2.5 pl-10 pr-4 text-sm text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] transition-all placeholder:text-muted-foreground focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-ring/40"
             />
           </form>
         </div>
@@ -196,38 +226,42 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={toggleTheme}
-            aria-label={theme === "light" ? t.themeToDark : t.themeToLight}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            aria-label={isDark ? t.themeToLight : t.themeToDark}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/70 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
-            {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
           {user ? (
-            <div className="relative">
+            <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen((value) => !value)}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary"
+                className="flex items-center gap-3 rounded-full border border-border/70 bg-background/78 px-2.5 py-1.5 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.55)] transition-all hover:border-accent/25 hover:bg-secondary/80"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
-                  {(user.name || user.username)[0]}
+                <Avatar className="h-9 w-9 border border-border/60 bg-secondary shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+                  <AvatarImage src={user.avatar ?? undefined} alt={displayName} className="object-contain p-0.5" />
+                  <AvatarFallback className="bg-accent/12 text-xs font-semibold text-accent">{displayInitial}</AvatarFallback>
+                </Avatar>
+                <div className="hidden min-w-0 text-left sm:block">
+                  <p className="max-w-[8rem] truncate text-sm font-semibold text-foreground">{displayName}</p>
+                  <p className="max-w-[8rem] truncate text-[11px] text-muted-foreground">@{user.username}</p>
                 </div>
-                <span className="hidden text-sm font-medium text-foreground sm:block">{user.name || user.username}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", userMenuOpen && "rotate-180")} />
               </button>
               {userMenuOpen ? (
-                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card py-1 shadow-elevated">
-                  <Link href="/profile" className="flex items-center px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary">
+                <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card/95 py-1.5 shadow-elevated backdrop-blur-sm">
+                  <Link href="/profile" className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary">
                     {t.profile}
                   </Link>
                   <Link
                     href="/profile?tab=requests"
-                    className="flex items-center px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                    className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
                     {t.myRequests}
                   </Link>
                   <Link
                     href="/profile?tab=favorites"
-                    className="flex items-center px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                    className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
                     {t.favorites}
                   </Link>
@@ -238,7 +272,7 @@ export function Navbar() {
                       setUserMenuOpen(false)
                       router.push("/")
                     }}
-                    className="flex w-full items-center px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-secondary"
+                    className="flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-secondary"
                   >
                     {t.logout}
                   </button>
@@ -273,7 +307,7 @@ export function Navbar() {
       </div>
 
       {mobileOpen ? (
-        <div className="space-y-2 border-t border-border bg-card px-4 py-3 md:hidden">
+        <div className="space-y-3 border-t border-border/70 bg-card/95 px-4 py-4 backdrop-blur md:hidden">
           <form onSubmit={submitSearch} className="relative mb-3">
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -282,9 +316,26 @@ export function Navbar() {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder={t.searchPlaceholder}
-              className="w-full rounded-lg border border-border bg-secondary py-2 pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+              className="w-full rounded-2xl border border-border/80 bg-background/80 py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
             />
           </form>
+
+          {user ? (
+            <Link
+              href="/profile"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3"
+            >
+              <Avatar className="h-10 w-10 border border-border/60 bg-secondary">
+                <AvatarImage src={user.avatar ?? undefined} alt={displayName} className="object-contain p-0.5" />
+                <AvatarFallback className="bg-accent/12 text-sm font-semibold text-accent">{displayInitial}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
+                <p className="truncate text-xs text-muted-foreground">@{user.username}</p>
+              </div>
+            </Link>
+          ) : null}
 
           {navItems.map((item) => (
             <div key={item.href} className="space-y-1">
@@ -292,7 +343,7 @@ export function Navbar() {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "block rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive(item.href)
                     ? "bg-secondary font-semibold text-foreground"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -305,7 +356,7 @@ export function Navbar() {
                   <Link
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className="block rounded-md px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                    className="block rounded-xl px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
                   >
                     {item.categoryFallbackLabel}
                   </Link>
@@ -314,7 +365,7 @@ export function Navbar() {
                       key={category.name}
                       href={`${item.categoryHrefPrefix}${encodeURIComponent(category.name)}`}
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-md px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground"
+                      className="block rounded-xl px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground"
                     >
                       {category.name}
                     </Link>
@@ -323,6 +374,19 @@ export function Navbar() {
               ) : null}
             </div>
           ))}
+
+          {user ? (
+            <button
+              onClick={() => {
+                logout()
+                setMobileOpen(false)
+                router.push("/")
+              }}
+              className="flex w-full items-center justify-center rounded-2xl border border-border px-3 py-2.5 text-sm font-medium text-destructive transition hover:bg-secondary"
+            >
+              {t.logout}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </header>

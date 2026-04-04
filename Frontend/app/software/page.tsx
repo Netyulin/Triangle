@@ -36,6 +36,13 @@ function accessLabel(level: string) {
   return "免费"
 }
 
+function sortLabel(sortKey: SortKey) {
+  if (sortKey === "downloads") return "下载量"
+  if (sortKey === "updated") return "最近更新"
+  if (sortKey === "rating") return "评分"
+  return "推荐优先"
+}
+
 function SoftwareCard({ app }: { app: AppSummary }) {
   return (
     <article className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 transition hover:border-primary/25 hover:shadow-sm">
@@ -154,10 +161,10 @@ export default function SoftwarePage() {
         <section className="rounded-3xl border border-border bg-card p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Software Library</p>
+              <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground">软件推荐</p>
               <h1 className="mt-2 text-4xl font-black text-foreground">软件库</h1>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                这里展示后端已发布的软件条目，支持按分类筛选，也支持按下载量、更新时间和评分排序。
+                这里收录站内整理的软件条目，支持按分类筛选，也能按下载量、更新时间和评分快速排序。
               </p>
             </div>
 
@@ -250,7 +257,7 @@ export default function SoftwarePage() {
         ) : filteredApps.length === 0 ? (
           <div className="mt-8 rounded-3xl border border-dashed border-border bg-card p-10 text-center">
             <p className="text-base font-semibold text-foreground">当前没有符合条件的软件</p>
-            <p className="mt-2 text-sm text-muted-foreground">可以试试换个关键词或分类。</p>
+            <p className="mt-2 text-sm text-muted-foreground">可以换个关键词，或重新选择分类和排序。</p>
           </div>
         ) : (
           <div className="mt-8 space-y-8">
@@ -258,7 +265,7 @@ export default function SoftwarePage() {
               <section>
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-black text-foreground">优先推荐</h2>
-                  <p className="text-sm text-muted-foreground">当前按照 {sortKey === "featured" ? "推荐优先" : "你选择的排序"} 展示</p>
+                  <p className="text-sm text-muted-foreground">当前按{sortLabel(sortKey)}展示</p>
                 </div>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   {featuredApps.map((app) => (

@@ -19,16 +19,16 @@ const items = [
 ]
 
 const colorClasses = {
-  slate: { bg: "bg-slate-600", activeBg: "bg-slate-100 dark:bg-slate-800", activeText: "text-slate-700 dark:text-slate-200", iconBg: "bg-slate-600" },
-  gray: { bg: "bg-gray-600", activeBg: "bg-gray-100 dark:bg-gray-800", activeText: "text-gray-700 dark:text-gray-200", iconBg: "bg-gray-600" },
-  blue: { bg: "bg-blue-600", activeBg: "bg-blue-100 dark:bg-blue-900/50", activeText: "text-blue-700 dark:text-blue-200", iconBg: "bg-blue-600" },
-  indigo: { bg: "bg-indigo-600", activeBg: "bg-indigo-100 dark:bg-indigo-900/50", activeText: "text-indigo-700 dark:text-indigo-200", iconBg: "bg-indigo-600" },
-  emerald: { bg: "bg-emerald-600", activeBg: "bg-emerald-100 dark:bg-emerald-900/50", activeText: "text-emerald-700 dark:text-emerald-200", iconBg: "bg-emerald-600" },
-  violet: { bg: "bg-violet-600", activeBg: "bg-violet-100 dark:bg-violet-900/50", activeText: "text-violet-700 dark:text-violet-200", iconBg: "bg-violet-600" },
-  amber: { bg: "bg-amber-600", activeBg: "bg-amber-100 dark:bg-amber-900/50", activeText: "text-amber-700 dark:text-amber-200", iconBg: "bg-amber-600" },
-  rose: { bg: "bg-rose-600", activeBg: "bg-rose-100 dark:bg-rose-900/50", activeText: "text-rose-700 dark:text-rose-200", iconBg: "bg-rose-600" },
-  cyan: { bg: "bg-cyan-600", activeBg: "bg-cyan-100 dark:bg-cyan-900/50", activeText: "text-cyan-700 dark:text-cyan-200", iconBg: "bg-cyan-600" },
-  teal: { bg: "bg-teal-600", activeBg: "bg-teal-100 dark:bg-teal-900/50", activeText: "text-teal-700 dark:text-teal-200", iconBg: "bg-teal-600" },
+  slate: { activeBg: "bg-slate-100 text-slate-700 dark:bg-slate-800/80 dark:text-slate-100", iconBg: "bg-slate-600" },
+  gray: { activeBg: "bg-gray-100 text-gray-700 dark:bg-gray-800/80 dark:text-gray-100", iconBg: "bg-gray-600" },
+  blue: { activeBg: "bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-100", iconBg: "bg-blue-600" },
+  indigo: { activeBg: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-100", iconBg: "bg-indigo-600" },
+  emerald: { activeBg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-100", iconBg: "bg-emerald-600" },
+  violet: { activeBg: "bg-violet-100 text-violet-700 dark:bg-violet-950/70 dark:text-violet-100", iconBg: "bg-violet-600" },
+  amber: { activeBg: "bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-100", iconBg: "bg-amber-600" },
+  rose: { activeBg: "bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-100", iconBg: "bg-rose-600" },
+  cyan: { activeBg: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/70 dark:text-cyan-100", iconBg: "bg-cyan-600" },
+  teal: { activeBg: "bg-teal-100 text-teal-700 dark:bg-teal-950/70 dark:text-teal-100", iconBg: "bg-teal-600" },
 }
 
 export function AdminSidebar() {
@@ -37,9 +37,9 @@ export function AdminSidebar() {
   return (
     <aside className="space-y-4">
       {/* Logo Branding */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5">
+      <div className="overflow-hidden rounded-[26px] border border-border/70 bg-[linear-gradient(145deg,rgba(8,15,28,0.96),rgba(15,23,42,0.9)_54%,rgba(14,165,233,0.72))] p-5 shadow-[0_28px_60px_-40px_rgba(15,23,42,0.9)]">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 backdrop-blur">
             <LayoutDashboard className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -50,7 +50,7 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation Menu */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 shadow-sm">
+      <div className="admin-panel p-3">
         <nav className="space-y-1">
           {items.map((item) => {
             const Icon = item.icon
@@ -62,15 +62,15 @@ export function AdminSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 group",
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200",
                   active
-                    ? `${colors.activeBg} ${colors.activeText}`
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100",
+                    ? `${colors.activeBg} shadow-[0_20px_42px_-34px_rgba(15,23,42,0.95)]`
+                    : "text-slate-600 hover:bg-slate-50/90 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900/70 dark:hover:text-slate-100",
                 )}
               >
                 <div className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105",
-                  active ? colors.iconBg + " text-white" : "bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400"
+                  "flex h-9 w-9 items-center justify-center rounded-xl border border-transparent transition-transform duration-200 group-hover:scale-105",
+                  active ? `${colors.iconBg} text-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.7)]` : "bg-slate-100 text-slate-500 dark:bg-slate-900/80 dark:text-slate-400"
                 )}>
                   <Icon className="h-4 w-4" />
                 </div>

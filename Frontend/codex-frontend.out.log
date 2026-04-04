@@ -1,0 +1,13 @@
+▲ Next.js 16.2.0 (webpack)
+- Local:         http://localhost:3004
+- Network:       http://192.168.168.63:3004
+- Environments: .env.local
+✓ Ready in 318ms
+
+ GET / 200 in 2.5s (next.js: 2.3s, application-code: 154ms)
+ GET /articles 200 in 1439ms (next.js: 1246ms, application-code: 193ms)
+ GET /software 200 in 1424ms (next.js: 1223ms, application-code: 201ms)
+ GET / 200 in 50ms (next.js: 13ms, application-code: 37ms)
+ GET / 200 in 50ms (next.js: 4ms, application-code: 47ms)
+ GET / 200 in 79ms (next.js: 7ms, application-code: 72ms)
+ GET / 200 in 41ms (next.js: 3ms, application-code: 38ms)

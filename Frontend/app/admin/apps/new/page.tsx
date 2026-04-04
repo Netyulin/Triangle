@@ -44,6 +44,7 @@ const defaultDownloadLinks: DownloadLink[] = [
 
 
 type DisplayMode = "cover" | "icon"
+type AppMediaField = "heroImage" | "icon"
 
 const initialForm = {
 
@@ -274,21 +275,33 @@ export default function AdminAppEditorPage() {
             pricing: app.pricing || "免费",
 
             summary: app.summary || "<p><br></p>",
+            highlights: Array.isArray(app.highlights) ? app.highlights.join("\n") : "",
 
             review: app.review || "",
 
             icon: app.icon || "",
+            verified: Boolean(app.verified),
 
             heroImage: app.heroImage || "",
 
             status: app.status || "published",
+            platforms:
+              Array.isArray(app.platforms) && app.platforms.length
+                ? app.platforms.filter((item): item is Platform => platformOptions.includes(item as Platform))
+                : initialForm.platforms,
+            compatibility:
+              Array.isArray(app.compatibility) && app.compatibility.length
+                ? app.compatibility.filter(
+                    (item): item is Compatibility => ["PC", "Apple Silicon", "Intel鑺墖", "绉诲姩骞冲彴"].includes(item),
+                  )
+                : initialForm.compatibility,
             downloadLinks: normalizeDownloadLinks(
               (Array.isArray(app.downloadLinks) && app.downloadLinks.length ? app.downloadLinks : defaultDownloadLinks).map((item) => ({
                 name: item.name || "",
                 url: item.url || "",
               }))
             ),
-            displayMode: app.heroImage ? "cover" : "icon",
+            displayMode: app.displayMode === "cover" || app.displayMode === "icon" ? app.displayMode : app.heroImage ? "cover" : "icon",
           })
 
           setSlugTouched(true)
@@ -334,7 +347,7 @@ export default function AdminAppEditorPage() {
     }
   }, [loading, form.summary])
 
-  const handleImageUpload = async (file: File | null, field: "heroImage" | "icon") => {
+  const handleImageUpload = async (file: File | null, field: AppMediaField) => {
     if (!file) return
 
     if (field === "heroImage") setUploadingCover(true)
@@ -345,7 +358,16 @@ export default function AdminAppEditorPage() {
 
     try {
       const result = await uploadAdminImage(file, field === "heroImage" ? "post-cover" : "app-cover")
-      setForm((current) => ({ ...current, [field]: result.path }))
+      setForm((current) => ({
+        ...current,
+        [field]: result.path,
+        displayMode:
+          current.heroImage || current.icon
+            ? current.displayMode
+            : field === "heroImage"
+              ? "cover"
+              : "icon",
+      }))
       setMessage("图片上传成功。")
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "图片上传失败")
@@ -361,9 +383,17 @@ export default function AdminAppEditorPage() {
     }
   }
 
-  const handlePasteImage = async (field: "heroImage" | "icon") => {
+  const handlePasteImage = async (field: AppMediaField) => {
     const file = await readClipboardImageFile()
     await handleImageUpload(file, field)
+  }
+
+  const setDisplayMode = (displayMode: DisplayMode) => {
+    setForm((current) => ({ ...current, displayMode }))
+  }
+
+  const updateMediaField = (field: AppMediaField, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }))
   }
 
   const handleSubmit = async (event: FormEvent) => {
@@ -381,6 +411,8 @@ export default function AdminAppEditorPage() {
 
       await saveAdminApp(editingSlug || null, {
         ...restForm,
+        subtitle: restForm.subtitle.trim() || restForm.name.trim(),
+        pricing: restForm.pricing || pricingOptions[0],
         summary: summaryContent,
         size: combineSizeValue(restForm.size, sizeUnit),
         rating: 0,
@@ -526,6 +558,30 @@ export default function AdminAppEditorPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
+            <Field label="副标题">
+              <input
+                value={form.subtitle}
+                onChange={(event) => setForm((current) => ({ ...current, subtitle: event.target.value }))}
+                className={inputClass}
+                placeholder="一句话说明这个软件适合做什么"
+              />
+            </Field>
+            <Field label="收费方式">
+              <select
+                value={form.pricing}
+                onChange={(event) => setForm((current) => ({ ...current, pricing: event.target.value }))}
+                className={inputClass}
+              >
+                {pricingOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
             <Field label="状态">
               <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))} className={inputClass}>
                 <option value="published">已发布</option>
@@ -585,7 +641,7 @@ export default function AdminAppEditorPage() {
                   <input
                     type="radio"
                     checked={form.displayMode === "cover"}
-                    onChange={() => setForm((current) => ({ ...current, displayMode: "cover" }))}
+                    onChange={() => setDisplayMode("cover")}
                   />
                   <span>显示大封面图</span>
                 </label>
@@ -593,7 +649,7 @@ export default function AdminAppEditorPage() {
                   <input
                     type="radio"
                     checked={form.displayMode === "icon"}
-                    onChange={() => setForm((current) => ({ ...current, displayMode: "icon" }))}
+                    onChange={() => setDisplayMode("icon")}
                   />
                   <span>仅显示应用图标</span>
                 </label>
@@ -601,7 +657,7 @@ export default function AdminAppEditorPage() {
               <p className="text-xs text-muted-foreground">选择「显示大封面图」会在详情页顶部显示一张横幅封面，选择「仅显示应用图标」只在卡片内显示图标。</p>
             </div>
 
-            {form.displayMode === "cover" && (
+            {true && (
               <div className="space-y-3">
                 <Field label="封面图">
                   <div className="space-y-4">
@@ -629,7 +685,7 @@ export default function AdminAppEditorPage() {
                     </div>
                     <input
                       value={form.heroImage}
-                      onChange={(event) => setForm((current) => ({ ...current, heroImage: event.target.value }))}
+                      onChange={(event) => updateMediaField("heroImage", event.target.value)}
                       onPaste={(event) => {
                         const imageFile = extractImageFromClipboardData(event.clipboardData)
                         if (!imageFile) return
@@ -645,7 +701,7 @@ export default function AdminAppEditorPage() {
               </div>
             )}
 
-            {form.displayMode === "icon" && (
+            {true && (
               <div className="space-y-3">
                 <Field label="应用图标">
                   <div className="space-y-4">
@@ -673,7 +729,7 @@ export default function AdminAppEditorPage() {
                     </div>
                     <input
                       value={form.icon}
-                      onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))}
+                      onChange={(event) => updateMediaField("icon", event.target.value)}
                       onPaste={(event) => {
                         const imageFile = extractImageFromClipboardData(event.clipboardData)
                         if (!imageFile) return

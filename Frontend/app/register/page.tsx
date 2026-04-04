@@ -50,13 +50,13 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
 
   const strength = useMemo(() => getStrength(form.password), [form.password])
-  const strengthText = ["", "弱", "偏弱", "中等", "较强", "很强"][strength]
+  const strengthText = ["", "较弱", "偏弱", "中等", "较强", "很强"][strength]
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
 
     if (!form.username.trim() || !form.name.trim() || !form.email.trim() || !form.password) {
-      setError("请先把必填信息补完整。")
+      setError("请先把必填信息填写完整。")
       return
     }
 
@@ -114,10 +114,10 @@ export default function RegisterPage() {
       <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <section className="overflow-hidden rounded-3xl border border-border bg-card">
           <div className="border-b border-border bg-secondary/40 px-8 py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Create Account</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">创建账号</p>
             <h1 className="mt-2 text-4xl font-black text-foreground">注册账号</h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-              注册成功后会自动登录，并直接进入个人页。你可以先从默认头像里选，也可以随机生成一个，或者上传自己的头像。
+              注册成功后会自动登录，并直接进入个人中心。你可以先选一个顺眼的头像，也可以稍后再改。
             </p>
           </div>
 
@@ -125,7 +125,7 @@ export default function RegisterPage() {
             <div className="px-8 py-12 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="mt-4 text-base font-semibold text-foreground">当前暂未开放注册</p>
-              <p className="mt-2 text-sm text-muted-foreground">如果你已经有账号，可以直接去登录。</p>
+              <p className="mt-2 text-sm text-muted-foreground">如果你已经有账号，可以直接前往登录。</p>
               <Link href="/login" className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
                 去登录
               </Link>
@@ -143,7 +143,7 @@ export default function RegisterPage() {
                   <input
                     value={form.username}
                     onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
-                    placeholder="3 到 30 个字符"
+                    placeholder="建议 3 到 30 个字符"
                     className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
                   />
                 </div>
@@ -152,7 +152,7 @@ export default function RegisterPage() {
                   <input
                     value={form.name}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="你希望展示出来的名字"
+                    placeholder="你希望展示的名字"
                     className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
                   />
                 </div>
@@ -164,7 +164,7 @@ export default function RegisterPage() {
                   <input
                     value={form.email}
                     onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                    placeholder="name@example.com"
+                    placeholder="请输入常用邮箱"
                     className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
                   />
                 </div>
@@ -240,7 +240,7 @@ export default function RegisterPage() {
                       type={showConfirm ? "text" : "password"}
                       value={form.confirmPassword}
                       onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
-                      placeholder="再输入一次密码"
+                      placeholder="请再输入一次密码"
                       className="w-full rounded-2xl border border-border bg-background px-4 py-3 pr-12 text-sm outline-none transition focus:border-primary/40"
                     />
                     <button

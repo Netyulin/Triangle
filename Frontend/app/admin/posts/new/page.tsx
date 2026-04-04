@@ -132,7 +132,7 @@ export default function AdminPostEditorPage() {
           featured: Boolean(post.featured),
           coverImage: post.coverImage || "",
           icon: post.icon || "",
-          displayMode: post.coverImage ? "cover" : "icon",
+          displayMode: post.displayMode === "cover" || post.displayMode === "icon" ? post.displayMode : post.coverImage ? "cover" : "icon",
           status: post.status || "published",
         })
         setEditorContent(post.content || "")
@@ -190,7 +190,11 @@ export default function AdminPostEditorPage() {
 
     try {
       const result = await uploadAdminImage(file, "post-cover")
-      setForm((current) => ({ ...current, coverImage: result.path }))
+      setForm((current) => ({
+        ...current,
+        coverImage: result.path,
+        displayMode: current.coverImage || current.icon ? current.displayMode : "cover",
+      }))
       setMessage("封面图片上传成功。")
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "封面上传失败。")
@@ -208,7 +212,11 @@ export default function AdminPostEditorPage() {
 
     try {
       const result = await uploadAdminImage(file, "app-cover")
-      setForm((current) => ({ ...current, icon: result.path }))
+      setForm((current) => ({
+        ...current,
+        icon: result.path,
+        displayMode: current.coverImage || current.icon ? current.displayMode : "icon",
+      }))
       setMessage("图标上传成功。")
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "图标上传失败。")
@@ -226,6 +234,10 @@ export default function AdminPostEditorPage() {
   const handlePasteIconImage = async () => {
     const file = await readClipboardImageFile()
     await handleIconUpload(file)
+  }
+
+  const setDisplayMode = (displayMode: DisplayMode) => {
+    setForm((current) => ({ ...current, displayMode }))
   }
 
   const handleSubmit = async (event: FormEvent) => {
@@ -447,7 +459,7 @@ export default function AdminPostEditorPage() {
                   <input
                     type="radio"
                     checked={form.displayMode === "cover"}
-                    onChange={() => setForm((current) => ({ ...current, displayMode: "cover" }))}
+                    onChange={() => setDisplayMode("cover")}
                   />
                   <span>显示大封面图</span>
                 </label>
@@ -455,7 +467,7 @@ export default function AdminPostEditorPage() {
                   <input
                     type="radio"
                     checked={form.displayMode === "icon"}
-                    onChange={() => setForm((current) => ({ ...current, displayMode: "icon" }))}
+                    onChange={() => setDisplayMode("icon")}
                   />
                   <span>仅显示文章图标</span>
                 </label>
@@ -463,7 +475,7 @@ export default function AdminPostEditorPage() {
               <p className="text-xs text-muted-foreground">选择「显示大封面图」会在文章详情页顶部显示一张横幅封面，也会在首页推荐展示封面。选择「仅显示文章图标」只在卡片内显示图标。</p>
             </div>
 
-            {form.displayMode === "cover" && (
+            {true && (
               <div className="space-y-3">
                 <Field label="封面图">
                   <div className="space-y-4">
@@ -507,7 +519,7 @@ export default function AdminPostEditorPage() {
               </div>
             )}
 
-            {form.displayMode === "icon" && (
+            {true && (
               <div className="space-y-3">
                 <Field label="文章图标">
                   <div className="space-y-4">

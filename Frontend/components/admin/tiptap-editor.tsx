@@ -3,7 +3,6 @@
 import { useEditor, EditorContent, type Editor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
-import Link from "@tiptap/extension-link"
 import Placeholder from "@tiptap/extension-placeholder"
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import {
@@ -90,16 +89,16 @@ export function TiptapEditor({
         heading: {
           levels: [1, 2],
         },
+        link: {
+          openOnClick: false,
+          HTMLAttributes: {
+            class: "tiptap-link",
+          },
+        },
       }),
       Image.configure({
         HTMLAttributes: {
           class: "tiptap-image",
-        },
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "tiptap-link",
         },
       }),
       Placeholder.configure({

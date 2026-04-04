@@ -2,8 +2,8 @@ export type Language = "zh-CN" | "zh-TW" | "en"
 
 export const languageOptions: Array<{ value: Language; label: string }> = [
   { value: "zh-CN", label: "简体中文" },
-  { value: "zh-TW", label: "繁體中文" },
-  { value: "en", label: "English" },
+  { value: "zh-TW", label: "繁体中文" },
+  { value: "en", label: "英文界面" },
 ]
 
 type Messages = {
@@ -43,11 +43,11 @@ const messages: Record<Language, Messages> = {
     myRequests: "我的需求",
     logout: "退出登录",
     searchPlaceholder: "搜索软件、文章或需求",
-    footerLinks: "站点入口",
+    footerLinks: "网站入口",
     footerAccount: "账号功能",
     footerLanguage: "页面语言",
-    themeToLight: "切换到浅色模式",
-    themeToDark: "切换到深色模式",
+    themeToLight: "切换为浅色模式",
+    themeToDark: "切换为深色模式",
     mobileMenu: "打开菜单",
   },
   "zh-TW": {
@@ -64,11 +64,11 @@ const messages: Record<Language, Messages> = {
     myRequests: "我的需求",
     logout: "登出",
     searchPlaceholder: "搜尋軟體、文章或需求",
-    footerLinks: "站點入口",
+    footerLinks: "網站入口",
     footerAccount: "帳號功能",
     footerLanguage: "頁面語言",
-    themeToLight: "切換到淺色模式",
-    themeToDark: "切換到深色模式",
+    themeToLight: "切換為淺色模式",
+    themeToDark: "切換為深色模式",
     mobileMenu: "打開選單",
   },
   en: {

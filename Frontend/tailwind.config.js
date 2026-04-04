@@ -1,3 +1,5 @@
+const withOpacity = (variable) => `rgb(var(${variable}) / <alpha-value>)`
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -20,30 +22,30 @@ module.exports = {
           100: '#f1f5f9',
           50: '#f8fafc',
         },
-        background: '#f8fafc',
-        foreground: '#0f172a',
-        surface: '#ffffff',
-        "surface-foreground": '#0f172a',
-        card: '#ffffff',
-        "card-foreground": '#0f172a',
-        popover: '#ffffff',
-        "popover-foreground": '#0f172a',
+        background: withOpacity('--background'),
+        foreground: withOpacity('--foreground'),
+        surface: withOpacity('--surface'),
+        "surface-foreground": withOpacity('--surface-foreground'),
+        card: withOpacity('--card'),
+        "card-foreground": withOpacity('--card-foreground'),
+        popover: withOpacity('--popover'),
+        "popover-foreground": withOpacity('--popover-foreground'),
         primary: {
-          DEFAULT: '#0b1220',
-          foreground: '#ffffff',
+          DEFAULT: withOpacity('--primary'),
+          foreground: withOpacity('--primary-foreground'),
         },
         secondary: {
-          DEFAULT: '#f1f5f9',
-          foreground: '#334155',
+          DEFAULT: withOpacity('--secondary'),
+          foreground: withOpacity('--secondary-foreground'),
         },
         muted: {
-          DEFAULT: '#f1f5f9',
-          foreground: '#64748b',
+          DEFAULT: withOpacity('--muted'),
+          foreground: withOpacity('--muted-foreground'),
         },
         accent: {
-          DEFAULT: '#0ea5e9',
-          hover: '#0284c7',
-          foreground: '#ffffff',
+          DEFAULT: withOpacity('--accent'),
+          hover: withOpacity('--accent-hover'),
+          foreground: withOpacity('--accent-foreground'),
         },
         destructive: {
           DEFAULT: '#ef4444',
@@ -61,9 +63,9 @@ module.exports = {
           DEFAULT: '#ef4444',
           foreground: '#ffffff',
         },
-        border: '#e2e8f0',
-        input: '#e2e8f0',
-        ring: '#0ea5e9',
+        border: withOpacity('--border'),
+        input: withOpacity('--input'),
+        ring: withOpacity('--ring'),
         "chart-1": 'hsl(222.2 84% 4.9%)',
         "chart-2": 'hsl(210 40% 98%)',
         "chart-3": 'hsl(215.4 16.3% 46.9%)',

@@ -1,31 +1,74 @@
 import prisma from './prisma.js';
 import { normalizeJsonInput, normalizeString } from './serializers.js';
 
-const DEFAULT_ORDER = 'name COLLATE NOCASE ASC';
+const DEFAULT_ORDER = 'sortOrder ASC, name COLLATE NOCASE ASC';
 
 export async function ensurePostCategoriesTable() {
   await prisma.$executeRaw`
     CREATE TABLE IF NOT EXISTS post_categories (
       name TEXT PRIMARY KEY,
+      sortOrder INTEGER NOT NULL DEFAULT 0,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL
     )
   `;
+  await ensurePostCategorySortOrderColumn();
+}
+
+async function ensurePostCategorySortOrderColumn() {
+  const columns = await prisma.$queryRawUnsafe(`PRAGMA table_info(post_categories)`);
+  const hasSortOrder = Array.isArray(columns) && columns.some((column) => column.name === 'sortOrder');
+
+  if (!hasSortOrder) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE post_categories ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0`);
+    await normalizePostCategorySortOrder();
+  }
+}
+
+async function normalizePostCategorySortOrder() {
+  const rows = await prisma.$queryRawUnsafe(`
+    SELECT name
+    FROM post_categories
+    ORDER BY sortOrder ASC, name COLLATE NOCASE ASC
+  `);
+
+  if (!Array.isArray(rows)) {
+    return;
+  }
+
+  await prisma.$transaction(
+    rows.map((row, index) =>
+      prisma.$executeRaw`
+        UPDATE post_categories
+        SET sortOrder = ${index}
+        WHERE name = ${row.name}
+      `
+    )
+  );
 }
 
 async function loadCategoryRows() {
   await ensurePostCategoriesTable();
   return prisma.$queryRawUnsafe(`
-    SELECT name, createdAt, updatedAt
+    SELECT name, sortOrder, createdAt, updatedAt
     FROM post_categories
     ORDER BY ${DEFAULT_ORDER}
   `);
 }
 
-async function insertCategory(name, timestamp) {
+async function getNextSortOrder() {
+  await ensurePostCategoriesTable();
+  const rows = await prisma.$queryRawUnsafe(`
+    SELECT COALESCE(MAX(sortOrder), -1) + 1 AS nextSortOrder
+    FROM post_categories
+  `);
+  return Array.isArray(rows) && rows[0]?.nextSortOrder !== undefined ? Number(rows[0].nextSortOrder) : 0;
+}
+
+async function insertCategory(name, timestamp, sortOrder) {
   await prisma.$executeRaw`
-    INSERT OR IGNORE INTO post_categories (name, createdAt, updatedAt)
-    VALUES (${name}, ${timestamp}, ${timestamp})
+    INSERT OR IGNORE INTO post_categories (name, sortOrder, createdAt, updatedAt)
+    VALUES (${name}, ${sortOrder}, ${timestamp}, ${timestamp})
   `;
 }
 
@@ -53,7 +96,7 @@ export async function syncPostCategoriesFromPosts() {
   const names = [...new Set(rows.map((row) => normalizeString(row.category).trim()).filter(Boolean))];
 
   for (const name of names) {
-    await insertCategory(name, now);
+    await insertCategory(name, now, await getNextSortOrder());
   }
 }
 
@@ -63,6 +106,7 @@ export async function listPostCategories({ publishedOnly = false } = {}) {
 
   return categories.map((row) => ({
     name: row.name,
+    sortOrder: Number(row.sortOrder ?? 0),
     count: usage[row.name] || 0,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt
@@ -77,7 +121,7 @@ export async function getPostCategory(name) {
   }
 
   const rows = await prisma.$queryRaw`
-    SELECT name, createdAt, updatedAt
+    SELECT name, sortOrder, createdAt, updatedAt
     FROM post_categories
     WHERE name = ${nextName}
     LIMIT 1
@@ -86,7 +130,7 @@ export async function getPostCategory(name) {
   return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
 
-export async function upsertPostCategory(name) {
+export async function upsertPostCategory(name, options = {}) {
   const nextName = normalizeString(name).trim();
   if (!nextName) {
     return null;
@@ -95,6 +139,7 @@ export async function upsertPostCategory(name) {
   await ensurePostCategoriesTable();
   const now = new Date().toISOString();
   const existing = await getPostCategory(nextName);
+  const nextSortOrder = Number.isInteger(options.sortOrder) ? options.sortOrder : null;
 
   if (existing) {
     await prisma.$executeRaw`
@@ -102,11 +147,16 @@ export async function upsertPostCategory(name) {
       SET updatedAt = ${now}
       WHERE name = ${nextName}
     `;
+    if (nextSortOrder !== null) {
+      await updatePostCategorySortOrder(nextName, nextSortOrder);
+      return { ...existing, updatedAt: now, sortOrder: nextSortOrder };
+    }
     return { ...existing, updatedAt: now };
   }
 
-  await insertCategory(nextName, now);
-  return { name: nextName, createdAt: now, updatedAt: now };
+  const sortOrder = nextSortOrder ?? (await getNextSortOrder());
+  await insertCategory(nextName, now, sortOrder);
+  return { name: nextName, sortOrder, createdAt: now, updatedAt: now };
 }
 
 export async function countPostsByCategory(name, { publishedOnly = false } = {}) {
@@ -179,7 +229,7 @@ export async function renamePostCategory(oldName, newName) {
     }
   });
 
-  return targetCategory || { name: nextName, createdAt: currentCategory.createdAt, updatedAt: now };
+  return targetCategory || { name: nextName, sortOrder: currentCategory.sortOrder, createdAt: currentCategory.createdAt, updatedAt: now };
 }
 
 export async function deletePostCategory(name) {
@@ -194,4 +244,47 @@ export async function deletePostCategory(name) {
     WHERE name = ${nextName}
   `;
   return true;
+}
+
+export async function updatePostCategorySortOrder(name, sortOrder) {
+  const nextName = normalizeString(name).trim();
+  if (!nextName) {
+    return null;
+  }
+
+  await ensurePostCategoriesTable();
+  const now = new Date().toISOString();
+  await prisma.$executeRaw`
+    UPDATE post_categories
+    SET sortOrder = ${sortOrder}, updatedAt = ${now}
+    WHERE name = ${nextName}
+  `;
+
+  return getPostCategory(nextName);
+}
+
+export async function reorderPostCategories(names) {
+  await ensurePostCategoriesTable();
+  const current = await loadCategoryRows();
+  const currentNames = Array.isArray(current) ? current.map((item) => item.name) : [];
+  const orderedNames = names
+    .map((item) => normalizeString(item).trim())
+    .filter(Boolean)
+    .filter((item, index, list) => list.indexOf(item) === index && currentNames.includes(item));
+
+  const remaining = currentNames.filter((item) => !orderedNames.includes(item));
+  const nextNames = [...orderedNames, ...remaining];
+  const now = new Date().toISOString();
+
+  await prisma.$transaction(
+    nextNames.map((name, index) =>
+      prisma.$executeRaw`
+        UPDATE post_categories
+        SET sortOrder = ${index}, updatedAt = ${now}
+        WHERE name = ${name}
+      `
+    )
+  );
+
+  return listPostCategories({ publishedOnly: false });
 }
