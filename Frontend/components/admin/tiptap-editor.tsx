@@ -1,10 +1,10 @@
 "use client"
 
-import { useEditor, EditorContent, type Editor } from "@tiptap/react"
+import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
 import Placeholder from "@tiptap/extension-placeholder"
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 import {
   Bold,
   Italic,
@@ -43,10 +43,10 @@ function ToolbarButton({ icon, isActive, onClick, title }: ToolbarButtonProps) {
       type="button"
       onClick={onClick}
       title={title}
-      className={`p-2 rounded-lg transition-colors ${
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition-all ${
         isActive
-          ? "bg-primary/20 text-primary"
-          : "hover:bg-muted text-muted-foreground"
+          ? "border-accent/25 bg-accent/10 text-accent shadow-[0_10px_24px_-18px_rgba(14,165,233,0.6)]"
+          : "border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground"
       }`}
     >
       {icon}
@@ -54,11 +54,9 @@ function ToolbarButton({ icon, isActive, onClick, title }: ToolbarButtonProps) {
   )
 }
 
-// Extract image files from clipboard data
 function extractImageFiles(clipboardData: DataTransfer): File[] {
   const files: File[] = []
 
-  // Check for files in clipboard (screenshot from clipboard)
   for (let i = 0; i < clipboardData.items.length; i++) {
     const item = clipboardData.items[i]
     if (item.kind === "file" && item.type.startsWith("image/")) {
@@ -75,7 +73,7 @@ function extractImageFiles(clipboardData: DataTransfer): File[] {
 export function TiptapEditor({
   content,
   onChange,
-  placeholder = "开始输入内容...",
+  placeholder = "寮€濮嬭緭鍏ュ唴瀹?..",
   uploadImage,
   className = "",
   minHeight = "300px",
@@ -86,24 +84,16 @@ export function TiptapEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        heading: {
-          levels: [1, 2],
-        },
+        heading: { levels: [1, 2] },
         link: {
           openOnClick: false,
-          HTMLAttributes: {
-            class: "tiptap-link",
-          },
+          HTMLAttributes: { class: "tiptap-link" },
         },
       }),
       Image.configure({
-        HTMLAttributes: {
-          class: "tiptap-image",
-        },
+        HTMLAttributes: { class: "tiptap-image" },
       }),
-      Placeholder.configure({
-        placeholder,
-      }),
+      Placeholder.configure({ placeholder }),
     ],
     content: content || "",
     onUpdate: ({ editor }) => {
@@ -114,7 +104,7 @@ export function TiptapEditor({
         class: `prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none`,
         style: `min-height: ${minHeight};`,
       },
-      handlePaste: (view, event, slice) => {
+      handlePaste: (view, event) => {
         if (!uploadImage) return false
 
         const clipboardData = event.clipboardData
@@ -123,11 +113,9 @@ export function TiptapEditor({
         const imageFiles = extractImageFiles(clipboardData)
         if (!imageFiles.length) return false
 
-        // We have image files to upload - handle them asynchronously
         event.preventDefault()
         setIsPasting(true)
 
-        // Process upload async but return synchronously
         ;(async () => {
           try {
             for (const file of imageFiles) {
@@ -149,11 +137,8 @@ export function TiptapEditor({
     },
   })
 
-  // Sync content from outside - always set content when it changes
-  // Original length-based check failed for image-only content
   useEffect(() => {
     if (!editor || content === undefined || content === null) return
-    // If editor is empty or content is different, update it
     const currentHtml = editor.getHTML().trim()
     if (!currentHtml || content.trim() !== currentHtml.trim()) {
       editor.commands.setContent(content)
@@ -170,13 +155,7 @@ export function TiptapEditor({
       const file = input.files?.[0]
       if (!file) return
 
-      let imageUrl = ""
-      if (uploadImage) {
-        imageUrl = await uploadImage(file)
-      } else {
-        imageUrl = URL.createObjectURL(file)
-      }
-
+      const imageUrl = uploadImage ? await uploadImage(file) : URL.createObjectURL(file)
       editor.chain().focus().setImage({ src: imageUrl }).run()
     }
     input.click()
@@ -185,112 +164,39 @@ export function TiptapEditor({
   const addLink = useCallback(() => {
     if (!editor) return
 
-    const url = window.prompt("输入链接地址:")
+    const url = window.prompt("杈撳叆閾炬帴鍦板潃:")
     if (!url) return
 
     editor.chain().focus().setLink({ href: url }).run()
   }, [editor])
 
-  if (!editor) {
-    return null
-  }
+  if (!editor) return null
 
   return (
-    <div className={`border border-input rounded-xl overflow-hidden ${className}`}>
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30">
-        <ToolbarButton
-          icon={<Bold className="w-4 h-4" />}
-          isActive={editor.isActive("bold")}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          title="粗体"
-        />
-        <ToolbarButton
-          icon={<Italic className="w-4 h-4" />}
-          isActive={editor.isActive("italic")}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          title="斜体"
-        />
-        <ToolbarButton
-          icon={<Strikethrough className="w-4 h-4" />}
-          isActive={editor.isActive("strike")}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          title="删除线"
-        />
-        <ToolbarButton
-          icon={<Code className="w-4 h-4" />}
-          isActive={editor.isActive("code")}
-          onClick={() => editor.chain().focus().toggleCode().run()}
-          title="行内代码"
-        />
-
-        <div className="w-px h-6 bg-border mx-1" />
-
-        <ToolbarButton
-          icon={<Heading1 className="w-4 h-4" />}
-          isActive={editor.isActive("heading", { level: 1 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          title="标题1"
-        />
-        <ToolbarButton
-          icon={<Heading2 className="w-4 h-4" />}
-          isActive={editor.isActive("heading", { level: 2 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          title="标题2"
-        />
-
-        <div className="w-px h-6 bg-border mx-1" />
-
-        <ToolbarButton
-          icon={<List className="w-4 h-4" />}
-          isActive={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          title="无序列表"
-        />
-        <ToolbarButton
-          icon={<ListOrdered className="w-4 h-4" />}
-          isActive={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          title="有序列表"
-        />
-        <ToolbarButton
-          icon={<Quote className="w-4 h-4" />}
-          isActive={editor.isActive("blockquote")}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          title="引用"
-        />
-
-        <div className="w-px h-6 bg-border mx-1" />
-
-        <ToolbarButton
-          icon={<Link2 className="w-4 h-4" />}
-          isActive={editor.isActive("link")}
-          onClick={addLink}
-          title="插入链接"
-        />
-        <ToolbarButton
-          icon={<ImagePlus className="w-4 h-4" />}
-          onClick={addImage}
-          title="插入图片"
-        />
-
+    <div className={`admin-panel overflow-hidden ${className}`}>
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-secondary/50 p-3">
+        <ToolbarButton icon={<Bold className="h-4 w-4" />} isActive={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="绮椾綋" />
+        <ToolbarButton icon={<Italic className="h-4 w-4" />} isActive={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="鏂滀綋" />
+        <ToolbarButton icon={<Strikethrough className="h-4 w-4" />} isActive={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="鍒犻櫎绾?" />
+        <ToolbarButton icon={<Code className="h-4 w-4" />} isActive={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} title="琛屽唴浠ｇ爜" />
+        <div className="mx-1 h-6 w-px bg-border" />
+        <ToolbarButton icon={<Heading1 className="h-4 w-4" />} isActive={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="鏍囬1" />
+        <ToolbarButton icon={<Heading2 className="h-4 w-4" />} isActive={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="鏍囬2" />
+        <div className="mx-1 h-6 w-px bg-border" />
+        <ToolbarButton icon={<List className="h-4 w-4" />} isActive={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="鏃犲簭鍒楄〃" />
+        <ToolbarButton icon={<ListOrdered className="h-4 w-4" />} isActive={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="鏈夊簭鍒楄〃" />
+        <ToolbarButton icon={<Quote className="h-4 w-4" />} isActive={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="寮曠敤" />
+        <div className="mx-1 h-6 w-px bg-border" />
+        <ToolbarButton icon={<Link2 className="h-4 w-4" />} isActive={editor.isActive("link")} onClick={addLink} title="鎻掑叆閾炬帴" />
+        <ToolbarButton icon={<ImagePlus className="h-4 w-4" />} onClick={addImage} title="鎻掑叆鍥剧墖" />
         <div className="flex-1" />
-
-        <ToolbarButton
-          icon={<Undo className="w-4 h-4" />}
-          onClick={() => editor.chain().focus().undo().run()}
-          title="撤销"
-        />
-        <ToolbarButton
-          icon={<Redo className="w-4 h-4" />}
-          onClick={() => editor.chain().focus().redo().run()}
-          title="重做"
-        />
+        <ToolbarButton icon={<Undo className="h-4 w-4" />} onClick={() => editor.chain().focus().undo().run()} title="鎾ら攢" />
+        <ToolbarButton icon={<Redo className="h-4 w-4" />} onClick={() => editor.chain().focus().redo().run()} title="閲嶅仛" />
       </div>
 
-      {/* Editor Content */}
-      <div className="p-4 bg-background">
+      <div className="bg-background p-4">
         <EditorContent editor={editor} />
+        {isPasting ? <p className="mt-3 text-xs text-muted-foreground">姝ｅ湪涓婁紶绮樿创鐨勫浘鐗?...</p> : null}
       </div>
     </div>
   )

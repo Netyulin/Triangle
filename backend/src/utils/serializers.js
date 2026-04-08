@@ -1,4 +1,5 @@
 import { buildDefaultAvatar, normalizeGender } from './userFeatures.js';
+import { getMembershipLevelLabel, normalizeMembershipLevel, getAllowedMembershipLevels } from './membership.js';
 
 function parseMaybeJson(value, fallback) {
   if (value === null || value === undefined || value === '') {
@@ -90,6 +91,10 @@ export function serializeUser(user) {
     return null;
   }
 
+  const normalizedMembershipLevel = normalizeMembershipLevel(user.membershipLevel);
+  const bannedUntil = user.bannedUntil ?? null;
+  const isBanned = user.status === 'banned' && (!bannedUntil || new Date(bannedUntil) > new Date());
+
   return {
     id: user.id,
     username: user.username,
@@ -100,12 +105,18 @@ export function serializeUser(user) {
     phone: user.phone ?? null,
     role: user.role,
     status: user.status ?? 'active',
-    membershipLevel: user.membershipLevel ?? 'free',
+    membershipLevel: normalizedMembershipLevel,
+    membershipLevelLabel: getMembershipLevelLabel(normalizedMembershipLevel),
     membershipExpireAt: user.membershipExpireAt ?? null,
+    bannedUntil,
+    banUntil: bannedUntil,
+    banReason: user.banReason ?? null,
     downloadQuotaDaily: user.downloadQuotaDaily ?? 0,
     downloadCountDaily: user.downloadCountDaily ?? 0,
     canComment: user.canComment ?? true,
+    canReply: user.canReply ?? true,
     canSubmitRequest: user.canSubmitRequest ?? true,
+    isBanned,
     lastLoginAt: user.lastLoginAt ?? null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
@@ -122,28 +133,13 @@ export function getUserAccessScope(user) {
 
   if (user.role === 'admin') {
     return {
-      allowedLevels: ['free', 'member', 'premium'],
+      allowedLevels: getAllowedMembershipLevels('supreme'),
       isAdmin: true
     };
   }
 
-  const membershipLevel = user.membershipLevel ?? 'free';
-  if (membershipLevel === 'premium') {
-    return {
-      allowedLevels: ['free', 'member', 'premium'],
-      isAdmin: false
-    };
-  }
-
-  if (membershipLevel === 'plus' || membershipLevel === 'member') {
-    return {
-      allowedLevels: ['free', 'member'],
-      isAdmin: false
-    };
-  }
-
   return {
-    allowedLevels: ['free'],
+    allowedLevels: getAllowedMembershipLevels(user.membershipLevel ?? 'free'),
     isAdmin: false
   };
 }
@@ -156,13 +152,19 @@ export function serializeUserPermissions(user) {
   return {
     role: user?.role ?? 'guest',
     status: user?.status ?? 'guest',
-    membershipLevel: user?.membershipLevel ?? 'free',
+    membershipLevel: normalizeMembershipLevel(user?.membershipLevel),
+    membershipLevelLabel: getMembershipLevelLabel(user?.membershipLevel ?? 'free'),
     canComment: user?.canComment ?? true,
+    canReply: user?.canReply ?? true,
     canSubmitRequest: user?.canSubmitRequest ?? true,
     allowedDownloadLevels: scope.allowedLevels,
     downloadQuotaDaily: quota,
     downloadCountDaily: used,
-    remainingDownloads: Math.max(quota - used, 0)
+    remainingDownloads: Math.max(quota - used, 0),
+    isAdmin: scope.isAdmin,
+    bannedUntil: user?.bannedUntil ?? null,
+    banUntil: user?.bannedUntil ?? null,
+    banReason: user?.banReason ?? null
   };
 }
 
@@ -258,6 +260,7 @@ export function serializeNetdiskReport(report) {
   return {
     id: report.id,
     appSlug: report.appSlug,
+    reporterId: report.reporterId ?? null,
     app: report.app
       ? {
           slug: report.app.slug,
@@ -272,8 +275,32 @@ export function serializeNetdiskReport(report) {
     contact: report.contact ?? null,
     status: report.status ?? 'pending',
     adminNote: report.adminNote ?? null,
+    handledById: report.handledById ?? null,
     createdAt: report.createdAt,
     handledAt: report.handledAt ?? null
+  };
+}
+
+export function serializeNotification(notification) {
+  if (!notification) {
+    return null;
+  }
+
+  return {
+    id: notification.id,
+    userId: notification.userId,
+    senderId: notification.senderId ?? null,
+    type: notification.type ?? 'system',
+    templateKey: notification.templateKey ?? null,
+    title: notification.title,
+    content: notification.content,
+    data: notification.data ?? null,
+    link: notification.link ?? null,
+    isRead: notification.isRead ?? false,
+    readAt: notification.readAt ?? null,
+    deletedAt: notification.deletedAt ?? null,
+    createdAt: notification.createdAt,
+    updatedAt: notification.updatedAt
   };
 }
 

@@ -253,7 +253,7 @@ function SearchContent() {
                   {sections.posts.map((post) => (
                     <Link
                       key={post.slug}
-                      href={`/articles/${post.slug}`}
+                      href={`/news/${post.slug}`}
                       className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/25 hover:shadow-sm"
                     >
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

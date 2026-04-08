@@ -1,10 +1,10 @@
 "use client"
 
-import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react"
-import { Shapes, Trash2, CheckCircle } from "lucide-react"
+import { FormEvent, useEffect, useMemo, useState, type ReactNode } from "react"
+import { CheckCircle, Search, Shapes, Trash2 } from "lucide-react"
 import { createAdminTopic, deleteAdminTopic, fetchAdminApps, fetchAdminPosts, fetchAdminTopics, updateAdminTopic } from "@/lib/admin-api"
 
-type TopicStatus = "draft" | "published" | "archived"
+type TopicStatus = "hidden" | "published" | "archived"
 
 type TopicForm = {
   slug: string
@@ -28,44 +28,40 @@ const initialForm: TopicForm = {
   title: "",
   description: "",
   coverImage: "",
-  status: "draft",
+  status: "published",
   relatedAppSlugs: [],
   relatedPostSlugs: [],
 }
 
 const statusLabel: Record<TopicStatus, string> = {
-  draft: "草稿",
+  hidden: "已隐藏",
   published: "已发布",
   archived: "已归档",
 }
 
 const statusColor: Record<TopicStatus, string> = {
-  draft: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-  published: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-  archived: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700",
+  hidden: "bg-secondary text-muted-foreground border-border",
+  published: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800",
+  archived: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800",
 }
 
 function normalizeTopic(item: TopicApiItem): TopicRecord {
-  const relatedAppSlugs = Array.isArray(item.relatedAppSlugs)
-    ? item.relatedAppSlugs.filter(Boolean)
-    : Array.isArray(item.relatedApps)
-      ? item.relatedApps.map((entry) => entry.slug || "").filter(Boolean)
-      : []
-
-  const relatedPostSlugs = Array.isArray(item.relatedPostSlugs)
-    ? item.relatedPostSlugs.filter(Boolean)
-    : Array.isArray(item.relatedPosts)
-      ? item.relatedPosts.map((entry) => entry.slug || "").filter(Boolean)
-      : []
-
   return {
     slug: String(item.slug || ""),
     title: String(item.title || ""),
     description: String(item.description || ""),
     coverImage: String(item.coverImage || ""),
-    status: item.status === "published" || item.status === "archived" ? item.status : "draft",
-    relatedAppSlugs,
-    relatedPostSlugs,
+    status: item.status === "archived" ? "archived" : item.status === "hidden" ? "hidden" : "published",
+    relatedAppSlugs: Array.isArray(item.relatedAppSlugs)
+      ? item.relatedAppSlugs.filter(Boolean)
+      : Array.isArray(item.relatedApps)
+        ? item.relatedApps.map((entry) => entry.slug || "").filter(Boolean)
+        : [],
+    relatedPostSlugs: Array.isArray(item.relatedPostSlugs)
+      ? item.relatedPostSlugs.filter(Boolean)
+      : Array.isArray(item.relatedPosts)
+        ? item.relatedPosts.map((entry) => entry.slug || "").filter(Boolean)
+        : [],
   }
 }
 
@@ -75,6 +71,8 @@ export default function AdminTopicsPage() {
   const [posts, setPosts] = useState<Array<{ slug: string; title: string }>>([])
   const [form, setForm] = useState<TopicForm>(initialForm)
   const [editingSlug, setEditingSlug] = useState("")
+  const [appKeyword, setAppKeyword] = useState("")
+  const [postKeyword, setPostKeyword] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
@@ -82,10 +80,8 @@ export default function AdminTopicsPage() {
 
   const loadData = async () => {
     setLoading(true)
-
     try {
       const [topicItems, appItems, postItems] = await Promise.all([fetchAdminTopics(), fetchAdminApps(), fetchAdminPosts()])
-
       setTopics((topicItems as TopicApiItem[]).map(normalizeTopic))
       setApps(appItems.map((item) => ({ slug: item.slug, name: item.name })))
       setPosts(postItems.map((item) => ({ slug: item.slug, title: item.title })))
@@ -101,12 +97,22 @@ export default function AdminTopicsPage() {
     void loadData()
   }, [])
 
+  const filteredApps = useMemo(() => {
+    const keyword = appKeyword.trim().toLowerCase()
+    return apps.filter((item) => !keyword || `${item.name} ${item.slug}`.toLowerCase().includes(keyword))
+  }, [appKeyword, apps])
+
+  const filteredPosts = useMemo(() => {
+    const keyword = postKeyword.trim().toLowerCase()
+    return posts.filter((item) => !keyword || `${item.title} ${item.slug}`.toLowerCase().includes(keyword))
+  }, [postKeyword, posts])
+
   const rows = useMemo(
     () =>
       topics.map((topic) => ({
         ...topic,
-        appNames: topic.relatedAppSlugs.map((slug) => apps.find((item) => item.slug === slug)?.name || slug).slice(0, 3),
-        postTitles: topic.relatedPostSlugs.map((slug) => posts.find((item) => item.slug === slug)?.title || slug).slice(0, 3),
+        appNames: topic.relatedAppSlugs.map((slug) => apps.find((item) => item.slug === slug)?.name || slug).slice(0, 4),
+        postTitles: topic.relatedPostSlugs.map((slug) => posts.find((item) => item.slug === slug)?.title || slug).slice(0, 4),
       })),
     [apps, posts, topics],
   )
@@ -114,6 +120,8 @@ export default function AdminTopicsPage() {
   const resetForm = () => {
     setForm(initialForm)
     setEditingSlug("")
+    setAppKeyword("")
+    setPostKeyword("")
     setMessage("")
     setError("")
   }
@@ -131,6 +139,24 @@ export default function AdminTopicsPage() {
     setEditingSlug(topic.slug)
     setMessage("")
     setError("")
+  }
+
+  const toggleRelatedApp = (slug: string) => {
+    setForm((current) => ({
+      ...current,
+      relatedAppSlugs: current.relatedAppSlugs.includes(slug)
+        ? current.relatedAppSlugs.filter((item) => item !== slug)
+        : [...current.relatedAppSlugs, slug],
+    }))
+  }
+
+  const toggleRelatedPost = (slug: string) => {
+    setForm((current) => ({
+      ...current,
+      relatedPostSlugs: current.relatedPostSlugs.includes(slug)
+        ? current.relatedPostSlugs.filter((item) => item !== slug)
+        : [...current.relatedPostSlugs, slug],
+    }))
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -159,17 +185,12 @@ export default function AdminTopicsPage() {
 
   const handleDelete = async (slug: string) => {
     if (!window.confirm("确定删除这个专题吗？")) return
-
     setMessage("")
     setError("")
 
     try {
       await deleteAdminTopic(slug)
-
-      if (editingSlug === slug) {
-        resetForm()
-      }
-
+      if (editingSlug === slug) resetForm()
       setMessage("专题已删除。")
       await loadData()
     } catch (nextError) {
@@ -179,46 +200,31 @@ export default function AdminTopicsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50/80 to-purple-50/50 dark:from-violet-950/40 dark:to-purple-950/20 border border-violet-100 dark:border-violet-900">
+      <div className="admin-hero">
         <div className="p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white shadow-lg shadow-violet-600/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
               <Shapes className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">专题管理</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">把相关软件和文章组织成一个专题页，方便前台集中展示</p>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">专题管理</h1>
+              <p className="mt-1 text-sm text-muted-foreground">把软件和文章组合成更清晰的专题页。</p>
             </div>
           </div>
         </div>
       </div>
 
-      {error ? (
-        <div className="rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-4 py-3 text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
-          <svg className="h-5 w-5 flex-shrink-0 mt-[-1px]" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 011.06 0L10 8.94l.66-.66a.75.75 0 111.06 1.06L11.06 10l.66.66a.75.75 0 11-1.06 1.06L10 11.06l-.66.66a.75.75 0 01-1.06-1.06L8.94 10l-.66-.66a.75.75 0 010-1.06z" clipRule="evenodd" />
-          </svg>
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
+      {message ? <div className="admin-panel flex items-start gap-2 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle className="mt-[-1px] h-5 w-5 flex-shrink-0" />{message}</div> : null}
 
-      {message ? (
-        <div className="rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50 px-4 py-3 text-sm text-green-700 dark:text-green-400 flex items-start gap-2">
-          <CheckCircle className="h-5 w-5 flex-shrink-0 mt-[-1px]" />
-          {message}
-        </div>
-      ) : null}
-
-      {/* Create/Edit Form */}
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-sm">
+      <form onSubmit={handleSubmit} className="admin-panel p-5">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{editingSlug ? "编辑专题" : "新建专题"}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{editingSlug ? "编辑专题" : "新建专题"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">软件和文章分开选择，避免混在一起。</p>
           </div>
-
           {editingSlug ? (
-            <button type="button" onClick={resetForm} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900">
+            <button type="button" onClick={resetForm} className="admin-secondary-btn px-4 py-2">
               取消编辑
             </button>
           ) : null}
@@ -226,148 +232,98 @@ export default function AdminTopicsPage() {
 
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="专题标题">
-            <input
-              value={form.title}
-              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-              required
-              className={inputClass}
-            />
+            <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required className={inputClass} />
           </Field>
-
           <Field label="专题别名">
-            <input
-              value={form.slug}
-              onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
-              required
-              disabled={Boolean(editingSlug)}
-              className={inputClass}
-            />
+            <input value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))} required disabled={Boolean(editingSlug)} className={inputClass} />
           </Field>
         </div>
 
         <div className="mt-5">
           <Field label="专题描述">
-            <textarea
-              value={form.description}
-              onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-              rows={4}
-              required
-              className={inputClass}
-            />
+            <textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} rows={4} required className={inputClass} />
           </Field>
         </div>
 
         <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <Field label="封面图地址">
-            <input
-              value={form.coverImage}
-              onChange={(event) => setForm((current) => ({ ...current, coverImage: event.target.value }))}
-              className={inputClass}
-            />
+          <Field label="封面地址">
+            <input value={form.coverImage} onChange={(event) => setForm((current) => ({ ...current, coverImage: event.target.value }))} className={inputClass} />
           </Field>
-
           <Field label="状态">
-            <select
-              value={form.status}
-              onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as TopicStatus }))}
-              className={inputClass}
-            >
-              <option value="draft">草稿</option>
+            <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as TopicStatus }))} className={inputClass}>
               <option value="published">已发布</option>
+              <option value="hidden">已隐藏</option>
               <option value="archived">已归档</option>
             </select>
           </Field>
         </div>
 
-        <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <Field label="关联软件（按住 Ctrl/Command 多选）">
-            <select
-              multiple
-              value={form.relatedAppSlugs}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  relatedAppSlugs: Array.from(event.target.selectedOptions).map((item) => item.value),
-                }))
-              }
-              className={`${inputClass} min-h-36`}
-            >
-              {apps.map((app) => (
-                <option key={app.slug} value={app.slug}>
-                  {app.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="关联文章（按住 Ctrl/Command 多选）">
-            <select
-              multiple
-              value={form.relatedPostSlugs}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  relatedPostSlugs: Array.from(event.target.selectedOptions).map((item) => item.value),
-                }))
-              }
-              className={`${inputClass} min-h-36`}
-            >
-              {posts.map((post) => (
-                <option key={post.slug} value={post.slug}>
-                  {post.title}
-                </option>
-              ))}
-            </select>
-          </Field>
+        <div className="mt-5 grid gap-5 xl:grid-cols-2">
+          <SelectionPanel
+            title="关联软件"
+            keyword={appKeyword}
+            onKeywordChange={setAppKeyword}
+            placeholder="搜索软件名称或别名"
+            items={filteredApps.map((item) => ({ id: item.slug, label: item.name, meta: item.slug }))}
+            selectedIds={form.relatedAppSlugs}
+            onToggle={toggleRelatedApp}
+            emptyText="没有匹配的软件。"
+          />
+          <SelectionPanel
+            title="关联文章"
+            keyword={postKeyword}
+            onKeywordChange={setPostKeyword}
+            placeholder="搜索文章标题或别名"
+            items={filteredPosts.map((item) => ({ id: item.slug, label: item.title, meta: item.slug }))}
+            selectedIds={form.relatedPostSlugs}
+            onToggle={toggleRelatedPost}
+            emptyText="没有匹配的文章。"
+          />
         </div>
 
         <div className="mt-5 flex items-center gap-3">
-          <button type="submit" disabled={saving} className="inline-flex items-center justify-center rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-violet-700 hover:shadow-md hover:shadow-violet-600/20 disabled:opacity-60 disabled:cursor-not-allowed">
+          <button type="submit" disabled={saving} className="admin-primary-btn px-5 py-2.5">
             {saving ? "保存中..." : editingSlug ? "保存修改" : "创建专题"}
           </button>
-          <span className="text-xs text-slate-500 dark:text-slate-400">按住 Ctrl 或 Command 可以多选关联项。</span>
+          <span className="text-xs text-muted-foreground">已选软件 {form.relatedAppSlugs.length} 个，文章 {form.relatedPostSlugs.length} 篇。</span>
         </div>
       </form>
 
-      {/* Topic List */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-sm">
+      <div className="admin-panel p-5">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">专题列表</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">当前共有 {topics.length} 个专题。</p>
+          <h2 className="text-lg font-semibold text-foreground">专题列表</h2>
+          <p className="mt-1 text-sm text-muted-foreground">当前共有 {topics.length} 个专题。</p>
         </div>
 
         {loading ? (
-          <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">正在加载专题数据...</div>
+          <div className="py-10 text-center text-sm text-muted-foreground">正在加载专题数据...</div>
         ) : rows.length ? (
           <div className="space-y-3">
             {rows.map((topic) => (
-              <div key={topic.slug} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-transparent p-4 transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+              <div key={topic.slug} className="rounded-[24px] border border-border bg-background p-4 transition-colors hover:bg-secondary/40">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-white">{topic.title}</h3>
+                      <h3 className="text-base font-semibold text-foreground">{topic.title}</h3>
                       <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusColor[topic.status]}`}>{statusLabel[topic.status]}</span>
                     </div>
 
-                    {topic.description && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{topic.description}</p>
-                    )}
-                    <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-500">
-                      <span>别名：<code className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.5">{topic.slug}</code></span>
-                      {topic.appNames.length > 0 && (
-                        <span>软件：{topic.appNames.join("，")}</span>
-                      )}
-                      {topic.postTitles.length > 0 && (
-                        <span>文章：{topic.postTitles.join("，")}</span>
-                      )}
+                    {topic.description ? <p className="text-sm text-muted-foreground">{topic.description}</p> : null}
+
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      <span>
+                        别名：<code className="rounded bg-secondary px-1 py-0.5">{topic.slug}</code>
+                      </span>
+                      {topic.appNames.length > 0 ? <span>软件：{topic.appNames.join("、")}</span> : null}
+                      {topic.postTitles.length > 0 ? <span>文章：{topic.postTitles.join("、")}</span> : null}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button onClick={() => startEdit(topic)} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-900/40 dark:hover:text-blue-400">
+                    <button onClick={() => startEdit(topic)} className="admin-secondary-btn px-3 py-2">
                       编辑
                     </button>
-                    <button onClick={() => void handleDelete(topic.slug)} className="inline-flex items-center gap-1 rounded-lg border border-red-200 dark:border-red-800/50 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/40">
+                    <button onClick={() => void handleDelete(topic.slug)} className="admin-secondary-btn inline-flex items-center gap-1 px-3 py-2">
                       <Trash2 className="h-4 w-4" />
                       删除
                     </button>
@@ -377,7 +333,7 @@ export default function AdminTopicsPage() {
             ))}
           </div>
         ) : (
-          <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">还没有专题内容。</div>
+          <div className="py-10 text-center text-sm text-muted-foreground">还没有专题内容。</div>
         )}
       </div>
     </div>
@@ -387,10 +343,67 @@ export default function AdminTopicsPage() {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+      <label className="mb-2 block text-sm font-medium text-foreground">{label}</label>
       {children}
     </div>
   )
 }
 
-const inputClass = "w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm outline-none transition-colors focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:border-violet-500 dark:focus:ring-violet-500/20 text-slate-900 dark:text-slate-100"
+function SelectionPanel({
+  title,
+  keyword,
+  onKeywordChange,
+  placeholder,
+  items,
+  selectedIds,
+  onToggle,
+  emptyText,
+}: {
+  title: string
+  keyword: string
+  onKeywordChange: (value: string) => void
+  placeholder: string
+  items: Array<{ id: string; label: string; meta: string }>
+  selectedIds: string[]
+  onToggle: (id: string) => void
+  emptyText: string
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-secondary/30 p-4">
+      <div className="mb-3">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      </div>
+
+      <div className="relative mb-3">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input value={keyword} onChange={(event) => onKeywordChange(event.target.value)} placeholder={placeholder} className={`${inputClass} pl-9`} />
+      </div>
+
+      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+        {items.length ? (
+          items.map((item) => {
+            const checked = selectedIds.includes(item.id)
+            return (
+              <label
+                key={item.id}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2 transition ${
+                  checked ? "border-sky-300 bg-sky-50 dark:border-sky-700 dark:bg-sky-950/30" : "border-border bg-background hover:border-sky-300"
+                }`}
+              >
+                <input type="checkbox" checked={checked} onChange={() => onToggle(item.id)} className="mt-1 h-4 w-4 rounded border-border text-sky-600 focus:ring-sky-500" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-foreground">{item.label}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{item.meta}</div>
+                </div>
+              </label>
+            )
+          })
+        ) : (
+          <div className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">{emptyText}</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const inputClass = "admin-input"

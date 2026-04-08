@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { ChevronDown, Menu, Moon, Search, Sun, X } from "lucide-react"
+import { ChevronDown, Menu, Moon, Search, Sun, X, Mail } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
@@ -37,6 +37,7 @@ export function Navbar() {
   const [softwareCategories, setSoftwareCategories] = useState<CategoryItem[]>([])
   const [articleCategories, setArticleCategories] = useState<CategoryItem[]>([])
   const [openDropdownHref, setOpenDropdownHref] = useState<string | null>(null)
+  const [mobileDropdownHref, setMobileDropdownHref] = useState<string | null>(null)
 
   const navItems: NavItem[] = [
     { label: t.navHome, href: "/" },
@@ -49,9 +50,9 @@ export function Navbar() {
     },
     {
       label: t.navArticles,
-      href: "/articles",
+      href: "/news",
       categories: articleCategories,
-      categoryHrefPrefix: "/articles?category=",
+      categoryHrefPrefix: "/news?category=",
       categoryFallbackLabel: "全部文章",
     },
     { label: t.navRequests, href: "/requests" },
@@ -66,6 +67,7 @@ export function Navbar() {
     setMobileOpen(false)
     setUserMenuOpen(false)
     setOpenDropdownHref(null)
+    setMobileDropdownHref(null)
   }, [pathname])
 
   useEffect(() => {
@@ -135,12 +137,13 @@ export function Navbar() {
         <nav className="ml-2 hidden items-center gap-1 rounded-full border border-border/70 bg-background/70 p-1.5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.45)] md:flex">
           {navItems.map((item) => {
             const active = isActive(item.href)
-            const dropdownOpen = active || openDropdownHref === item.href
+            const dropdownOpen = openDropdownHref === item.href
             if (!item.categories?.length) {
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setOpenDropdownHref(null)}
                   className={cn(
                     "rounded-full px-4 py-2 text-sm font-medium transition-all",
                     active
@@ -164,6 +167,7 @@ export function Navbar() {
               >
                 <Link
                   href={item.href}
+                  onClick={() => setOpenDropdownHref(null)}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-all",
                     active
@@ -186,6 +190,7 @@ export function Navbar() {
                   <div className="w-64 overflow-hidden rounded-2xl border border-border bg-card/95 p-2 shadow-elevated backdrop-blur-sm">
                     <Link
                       href={item.href}
+                      onClick={() => setOpenDropdownHref(null)}
                       className="mb-1 block rounded-xl px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary"
                     >
                       {item.categoryFallbackLabel}
@@ -194,9 +199,10 @@ export function Navbar() {
                       {item.categories.map((category) => (
                         <Link
                           key={category.name}
-                          href={`${item.categoryHrefPrefix}${encodeURIComponent(category.name)}`}
-                          className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-                        >
+                        href={`${item.categoryHrefPrefix}${encodeURIComponent(category.name)}`}
+                        onClick={() => setOpenDropdownHref(null)}
+                        className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                      >
                           <span>{category.name}</span>
                           <span className="font-mono text-xs">{category.count}</span>
                         </Link>
@@ -250,17 +256,31 @@ export function Navbar() {
               </button>
               {userMenuOpen ? (
                 <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card/95 py-1.5 shadow-elevated backdrop-blur-sm">
-                  <Link href="/profile" className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary">
+                  <Link
+                    href="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                  >
                     {t.profile}
                   </Link>
                   <Link
+                    href="/profile?tab=messages"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                  >
+                    <Mail className="mr-2 h-4 w-4 text-accent" />
+                    消息中心
+                  </Link>
+                  <Link
                     href="/profile?tab=requests"
+                    onClick={() => setUserMenuOpen(false)}
                     className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
                     {t.myRequests}
                   </Link>
                   <Link
                     href="/profile?tab=favorites"
+                    onClick={() => setUserMenuOpen(false)}
                     className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
                     {t.favorites}
@@ -337,43 +357,93 @@ export function Navbar() {
             </Link>
           ) : null}
 
-          {navItems.map((item) => (
-            <div key={item.href} className="space-y-1">
-              <Link
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "block rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive(item.href)
-                    ? "bg-secondary font-semibold text-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                )}
-              >
-                {item.label}
-              </Link>
-              {item.categories?.length ? (
-                <div className="ml-3 space-y-1 border-l border-border pl-3">
+          {navItems.map((item) => {
+            const mobileDropdownOpen = mobileDropdownHref === item.href
+
+            if (!item.categories?.length) {
+              return (
+                <div key={item.href} className="space-y-1">
                   <Link
                     href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-xl px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                    onClick={() => {
+                      setMobileOpen(false)
+                      setMobileDropdownHref(null)
+                    }}
+                    className={cn(
+                      "block rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive(item.href)
+                        ? "bg-secondary font-semibold text-foreground"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                    )}
                   >
-                    {item.categoryFallbackLabel}
+                    {item.label}
                   </Link>
-                  {item.categories.map((category) => (
-                    <Link
-                      key={category.name}
-                      href={`${item.categoryHrefPrefix}${encodeURIComponent(category.name)}`}
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-xl px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground"
-                    >
-                      {category.name}
-                    </Link>
-                  ))}
                 </div>
-              ) : null}
-            </div>
-          ))}
+              )
+            }
+
+            return (
+              <div key={item.href} className="space-y-1">
+                <div className="flex gap-2">
+                  <Link
+                    href={item.href}
+                    onClick={() => {
+                      setMobileOpen(false)
+                      setMobileDropdownHref(null)
+                    }}
+                    className={cn(
+                      "flex-1 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive(item.href)
+                        ? "bg-secondary font-semibold text-foreground"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setMobileDropdownHref((value) => (value === item.href ? null : item.href))}
+                    aria-label={`${item.label}分类菜单`}
+                    aria-expanded={mobileDropdownOpen}
+                    className={cn(
+                      "flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-background/70 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+                      mobileDropdownOpen && "bg-secondary text-foreground",
+                    )}
+                  >
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", mobileDropdownOpen && "rotate-180")} />
+                  </button>
+                </div>
+
+                {mobileDropdownOpen ? (
+                  <div className="ml-3 space-y-1 border-l border-border pl-3">
+                    <Link
+                      href={item.href}
+                      onClick={() => {
+                        setMobileOpen(false)
+                        setMobileDropdownHref(null)
+                      }}
+                      className="block rounded-xl px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                    >
+                      {item.categoryFallbackLabel}
+                    </Link>
+                    {item.categories.map((category) => (
+                      <Link
+                        key={category.name}
+                        href={`${item.categoryHrefPrefix}${encodeURIComponent(category.name)}`}
+                        onClick={() => {
+                          setMobileOpen(false)
+                          setMobileDropdownHref(null)
+                        }}
+                        className="block rounded-xl px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground"
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
 
           {user ? (
             <button

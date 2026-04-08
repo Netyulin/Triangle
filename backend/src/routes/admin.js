@@ -14,6 +14,9 @@ import * as postCategoryController from '../controllers/postCategoryController.j
 import * as netdiskReportController from '../controllers/netdiskReportController.js';
 import * as settingsController from '../controllers/settingsController.js';
 import * as inviteCodeController from '../controllers/inviteCodeController.js';
+import * as adminUserController from '../controllers/adminUserController.js';
+import * as notificationController from '../controllers/notificationController.js';
+import * as contentPickerController from '../controllers/contentPickerController.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -25,6 +28,29 @@ router.get('/settings', authenticate, requireAdmin, settingsController.getAdminS
 router.put('/settings', authenticate, requireAdmin, settingsController.updateValidation, settingsController.updateSettings);
 router.get('/invite-codes', authenticate, requireAdmin, inviteCodeController.listValidation, inviteCodeController.list);
 router.post('/invite-codes/batch', authenticate, requireAdmin, inviteCodeController.createBatchValidation, inviteCodeController.createBatch);
+router.get('/users', authenticate, requireAdmin, adminUserController.listValidation, adminUserController.list);
+router.get('/users/levels', authenticate, requireAdmin, adminUserController.levels);
+router.patch('/users/:id', authenticate, requireAdmin, adminUserController.updateValidation, adminUserController.update);
+router.patch(
+  '/users/:id/password',
+  authenticate,
+  requireAdmin,
+  adminUserController.passwordValidation,
+  adminUserController.updatePassword
+);
+router.delete('/users/:id', authenticate, requireAdmin, adminUserController.deleteValidation, adminUserController.remove);
+router.get('/notification-templates', authenticate, requireAdmin, notificationController.templates);
+router.put(
+  '/notification-templates/:key',
+  authenticate,
+  requireAdmin,
+  notificationController.templateValidation,
+  notificationController.updateTemplate
+);
+router.post('/notifications/send', authenticate, requireAdmin, notificationController.sendValidation, notificationController.send);
+router.post('/notifications/users/:id', authenticate, requireAdmin, notificationController.sendValidation, notificationController.createForUser);
+router.get('/content-picker/apps', authenticate, requireAdmin, contentPickerController.listValidation, contentPickerController.appPicker);
+router.get('/content-picker/posts', authenticate, requireAdmin, contentPickerController.listValidation, contentPickerController.postPicker);
 
 router.get('/requests', authenticate, requireAdmin, adminListValidation, adminList);
 router.put('/requests/:id', authenticate, requireAdmin, requestUpdateValidation, update);
@@ -109,6 +135,13 @@ router.get(
   requireAdmin,
   netdiskReportController.adminListValidation,
   netdiskReportController.adminList
+);
+router.patch(
+  '/netdisk-reports/:id',
+  authenticate,
+  requireAdmin,
+  netdiskReportController.adminUpdateValidation,
+  netdiskReportController.adminUpdate
 );
 
 export default router;

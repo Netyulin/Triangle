@@ -1,4 +1,5 @@
 import prisma from './prisma.js';
+import { saveBufferToUploads } from './assetStorage.js';
 
 function mapNumber(value) {
   if (typeof value === 'number') {
@@ -17,59 +18,7 @@ function escapeSqlString(value) {
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 
-const FEMALE_TOP_TYPES = [
-  'LongHairBigHair',
-  'LongHairBob',
-  'LongHairBun',
-  'LongHairCurly',
-  'LongHairCurvy',
-  'LongHairFrida',
-  'LongHairFro',
-  'LongHairMiaWallace',
-  'LongHairStraight',
-  'LongHairStraight2',
-  'LongHairStraightStrand',
-  'Hijab'
-];
-
-const MALE_TOP_TYPES = [
-  'ShortHairDreads01',
-  'ShortHairDreads02',
-  'ShortHairFrizzle',
-  'ShortHairShortCurly',
-  'ShortHairShortFlat',
-  'ShortHairShortRound',
-  'ShortHairShortWaved',
-  'ShortHairSides',
-  'ShortHairTheCaesar',
-  'ShortHairTheCaesarSidePart',
-  'NoHair',
-  'Turban'
-];
-
-const ALL_TOP_TYPES = [
-  ...FEMALE_TOP_TYPES,
-  ...MALE_TOP_TYPES
-];
-
-const ACCESSORIES_TYPES = ['Blank', 'Prescription01', 'Prescription02', 'Round', 'Wayfarers', 'Kurt'];
-const HAIR_COLORS = ['Auburn', 'Black', 'Blonde', 'BlondeGolden', 'Brown', 'BrownDark', 'Red', 'SilverGray'];
-const FACIAL_HAIR_TYPES = ['Blank', 'BeardLight', 'BeardMedium', 'BeardMajestic', 'MoustacheFancy', 'MoustacheMagnum'];
-const CLOTHE_TYPES = [
-  'BlazerShirt',
-  'BlazerSweater',
-  'CollarSweater',
-  'GraphicShirt',
-  'Hoodie',
-  'ShirtCrewNeck',
-  'ShirtScoopNeck',
-  'ShirtVNeck'
-];
-const CLOTHE_COLORS = ['Black', 'Blue01', 'Blue02', 'Blue03', 'Gray01', 'Gray02', 'PastelBlue', 'PastelGreen', 'Pink', 'White'];
-const EYE_TYPES = ['Default', 'Happy', 'Squint', 'Wink', 'Side', 'Surprised', 'Hearts'];
-const EYEBROW_TYPES = ['Default', 'DefaultNatural', 'RaisedExcited', 'RaisedExcitedNatural', 'UpDown', 'UpDownNatural'];
-const MOUTH_TYPES = ['Default', 'Smile', 'Twinkle', 'Serious'];
-const SKIN_COLORS = ['Tanned', 'Yellow', 'Pale', 'Light', 'Brown', 'DarkBrown'];
+const DEFAULT_AVATAR_COUNT = 10;
 
 export function normalizeGender(gender, fallback = 'other') {
   const value = String(gender || '').trim().toLowerCase();
@@ -89,70 +38,25 @@ function stableHash(input) {
   return hash >>> 0;
 }
 
-function pickValue(values, hash, offset = 0) {
-  if (!Array.isArray(values) || values.length === 0) {
-    return '';
-  }
-  return values[(hash + offset * 97) % values.length];
-}
-
-function pickTopType(hash, gender) {
-  if (gender === 'female') {
-    return pickValue(FEMALE_TOP_TYPES, hash, 1);
-  }
-  if (gender === 'male') {
-    return pickValue(MALE_TOP_TYPES, hash, 1);
-  }
-  return pickValue(ALL_TOP_TYPES, hash, 1);
-}
-
-function pickFacialHairType(hash, gender) {
-  if (gender === 'female') {
-    return 'Blank';
-  }
-
-  if (gender === 'male') {
-    if (hash % 100 < 55) {
-      return pickValue(FACIAL_HAIR_TYPES.filter((item) => item !== 'Blank'), hash, 2);
-    }
-    return 'Blank';
-  }
-
-  if (hash % 100 < 30) {
-    return pickValue(FACIAL_HAIR_TYPES.filter((item) => item !== 'Blank'), hash, 2);
-  }
-  return 'Blank';
-}
-
 export function buildDefaultAvatar(seed, gender = 'other') {
   const normalizedSeed = String(seed || 'triangle-user').trim() || 'triangle-user';
   const normalizedGender = normalizeGender(gender);
-  const hash = stableHash(`${normalizedSeed}:${normalizedGender}`);
-  const facialHairType = pickFacialHairType(hash, normalizedGender);
-
-  const params = new URLSearchParams({
-    avatarStyle: 'Circle',
-    topType: pickTopType(hash, normalizedGender),
-    accessoriesType: pickValue(ACCESSORIES_TYPES, hash, 3),
-    hairColor: pickValue(HAIR_COLORS, hash, 4),
-    facialHairType,
-    facialHairColor: facialHairType === 'Blank' ? 'Black' : pickValue(HAIR_COLORS, hash, 5),
-    clotheType: pickValue(CLOTHE_TYPES, hash, 6),
-    clotheColor: pickValue(CLOTHE_COLORS, hash, 7),
-    eyeType: pickValue(EYE_TYPES, hash, 8),
-    eyebrowType: pickValue(EYEBROW_TYPES, hash, 9),
-    mouthType: pickValue(MOUTH_TYPES, hash, 10),
-    skinColor: pickValue(SKIN_COLORS, hash, 11),
-    triangleDefault: '1',
-    triangleGender: normalizedGender
-  });
-
-  return `https://avataaars.io/?${params.toString()}`;
+  const hash = stableHash(`${normalizedSeed}:${normalizedGender}:avatar-gen-default`);
+  const avatarNumber = (hash % DEFAULT_AVATAR_COUNT) + 1;
+  return `/avatars/avatar-gen-defaults/${normalizedGender}/avatar-${String(avatarNumber).padStart(2, '0')}.svg`;
 }
 
 export function isGeneratedAvatar(avatar) {
   if (!avatar || typeof avatar !== 'string') {
     return false;
+  }
+
+  if (avatar.startsWith('/uploads/avatars/')) {
+    return true;
+  }
+
+  if (avatar.startsWith('/avatars/avatar-gen-defaults/')) {
+    return true;
   }
 
   try {
@@ -165,6 +69,79 @@ export function isGeneratedAvatar(avatar) {
     return parsed.searchParams.get('triangleDefault') === '1';
   } catch {
     return false;
+  }
+}
+
+function mimeToExtension(mimeType) {
+  const value = String(mimeType || '').split(';')[0].trim().toLowerCase();
+  if (value.includes('svg')) return '.svg';
+  if (value.includes('png')) return '.png';
+  if (value.includes('jpeg') || value.includes('jpg')) return '.jpg';
+  if (value.includes('webp')) return '.webp';
+  if (value.includes('gif')) return '.gif';
+  return '.svg';
+}
+
+export async function localizeGeneratedAvatar(avatar, options = {}) {
+  const nextAvatar = String(avatar || '').trim();
+
+  if (!nextAvatar) {
+    return nextAvatar;
+  }
+
+  if (nextAvatar.startsWith('/uploads/')) {
+    return nextAvatar;
+  }
+
+  if (nextAvatar.startsWith('/avatars/avatar-gen-defaults/') || nextAvatar.startsWith('/avatars/defaults/')) {
+    return nextAvatar;
+  }
+
+  if (nextAvatar.startsWith('data:image/')) {
+    const match = nextAvatar.match(/^data:([^;]+);base64,(.+)$/i);
+    if (!match) {
+      return nextAvatar;
+    }
+
+    const buffer = Buffer.from(match[2], 'base64');
+    if (!buffer.length) {
+      return nextAvatar;
+    }
+
+    const stored = await saveBufferToUploads(buffer, {
+      folder: options.folder || 'avatars/generated',
+      extension: mimeToExtension(match[1])
+    });
+    return stored.relativePath;
+  }
+
+  if (!isGeneratedAvatar(nextAvatar) && !nextAvatar.startsWith('http://') && !nextAvatar.startsWith('https://')) {
+    return nextAvatar;
+  }
+
+  try {
+    const response = await fetch(nextAvatar, {
+      headers: {
+        'User-Agent': 'TrianglePortalAvatarImporter/1.0'
+      }
+    });
+
+    if (!response.ok) {
+      return nextAvatar;
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length) {
+      return nextAvatar;
+    }
+
+    const stored = await saveBufferToUploads(buffer, {
+      folder: options.folder || 'avatars/generated',
+      extension: mimeToExtension(response.headers.get('content-type'))
+    });
+    return stored.relativePath;
+  } catch {
+    return nextAvatar;
   }
 }
 

@@ -9,6 +9,7 @@ import {
   buildDefaultAvatar,
   ensureUserFeatureTables,
   isGeneratedAvatar,
+  localizeGeneratedAvatar,
   listFavoriteRows,
   listRechargeRecords,
   normalizeGender
@@ -16,6 +17,8 @@ import {
 import { readSiteSettings } from '../utils/siteSettings.js';
 import { consumeInviteCode } from '../utils/inviteCodes.js';
 import { getPasswordPolicyText, isStrongPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../utils/passwordPolicy.js';
+import { normalizeMembershipLevel } from '../utils/membership.js';
+import { sendTemplateNotificationToUser } from '../utils/notifications.js';
 
 export const loginValidation = validate([
   body('username').trim().notEmpty().withMessage('username is required'),
@@ -55,6 +58,9 @@ export const updateProfileValidation = validate([
         value.startsWith('http://') ||
         value.startsWith('https://') ||
         value.startsWith('data:image/') ||
+        value.startsWith('/uploads/avatars/') ||
+        value.startsWith('/uploads/') ||
+        value.startsWith('/avatars/avatar-gen-defaults/') ||
         value.startsWith('/avatars/default/') ||
         value.startsWith('/avatars/defaults/')
       ) {
@@ -153,10 +159,11 @@ export async function register(req, res) {
       phone: req.body.phone ? normalizeString(req.body.phone).trim() : null,
       role: 'reader',
       status: 'active',
-      membershipLevel: 'free',
+      membershipLevel: normalizeMembershipLevel('free'),
       downloadQuotaDaily: 3,
       downloadCountDaily: 0,
       canComment: true,
+      canReply: true,
       canSubmitRequest: true
     }
   });
@@ -169,18 +176,32 @@ export async function register(req, res) {
     }
   }
 
+  const localizedAvatar = await localizeGeneratedAvatar(user.avatar, {
+    folder: 'avatars/generated'
+  });
+  const nextUser = localizedAvatar && localizedAvatar !== user.avatar ? await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      avatar: localizedAvatar
+    }
+  }) : user;
+
+  await sendTemplateNotificationToUser(nextUser.id, 'register_welcome', {
+    name: nextUser.name || nextUser.username
+  });
+
   const token = generateToken({
-    id: user.id,
-    username: user.username,
-    name: user.name,
-    role: user.role
+    id: nextUser.id,
+    username: nextUser.username,
+    name: nextUser.name,
+    role: nextUser.role
   });
 
   return sendSuccess(
     res,
     {
       token,
-      ...buildAuthPayload(user)
+      ...buildAuthPayload(nextUser)
     },
     'register success',
     201
@@ -190,13 +211,25 @@ export async function register(req, res) {
 export async function login(req, res) {
   const { username, password } = req.body;
 
-  const user = await prisma.user.findUnique({
+  const current = await prisma.user.findUnique({
     where: { username }
   });
 
-  if (!user) {
+  if (!current) {
     return sendError(res, ErrorCodes.USER_NOT_FOUND, 'invalid username or password');
   }
+
+  const user =
+    current.status === 'banned' && current.bannedUntil && new Date(current.bannedUntil) <= new Date()
+      ? await prisma.user.update({
+          where: { id: current.id },
+          data: {
+            status: 'active',
+            bannedUntil: null,
+            banReason: null
+          }
+        })
+      : current;
 
   if (user.status && user.status !== 'active') {
     return sendError(res, ErrorCodes.FORBIDDEN, 'account is disabled');
@@ -307,11 +340,12 @@ export async function updateProfile(req, res) {
 
   let nextAvatar = '';
   if (req.body.avatar !== undefined) {
-    nextAvatar = normalizeString(req.body.avatar).trim() || buildDefaultAvatar(current.username, nextGender);
+    const requestedAvatar = normalizeString(req.body.avatar).trim();
+    nextAvatar = requestedAvatar ? await localizeGeneratedAvatar(requestedAvatar, { folder: 'avatars/generated' }) : buildDefaultAvatar(current.username, nextGender);
   } else if (isGeneratedAvatar(current.avatar) && currentGender !== nextGender) {
-    nextAvatar = buildDefaultAvatar(current.username, nextGender);
+    nextAvatar = await localizeGeneratedAvatar(buildDefaultAvatar(current.username, nextGender), { folder: 'avatars/generated' });
   } else {
-    nextAvatar = current.avatar || buildDefaultAvatar(current.username, nextGender);
+    nextAvatar = current.avatar || (await localizeGeneratedAvatar(buildDefaultAvatar(current.username, nextGender), { folder: 'avatars/generated' }));
   }
 
   const currentPassword = normalizeString(req.body.currentPassword);

@@ -12,7 +12,7 @@ export function Footer() {
     [t.footerLinks]: [
       { label: t.navHome, href: "/" },
       { label: t.navSoftware, href: "/software" },
-      { label: t.navArticles, href: "/articles" },
+  { label: t.navArticles, href: "/news" },
       { label: t.navRequests, href: "/requests" },
     ],
     [t.footerAccount]: [

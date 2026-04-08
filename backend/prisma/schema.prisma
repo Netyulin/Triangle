@@ -21,9 +21,12 @@ model User {
   status             String            @default("active")
   membershipLevel    String            @default("free")
   membershipExpireAt DateTime?
+  bannedUntil        DateTime?
+  banReason          String?
   downloadQuotaDaily Int               @default(3)
   downloadCountDaily Int               @default(0)
   canComment         Boolean           @default(true)
+  canReply           Boolean           @default(true)
   canSubmitRequest   Boolean           @default(true)
   lastLoginAt        DateTime?
   createdAt          DateTime          @default(now())
@@ -32,6 +35,10 @@ model User {
   posts              Post[]
   comments           Comment[]
   requests           SoftwareRequest[]
+  notifications      Notification[]    @relation("UserNotifications")
+  sentNotifications  Notification[]    @relation("NotificationSender")
+  netdiskReports     NetdiskReport[]   @relation("NetdiskReportReporter")
+  handledReports     NetdiskReport[]   @relation("NetdiskReportHandler")
 }
 
 model App {
@@ -95,7 +102,7 @@ model Post {
   readingTime    String
   dateLabel      String
   publishedAt    String
-  status         String   @default("draft")
+  status         String   @default("hidden")
   seoTitle       String?
   seoDescription String?
   createdAt      DateTime @default(now())
@@ -109,7 +116,7 @@ model Topic {
   title        String
   description  String
   coverImage   String?
-  status       String      @default("draft")
+  status       String      @default("hidden")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   relatedApps  TopicApp[]
@@ -173,12 +180,16 @@ model NetdiskReport {
   id           Int      @id @default(autoincrement())
   appSlug      String
   app          App      @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+  reporterId   Int?
+  reporter     User?    @relation("NetdiskReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
   netdiskName  String
   downloadUrl  String?
   reason       String
   contact      String?
   status       String   @default("pending")
   adminNote    String?
+  handledById   Int?
+  handledBy     User?    @relation("NetdiskReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
   createdAt    DateTime @default(now())
   handledAt    DateTime?
 }
@@ -188,4 +199,36 @@ model HotSearch {
   keyword String @unique
   type    String @default("all")
   count   Int    @default(1)
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  senderId    Int?
+  sender      User?    @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  type        String   @default("system")
+  templateKey String?
+  title       String
+  content     String
+  data        Json?
+  link        String?
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, isRead, deletedAt])
+}
+
+model NotificationTemplate {
+  key         String   @id
+  title       String
+  content     String
+  enabled     Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

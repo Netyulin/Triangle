@@ -36,6 +36,7 @@ function buildHeroSlideFromApp(app, index) {
     coverBg: index % 2 === 0 ? 'bg-[#1d4ed8]' : 'bg-slate-800',
     coverText: String(app.name || 'A').slice(0, 2).toUpperCase(),
     coverColor: 'text-white',
+    icon: app.icon ?? null,
     href: `/software/${app.slug}`,
     downloadHref: `/software/${app.slug}`
   };
@@ -53,7 +54,8 @@ function buildHeroSlideFromPost(post, index) {
     coverBg: index % 2 === 0 ? 'bg-[#c0392b]' : 'bg-orange-500',
     coverText: String(post.title || 'P').slice(0, 2).toUpperCase(),
     coverColor: 'text-white',
-    href: `/articles/${post.slug}`,
+    icon: post.icon ?? null,
+    href: `/news/${post.slug}`,
     downloadHref: post.relatedAppSlug ? `/software/${post.relatedAppSlug}` : null
   };
 }
@@ -107,6 +109,20 @@ export async function summary(req, res) {
       ...serializeApp(app)
     }));
 
+  const announcements = settings.siteAnnouncementEnabled
+    ? [
+        {
+          id: 'site-announcement',
+          title: settings.siteAnnouncementTitle,
+          content: settings.siteAnnouncementContent,
+          kind: 'system',
+          createdAt: settings.updatedAt ?? new Date().toISOString(),
+          pinned: true,
+          link: settings.siteAnnouncementLink || null
+        }
+      ]
+    : [];
+
   return sendSuccess(res, {
     site: {
       siteName: settings.siteName,
@@ -115,6 +131,7 @@ export async function summary(req, res) {
       supportedLocales: settings.supportedLocales,
       languageOptions: settings.languageOptions
     },
+    announcements,
     stats: {
       publishedApps: appCount,
       publishedPosts: postCount,

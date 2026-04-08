@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
-import { ArrowRight, Package, FileText, MessageSquare, BarChart3 } from "lucide-react"
+import { ArrowRight, BarChart3, FileText, MessageSquare, Package } from "lucide-react"
 import { AdminTable } from "@/components/admin/admin-table"
 import { AdminTrendChart } from "@/components/admin/admin-trend-chart"
 import { fetchAdminApps, fetchAdminPosts, fetchAdminStats, fetchAdminTrends } from "@/lib/admin-api"
@@ -75,12 +75,9 @@ export default function AdminDashboardPage() {
       label: "待处理需求",
       value: stats.pendingRequests,
       href: "/admin/submissions?status=pending",
-      helper: "快速查看还没回复的用户需求",
+      helper: "快速查看还没有回复的用户需求",
       icon: MessageSquare,
-      gradient: "from-amber-50/80 to-orange-50/50 dark:from-amber-950/40 dark:to-orange-950/20",
-      border: "border-amber-100 dark:border-amber-900",
-      iconBg: "bg-amber-500",
-      text: "text-amber-600 dark:text-amber-400",
+      accent: "text-sky-600 bg-sky-50 dark:text-sky-300 dark:bg-sky-950/30",
     },
     {
       label: "本周新增软件",
@@ -88,21 +85,15 @@ export default function AdminDashboardPage() {
       href: "/admin/apps",
       helper: "查看最近新增的软件条目",
       icon: Package,
-      gradient: "from-blue-50/80 to-indigo-50/50 dark:from-blue-950/40 dark:to-indigo-950/20",
-      border: "border-blue-100 dark:border-blue-900",
-      iconBg: "bg-blue-600",
-      text: "text-blue-600 dark:text-blue-400",
+      accent: "text-blue-600 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/30",
     },
     {
       label: "已发布文章",
       value: stats.publishedPosts,
       href: "/admin/posts",
-      helper: "继续维护站内文章内容",
+      helper: "继续维护站内内容质量",
       icon: FileText,
-      gradient: "from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/20",
-      border: "border-emerald-100 dark:border-emerald-900",
-      iconBg: "bg-emerald-600",
-      text: "text-emerald-600 dark:text-emerald-400",
+      accent: "text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/30",
     },
     {
       label: "总需求数",
@@ -110,52 +101,57 @@ export default function AdminDashboardPage() {
       href: "/admin/submissions",
       helper: "查看全部需求与处理记录",
       icon: BarChart3,
-      gradient: "from-violet-50/80 to-purple-50/50 dark:from-violet-950/40 dark:to-purple-950/20",
-      border: "border-violet-100 dark:border-violet-900",
-      iconBg: "bg-violet-600",
-      text: "text-violet-600 dark:text-violet-400",
+      accent: "text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-950/30",
     },
   ]
 
   return (
-    <>
-      <div className="admin-hero p-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">后台概览</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">把软件、文章、专题、需求和站点设置放到同一个入口里统一管理。</p>
-      </div>
-
-      {error ? (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
-          <svg className="mt-[-1px] h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 011.06 0L10 8.94l.66-.66a.75.75 0 111.06 1.06L11.06 10l.66.66a.75.75 0 11-1.06 1.06L10 11.06l-.66.66a.75.75 0 01-1.06-1.06L8.94 10l-.66-.66a.75.75 0 010-1.06z" clipRule="evenodd" />
-          </svg>
-          {error}
+    <div className="space-y-6">
+      <section className="admin-hero p-6 md:p-7">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600 dark:text-sky-300">后台概览</p>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-foreground md:text-3xl">把软件、文章、专题和站点设置放在同一个入口里统一管理</h1>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+              这页保留前台那种清爽的浅蓝灰调子，但把信息密度拉高，方便你快速扫描待办、趋势和最近更新。
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 md:w-[360px]">
+            {cards.slice(0, 2).map((card) => {
+              const Icon = card.icon
+              return (
+                <Link key={card.label} href={card.href} className="admin-card p-4 transition hover:-translate-y-0.5">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.accent}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <p className="mt-3 text-xs font-medium text-muted-foreground">{card.label}</p>
+                  <p className="mt-1 text-2xl font-black text-foreground">{loading ? "-" : card.value}</p>
+                </Link>
+              )
+            })}
+          </div>
         </div>
-      ) : null}
+      </section>
+
+      {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">{error}</div> : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon
           return (
-            <Link
-              key={card.label}
-              href={card.href}
-              className={`group overflow-hidden rounded-2xl border transition-all duration-200 hover:shadow-md ${card.gradient} ${card.border}`}
-            >
-              <div className="p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{card.label}</p>
-                    <p className={`mt-2 text-3xl font-bold ${card.text}`}>{loading ? "-" : card.value}</p>
-                  </div>
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.iconBg} text-white shadow-lg shadow-current/20`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
+            <Link key={card.label} href={card.href} className="admin-panel group p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_44px_-34px_rgba(14,165,233,0.35)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{card.label}</p>
+                  <p className="mt-2 text-3xl font-black text-foreground">{loading ? "-" : card.value}</p>
                 </div>
-                <div className="mt-4 flex items-center justify-between gap-4">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">{card.helper}</span>
-                  <ArrowRight className="h-4 w-4 -translate-x-1 text-slate-400 transition-transform duration-200 group-hover:translate-x-0" />
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${card.accent} shadow-[0_14px_32px_-24px_rgba(15,23,42,0.25)]`}>
+                  <Icon className="h-6 w-6" />
                 </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <span className="text-xs leading-5 text-muted-foreground">{card.helper}</span>
+                <ArrowRight className="h-4 w-4 -translate-x-1 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0" />
               </div>
             </Link>
           )
@@ -164,13 +160,13 @@ export default function AdminDashboardPage() {
 
       <section className="admin-panel p-5">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">最近 7 天趋势</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">用一张图快速看后台最近新增的软件、文章和需求。</p>
+          <h2 className="text-lg font-semibold text-foreground">最近 7 天趋势</h2>
+          <p className="mt-1 text-sm text-muted-foreground">用一张图快速看最近新增的软件、文章和需求。</p>
         </div>
-        <div>{trendData.length ? <AdminTrendChart data={trendData} /> : <div className="h-[280px] rounded-xl bg-slate-100/50 dark:bg-slate-900/50" />}</div>
+        <div>{trendData.length ? <AdminTrendChart data={trendData} /> : <div className="h-[280px] rounded-2xl bg-secondary/40" />}</div>
       </section>
 
-      <AdminTable title="最近内容" description="这里展示最近同步到后台的软件和文章。" rows={recentRows} emptyText="最近还没有新增内容。" />
-    </>
+      <AdminTable title="最近内容" description="这里显示最近同步到后台的软件和文章。" rows={recentRows} emptyText="最近还没有新增内容。" />
+    </div>
   )
 }

@@ -1,18 +1,7 @@
 "use client"
 
 import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react"
-import {
-  CheckCircle2,
-  Edit3,
-  FileText,
-  GripVertical,
-  Package,
-  Plus,
-  Tags,
-  Trash2,
-  X,
-} from "lucide-react"
-
+import { CheckCircle2, Edit3, FileText, GripVertical, Package, Plus, Tags, Trash2, X } from "lucide-react"
 import {
   createAdminAppCategory,
   createAdminPostCategory,
@@ -28,14 +17,8 @@ import {
   updateAdminPostCategory,
 } from "@/lib/admin-api"
 
-type CategoryForm = {
-  name: string
-}
-
-type DragState = {
-  type: "app" | "post"
-  name: string
-} | null
+type CategoryForm = { name: string }
+type DragState = { type: "app" | "post"; name: string } | null
 
 const initialForm: CategoryForm = { name: "" }
 
@@ -62,7 +45,6 @@ export default function AdminCategoriesPage() {
   const [dragState, setDragState] = useState<DragState>(null)
   const [dragOverName, setDragOverName] = useState<string | null>(null)
   const dragSourceRef = useRef<DragState>(null)
-
   const appEditInputRef = useRef<HTMLInputElement>(null)
   const postEditInputRef = useRef<HTMLInputElement>(null)
 
@@ -73,7 +55,7 @@ export default function AdminCategoriesPage() {
       setAppCategories(items)
       setAppError("")
     } catch (nextError) {
-      setAppError(nextError instanceof Error ? nextError.message : "软件分类列表加载失败")
+      setAppError(nextError instanceof Error ? nextError.message : "软件分类加载失败。")
     } finally {
       setAppLoading(false)
     }
@@ -86,7 +68,7 @@ export default function AdminCategoriesPage() {
       setPostCategories(items)
       setPostError("")
     } catch (nextError) {
-      setPostError(nextError instanceof Error ? nextError.message : "文章分类列表加载失败")
+      setPostError(nextError instanceof Error ? nextError.message : "文章分类加载失败。")
     } finally {
       setPostLoading(false)
     }
@@ -141,7 +123,7 @@ export default function AdminCategoriesPage() {
       setAppForm(initialForm)
       await loadAppCategories()
     } catch (nextError) {
-      setAppError(nextError instanceof Error ? nextError.message : "软件分类保存失败")
+      setAppError(nextError instanceof Error ? nextError.message : "软件分类保存失败。")
     } finally {
       setAppSaving(false)
     }
@@ -165,7 +147,7 @@ export default function AdminCategoriesPage() {
       setPostForm(initialForm)
       await loadPostCategories()
     } catch (nextError) {
-      setPostError(nextError instanceof Error ? nextError.message : "文章分类保存失败")
+      setPostError(nextError instanceof Error ? nextError.message : "文章分类保存失败。")
     } finally {
       setPostSaving(false)
     }
@@ -188,11 +170,11 @@ export default function AdminCategoriesPage() {
 
     try {
       await updateAdminAppCategory(originalName, { name: nextName })
-      setAppMessage("软件分类名称已更新。")
+      setAppMessage("软件分类已更新。")
       resetAppEditor()
       await loadAppCategories()
     } catch (nextError) {
-      setAppError(nextError instanceof Error ? nextError.message : "软件分类更新失败")
+      setAppError(nextError instanceof Error ? nextError.message : "软件分类更新失败。")
     } finally {
       setAppSaving(false)
     }
@@ -215,11 +197,11 @@ export default function AdminCategoriesPage() {
 
     try {
       await updateAdminPostCategory(originalName, { name: nextName })
-      setPostMessage("文章分类名称已更新。")
+      setPostMessage("文章分类已更新。")
       resetPostEditor()
       await loadPostCategories()
     } catch (nextError) {
-      setPostError(nextError instanceof Error ? nextError.message : "文章分类更新失败")
+      setPostError(nextError instanceof Error ? nextError.message : "文章分类更新失败。")
     } finally {
       setPostSaving(false)
     }
@@ -230,7 +212,7 @@ export default function AdminCategoriesPage() {
       setAppError("这个分类下还有软件，先挪走内容再删除。")
       return
     }
-    if (!window.confirm(`确定删除「${item.name}」吗？`)) return
+    if (!window.confirm(`确定删除“${item.name}”吗？`)) return
 
     setAppSaving(true)
     setAppError("")
@@ -241,7 +223,7 @@ export default function AdminCategoriesPage() {
       setAppMessage("软件分类已删除。")
       await loadAppCategories()
     } catch (nextError) {
-      setAppError(nextError instanceof Error ? nextError.message : "软件分类删除失败")
+      setAppError(nextError instanceof Error ? nextError.message : "软件分类删除失败。")
     } finally {
       setAppSaving(false)
     }
@@ -252,7 +234,7 @@ export default function AdminCategoriesPage() {
       setPostError("这个分类下还有文章，先挪走内容再删除。")
       return
     }
-    if (!window.confirm(`确定删除「${item.name}」吗？`)) return
+    if (!window.confirm(`确定删除“${item.name}”吗？`)) return
 
     setPostSaving(true)
     setPostError("")
@@ -263,7 +245,7 @@ export default function AdminCategoriesPage() {
       setPostMessage("文章分类已删除。")
       await loadPostCategories()
     } catch (nextError) {
-      setPostError(nextError instanceof Error ? nextError.message : "文章分类删除失败")
+      setPostError(nextError instanceof Error ? nextError.message : "文章分类删除失败。")
     } finally {
       setPostSaving(false)
     }
@@ -288,7 +270,7 @@ export default function AdminCategoriesPage() {
         setAppCategories(nextItems)
         setAppMessage("软件分类顺序已更新。")
       } catch (nextError) {
-        setAppError(nextError instanceof Error ? nextError.message : "软件分类排序失败")
+        setAppError(nextError instanceof Error ? nextError.message : "软件分类排序失败。")
       } finally {
         setAppSaving(false)
       }
@@ -303,7 +285,7 @@ export default function AdminCategoriesPage() {
       setPostCategories(nextItems)
       setPostMessage("文章分类顺序已更新。")
     } catch (nextError) {
-      setPostError(nextError instanceof Error ? nextError.message : "文章分类排序失败")
+      setPostError(nextError instanceof Error ? nextError.message : "文章分类排序失败。")
     } finally {
       setPostSaving(false)
     }
@@ -341,7 +323,6 @@ export default function AdminCategoriesPage() {
     title,
     subtitle,
     icon,
-    accentClass,
     categories,
     loading,
     saving,
@@ -362,7 +343,6 @@ export default function AdminCategoriesPage() {
     title: string
     subtitle: string
     icon: React.ReactNode
-    accentClass: string
     categories: Array<AppCategoryItem | PostCategoryItem>
     loading: boolean
     saving: boolean
@@ -381,22 +361,18 @@ export default function AdminCategoriesPage() {
     type: "app" | "post"
   }) => (
     <div className="space-y-5">
-      <div className={`overflow-hidden rounded-2xl border ${accentClass}`}>
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-slate-900 shadow-sm">
-                {icon}
-              </div>
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900">{title}</h2>
-                <p className="mt-1 text-xs text-slate-600">{subtitle}</p>
-              </div>
+      <div className="admin-panel p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">{icon}</div>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-foreground">{title}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-slate-900 leading-none">{categories.length}</div>
-              <div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">总数</div>
-            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold leading-none text-foreground">{categories.length}</div>
+            <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">总数</div>
           </div>
         </div>
       </div>
@@ -404,26 +380,17 @@ export default function AdminCategoriesPage() {
       {error ? <Notice tone="error">{error}</Notice> : null}
       {message ? <Notice tone="success">{message}</Notice> : null}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="admin-panel p-4">
         <form onSubmit={onCreate} className="space-y-3">
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">新增分类名称</label>
+            <label className="mb-2 block text-sm font-medium text-foreground">新增分类名称</label>
             <div className="relative">
-              <input
-                value={form.name}
-                onChange={(event) => onFormChange(event.target.value)}
-                placeholder="输入分类名称"
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-500"
-              />
-              <Plus className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input value={form.name} onChange={(event) => onFormChange(event.target.value)} placeholder="输入分类名称" className={inputClass} />
+              <Plus className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
           </div>
           <div className="flex items-center justify-end">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-            >
+            <button type="submit" disabled={saving} className="admin-primary-btn inline-flex items-center gap-2 px-5 py-2.5">
               <Plus className="h-4 w-4" />
               {saving ? "保存中..." : "创建分类"}
             </button>
@@ -431,17 +398,15 @@ export default function AdminCategoriesPage() {
         </form>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="admin-panel p-4">
         <div className="mb-4 flex items-center gap-2 px-1">
-          <Tags className="h-4 w-4 text-slate-700" />
-          <h3 className="text-sm font-semibold text-slate-900">分类列表</h3>
-          <span className="ml-auto text-xs text-slate-500">拖拽左侧把手调整顺序</span>
+          <Tags className="h-4 w-4 text-sky-600" />
+          <h3 className="text-sm font-semibold text-foreground">分类列表</h3>
+          <span className="ml-auto text-xs text-muted-foreground">拖拽左侧把手调整顺序</span>
         </div>
 
         {loading ? (
-          <div className="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500">
-            分类列表加载中...
-          </div>
+          <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">分类列表加载中...</div>
         ) : categories.length ? (
           <div className="grid gap-2">
             {categories.map((item, index) => {
@@ -469,14 +434,8 @@ export default function AdminCategoriesPage() {
                     setDragOverName(null)
                     dragSourceRef.current = null
                   }}
-                  className={`rounded-xl border bg-white transition ${
-                    isEditing
-                      ? "border-slate-900 bg-slate-50"
-                      : isDragged
-                        ? "border-slate-300 opacity-50"
-                        : isDragOver
-                          ? "border-slate-900 ring-2 ring-slate-200"
-                          : "border-slate-200 hover:border-slate-300"
+                  className={`rounded-xl border bg-background transition ${
+                    isEditing ? "border-sky-300 bg-sky-50/60 dark:border-sky-700 dark:bg-sky-950/20" : isDragged ? "border-border opacity-50" : isDragOver ? "border-sky-300 ring-2 ring-sky-200" : "border-border hover:border-sky-300"
                   }`}
                 >
                   <div className="p-3">
@@ -487,23 +446,14 @@ export default function AdminCategoriesPage() {
                           value={form.name}
                           onChange={(event) => onFormChange(event.target.value)}
                           onKeyDown={(event) => onKeyDown(event, item.name)}
-                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-slate-500"
+                          className={inputClass}
                         />
                         <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={onCancelEdit}
-                            className="inline-flex h-7 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium text-slate-500 hover:bg-slate-100"
-                          >
+                          <button type="button" onClick={onCancelEdit} className="admin-secondary-btn inline-flex h-7 items-center justify-center gap-1 px-2 text-xs">
                             <X className="h-3 w-3" />
                             取消
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => onSaveEdit(item.name)}
-                            disabled={saving}
-                            className="inline-flex h-7 items-center justify-center gap-1 rounded-lg bg-slate-900 px-2 text-xs font-semibold text-white disabled:opacity-60"
-                          >
+                          <button type="button" onClick={() => onSaveEdit(item.name)} disabled={saving} className="admin-primary-btn inline-flex h-7 items-center justify-center gap-1 px-2 text-xs">
                             <CheckCircle2 className="h-3 w-3" />
                             保存
                           </button>
@@ -514,39 +464,32 @@ export default function AdminCategoriesPage() {
                         <div className="flex min-w-0 items-start gap-3">
                           <button
                             type="button"
-                            className="mt-0.5 inline-flex h-8 w-8 flex-shrink-0 cursor-grab items-center justify-center rounded-lg bg-slate-100 text-slate-500 active:cursor-grabbing"
+                            className="mt-0.5 inline-flex h-8 w-8 flex-shrink-0 cursor-grab items-center justify-center rounded-lg bg-secondary text-muted-foreground active:cursor-grabbing"
                             aria-label="拖拽排序"
                           >
                             <GripVertical className="h-4 w-4" />
                           </button>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1.5 text-[10px] font-bold text-slate-600">
-                                {index + 1}
-                              </span>
-                              <p className="truncate text-sm font-semibold text-slate-900">{item.name}</p>
+                              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-[10px] font-bold text-muted-foreground">{index + 1}</span>
+                              <p className="truncate text-sm font-semibold text-foreground">{item.name}</p>
                             </div>
-                            <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5">{item.count} 条内容</span>
+                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="rounded-full bg-secondary px-2 py-0.5">{item.count} 条内容</span>
                               {item.sortOrder !== undefined ? <span>顺序 {item.sortOrder + 1}</span> : null}
                             </div>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onStartEdit(item)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                            title="修改名称"
-                          >
+                          <button type="button" onClick={() => onStartEdit(item)} className="admin-secondary-btn inline-flex h-8 w-8 items-center justify-center p-0" title="修改名称">
                             <Edit3 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => onDelete(item)}
                             disabled={saving || item.count > 0}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="admin-secondary-btn inline-flex h-8 w-8 items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-40"
                             title="删除分类"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -560,9 +503,7 @@ export default function AdminCategoriesPage() {
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500">
-            还没有分类。
-          </div>
+          <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">还没有分类。</div>
         )}
       </div>
     </div>
@@ -572,9 +513,8 @@ export default function AdminCategoriesPage() {
     <div className="grid gap-6 lg:grid-cols-2">
       {renderCategoryColumn({
         title: "软件分类",
-        subtitle: "拖拽后会直接影响首页和前台分类下拉的顺序。",
+        subtitle: "拖拽顺序会直接影响前台的分类展示。",
         icon: <Package className="h-5 w-5" />,
-        accentClass: "border-blue-100 bg-gradient-to-br from-blue-50/80 to-indigo-50/50",
         categories: appCategories,
         loading: appLoading,
         saving: appSaving,
@@ -605,7 +545,6 @@ export default function AdminCategoriesPage() {
         title: "文章分类",
         subtitle: "文章列表和首页分类入口也会跟着这里的顺序走。",
         icon: <FileText className="h-5 w-5" />,
-        accentClass: "border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-teal-50/50",
         categories: postCategories,
         loading: postLoading,
         saving: postSaving,
@@ -636,10 +575,11 @@ export default function AdminCategoriesPage() {
 }
 
 function Notice({ tone, children }: { tone: "success" | "error"; children: ReactNode }) {
-  const className =
-    tone === "success"
-      ? "border-green-200 bg-green-50 text-green-700"
-      : "border-red-200 bg-red-50 text-red-700"
-
-  return <div className={`rounded-xl border px-4 py-3 text-sm ${className}`}>{children}</div>
+  return (
+    <div className={`admin-panel px-4 py-3 text-sm ${tone === "success" ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"}`}>
+      {children}
+    </div>
+  )
 }
+
+const inputClass = "admin-input"

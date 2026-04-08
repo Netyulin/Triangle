@@ -5,11 +5,10 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, FileText, ImagePlus, Link2, Upload, WandSparkles } from "lucide-react"
 import { TiptapEditor } from "@/components/admin/tiptap-editor"
-import { deleteAdminPost, fetchAdminPostDetail, importAdminPostFromUrl, resolveAssetUrl, saveAdminPost, uploadAdminImage } from "@/lib/admin-api"
+import { deleteAdminPost, fetchAdminPostCategories, fetchAdminPostDetail, importAdminPostFromUrl, resolveAssetUrl, saveAdminPost, uploadAdminImage } from "@/lib/admin-api"
 import { looksLikeImageUrl } from "@/lib/utils"
 
 const DEFAULT_AUTHOR = "Triangle 编辑部"
-const articleCategories = ["Tech", "Review", "How-to", "Guide"]
 
 type EditorMode = "visual" | "html"
 type DisplayMode = "cover" | "icon"
@@ -109,9 +108,28 @@ export default function AdminPostEditorPage() {
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [slugTouched, setSlugTouched] = useState(Boolean(editingSlug))
+  const [articleCategories, setArticleCategories] = useState<string[]>([])
 
   // Editor state
   const [editorContent, setEditorContent] = useState("")
+
+  useEffect(() => {
+    let active = true
+
+    fetchAdminPostCategories()
+      .then((items) => {
+        if (!active) return
+        setArticleCategories(items.map((item) => item.name))
+      })
+      .catch(() => {
+        if (!active) return
+        setArticleCategories([])
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!editingSlug) return
@@ -236,10 +254,6 @@ export default function AdminPostEditorPage() {
     await handleIconUpload(file)
   }
 
-  const setDisplayMode = (displayMode: DisplayMode) => {
-    setForm((current) => ({ ...current, displayMode }))
-  }
-
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setSaving(true)
@@ -335,23 +349,23 @@ export default function AdminPostEditorPage() {
   return (
     <main className="space-y-6">
       {/* Page Header */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-100 dark:border-emerald-900">
+      <div className="admin-hero">
         <div className="p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 shadow-[0_12px_24px_-20px_rgba(14,165,233,0.7)] dark:bg-sky-950/30 dark:text-sky-300">
                 <FileText className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">
                   {editingSlug ? "编辑文章" : "新建文章"}
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <p className="mt-1 text-sm text-muted-foreground">
                   创建新的技术文章、评测或教程
                 </p>
               </div>
             </div>
-            <Link href="/admin/posts" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+            <Link href="/admin/posts" className="admin-secondary-btn px-4 py-2 text-sm">
               <ArrowLeft className="h-4 w-4" />
               返回列表
             </Link>
@@ -373,25 +387,25 @@ export default function AdminPostEditorPage() {
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/30 dark:to-teal-950/10 border border-emerald-100/70 dark:border-emerald-900/50 bg-card p-6">
+      <section className="admin-panel p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">导入助手</p>
-            <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">导入网页内容</h2>
+            <h2 className="mt-2 text-2xl font-black text-foreground">导入网页内容</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">输入链接后，后台会抓取标题、摘要、封面和正文，直接填进编辑器。</p>
           </div>
           <WandSparkles className="hidden h-9 w-9 text-slate-400/40 dark:text-slate-500/40 md:block" />
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
           <input value={importUrl} onChange={(event) => setImportUrl(event.target.value)} placeholder="输入要导入的链接地址" className={inputClass} />
-          <button type="button" onClick={handleImport} disabled={importing || !importUrl.trim()} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60">
+          <button type="button" onClick={handleImport} disabled={importing || !importUrl.trim()} className="admin-primary-btn px-5 py-3">
             <Link2 className="h-4 w-4" />
             {importing ? "导入中..." : "抓取并导入"}
           </button>
         </div>
       </section>
 
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 md:p-8">
+      <form onSubmit={handleSubmit} className="admin-panel p-6 md:p-8">
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <Field label="标题">
@@ -446,37 +460,7 @@ export default function AdminPostEditorPage() {
             </Field>
           </div>
 
-          {/* 头部展示设置 - 将显示模式、封面图、图标放在一起，逻辑连贯 */}
-          <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-4 w-1 rounded-full bg-emerald-600" />
-              <h3 className="text-sm font-semibold text-foreground">头部展示设置</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background p-3">
-                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer px-2 py-2 rounded-lg transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
-                  <input
-                    type="radio"
-                    checked={form.displayMode === "cover"}
-                    onChange={() => setDisplayMode("cover")}
-                  />
-                  <span>显示大封面图</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer px-2 py-2 rounded-lg transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
-                  <input
-                    type="radio"
-                    checked={form.displayMode === "icon"}
-                    onChange={() => setDisplayMode("icon")}
-                  />
-                  <span>仅显示文章图标</span>
-                </label>
-              </div>
-              <p className="text-xs text-muted-foreground">选择「显示大封面图」会在文章详情页顶部显示一张横幅封面，也会在首页推荐展示封面。选择「仅显示文章图标」只在卡片内显示图标。</p>
-            </div>
-
-            {true && (
-              <div className="space-y-3">
+          <div className="space-y-3">
                 <Field label="封面图">
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-3">
@@ -484,7 +468,7 @@ export default function AdminPostEditorPage() {
                         type="button"
                         onClick={() => coverFileInputRef.current?.click()}
                         disabled={uploadingCover}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-emerald-500/25 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         {uploadingCover ? "上传中..." : "上传本地封面"}
@@ -493,7 +477,7 @@ export default function AdminPostEditorPage() {
                         type="button"
                         onClick={() => void handlePasteCoverImage()}
                         disabled={uploadingCover}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-emerald-500/25 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         粘贴剪贴板图片
@@ -517,10 +501,7 @@ export default function AdminPostEditorPage() {
                   </div>
                 </Field>
               </div>
-            )}
-
-            {true && (
-              <div className="space-y-3">
+            <div className="space-y-3">
                 <Field label="文章图标">
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-3">
@@ -528,7 +509,7 @@ export default function AdminPostEditorPage() {
                         type="button"
                         disabled={uploadingIcon}
                         onClick={() => iconFileInputRef.current?.click()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-emerald-500/25 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         {uploadingIcon ? "上传中..." : "上传本地图标"}
@@ -537,7 +518,7 @@ export default function AdminPostEditorPage() {
                         type="button"
                         onClick={() => void handlePasteIconImage()}
                         disabled={uploadingIcon}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-emerald-500/25 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         粘贴剪贴板图片
@@ -558,7 +539,7 @@ export default function AdminPostEditorPage() {
                       placeholder="图标字母、文字、图片地址，或直接粘贴图片"
                     />
                     <div className="flex items-center gap-4 rounded-xl border border-border bg-background p-4">
-                      <div className="flex h-16 w-16 overflow-hidden rounded-xl bg-secondary text-lg font-black text-foreground">
+                      <div className="flex h-16 w-16 overflow-hidden rounded-2xl bg-secondary text-lg font-black text-foreground">
                         <div className="flex h-full w-full items-center justify-center">
                           {form.icon && looksLikeImageUrl(form.icon) ? (
                             <img src={resolveAssetUrl(form.icon)} alt="图标预览" className="h-full w-full object-cover" />
@@ -574,14 +555,12 @@ export default function AdminPostEditorPage() {
                   </div>
                 </Field>
               </div>
-            )}
-          </div>
 
           <Field label="正文">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-2">
-                  <ModeButton active={editorMode === "visual"} onClick={() => setEditorMode("visual")}>
+                <ModeButton active={editorMode === "visual"} onClick={() => setEditorMode("visual")}>
                     可视化
                   </ModeButton>
                   <ModeButton active={editorMode === "html"} onClick={() => setEditorMode("html")}>
@@ -601,7 +580,7 @@ export default function AdminPostEditorPage() {
                       input.onchange = () => void handleInsertInlineImages(Array.from(input.files || []))
                       input.click()
                     }}
-                    className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/25 disabled:opacity-50"
+                    className="admin-secondary-btn px-3 py-1.5 text-xs"
                   >
                     <ImagePlus className="h-4 w-4" />
                     {uploadingInlineImage ? "正文图片上传中..." : "上传正文图片"}
@@ -641,7 +620,7 @@ export default function AdminPostEditorPage() {
           </label>
 
           <div className="flex items-center gap-3 pt-2">
-            <button type="submit" disabled={saving || loading} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            <button type="submit" disabled={saving || loading} className="admin-primary-btn px-6 py-3">
               {saving ? "保存中..." : "保存文章"}
             </button>
             {editingSlug ? (
@@ -681,4 +660,4 @@ function ModeButton({ active, children, onClick }: { active: boolean; children: 
   )
 }
 
-const inputClass = "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40 disabled:bg-secondary"
+const inputClass = "admin-input"

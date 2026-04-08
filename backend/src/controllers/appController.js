@@ -3,7 +3,6 @@ import prisma from '../utils/prisma.js';
 import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
 import {
-  getUserAccessScope,
   normalizeBoolean,
   normalizeDownloadLinks,
   normalizeInteger,
@@ -13,8 +12,10 @@ import {
   serializeUserPermissions
 } from '../utils/serializers.js';
 import { listAppCategories, upsertAppCategory } from '../utils/appCategories.js';
+import { getMembershipLevelRank, normalizeMembershipLevel } from '../utils/membership.js';
+import { readSiteSettings } from '../utils/siteSettings.js';
 
-const appStatuses = ['draft', 'published', 'archived', 'scheduled'];
+const appStatuses = ['published', 'hidden', 'archived'];
 
 const listValidation = validate([
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
@@ -40,7 +41,7 @@ const writeValidationRules = [
   body('rating').optional().isFloat({ min: 0, max: 5 }).withMessage('rating must be between 0 and 5'),
   body('editorialScore').optional().isInt({ min: 0, max: 100 }).withMessage('editorialScore must be between 0 and 100'),
   body('status').optional().isIn(appStatuses).withMessage('status is invalid'),
-  body('accessLevel').optional().isIn(['free', 'member', 'premium']).withMessage('accessLevel is invalid'),
+  body('accessLevel').optional().isIn(['free', 'sponsor', 'lifetime', 'supreme', 'member', 'premium', 'vip']).withMessage('accessLevel is invalid'),
   body('compatibility').optional().isArray().withMessage('compatibility must be an array'),
   body('platforms').optional().isArray().withMessage('platforms must be an array'),
   body('gallery').optional().isArray().withMessage('gallery must be an array'),
@@ -98,8 +99,8 @@ function includeAppRelations() {
 function buildWhere(queryArgs, isAuthenticated) {
   const where = {};
   if (queryArgs.category) where.category = normalizeString(queryArgs.category).trim();
-  if (isAuthenticated && queryArgs.status) where.status = normalizeString(queryArgs.status).trim();
-  else if (!isAuthenticated) where.status = 'published';
+  if (queryArgs.status && isAuthenticated?.role === 'admin') where.status = normalizeString(queryArgs.status).trim();
+  else if (!isAuthenticated || isAuthenticated?.role !== 'admin') where.status = 'published';
   if (queryArgs.featured !== undefined) where.featured = normalizeBoolean(queryArgs.featured);
   if (queryArgs.search) {
     const keyword = normalizeString(queryArgs.search).trim();
@@ -144,8 +145,8 @@ function buildAppData(body) {
     requirements: normalizeJsonInput(body.requirements, []),
     review: body.review !== undefined ? normalizeString(body.review, '') : '',
     featured: normalizeBoolean(body.featured),
-    status: body.status !== undefined ? normalizeString(body.status).trim() : 'draft',
-    accessLevel: body.accessLevel !== undefined ? normalizeString(body.accessLevel).trim() : 'free',
+    status: body.status !== undefined ? normalizeString(body.status).trim() : 'hidden',
+    accessLevel: body.accessLevel !== undefined ? normalizeMembershipLevel(body.accessLevel) : 'free',
     isDownloadable: body.isDownloadable !== undefined ? normalizeBoolean(body.isDownloadable, true) : true,
     downloadUrl: downloadLinks[0]?.url ?? (body.downloadUrl !== undefined ? normalizeString(body.downloadUrl, '') : ''),
     downloadLinks,
@@ -188,7 +189,7 @@ function patchAppData(current, body) {
     review: body.review !== undefined ? normalizeString(body.review, '') : current.review,
     featured: body.featured !== undefined ? normalizeBoolean(body.featured) : current.featured,
     status: body.status !== undefined ? normalizeString(body.status).trim() : current.status,
-    accessLevel: body.accessLevel !== undefined ? normalizeString(body.accessLevel).trim() : current.accessLevel,
+    accessLevel: body.accessLevel !== undefined ? normalizeMembershipLevel(body.accessLevel) : normalizeMembershipLevel(current.accessLevel),
     isDownloadable:
       body.isDownloadable !== undefined ? normalizeBoolean(body.isDownloadable, true) : current.isDownloadable,
     downloadUrl:
@@ -201,6 +202,14 @@ function patchAppData(current, body) {
 }
 
 function resolveDownloadAccess(app, user) {
+  if (user?.role === 'admin') {
+    return {
+      allowed: true,
+      reason: 'ok',
+      requiresLogin: false
+    };
+  }
+
   if (!app.isDownloadable) {
     return {
       allowed: false,
@@ -209,9 +218,9 @@ function resolveDownloadAccess(app, user) {
     };
   }
 
-  const level = app.accessLevel ?? 'free';
-  const scope = getUserAccessScope(user);
-  if (!scope.allowedLevels.includes(level)) {
+  const requiredLevel = normalizeMembershipLevel(app.accessLevel);
+  const userLevel = normalizeMembershipLevel(user?.membershipLevel);
+  if (getMembershipLevelRank(userLevel) < getMembershipLevelRank(requiredLevel)) {
     return {
       allowed: false,
       reason: user ? 'membership not enough' : 'login required',
@@ -237,7 +246,7 @@ function resolveDownloadAccess(app, user) {
 export async function list(req, res) {
   const page = normalizeInteger(req.query.page, 1);
   const pageSize = normalizeInteger(req.query.pageSize, 12);
-  const where = buildWhere(req.query, Boolean(req.user));
+  const where = buildWhere(req.query, req.user ?? null);
   const sortField = ['createdAt', 'updatedAt', 'rating', 'editorialScore'].includes(req.query.sort) ? req.query.sort : 'createdAt';
   const sortOrder = req.query.order === 'asc' ? 'asc' : 'desc';
   const [items, total] = await Promise.all([
@@ -288,11 +297,21 @@ export async function access(req, res) {
     : null;
   const permission = resolveDownloadAccess(app, user);
   const serialized = serializeApp(app);
+  const settings = await readSiteSettings();
+  const userLevel = normalizeMembershipLevel(user?.membershipLevel);
 
   return sendSuccess(res, {
     appSlug: app.slug,
     accessLevel: app.accessLevel ?? 'free',
     isDownloadable: app.isDownloadable ?? true,
+    showInterstitial: settings.downloadInterstitialEnabled && userLevel === 'free',
+    downloadInterstitial: {
+      enabled: settings.downloadInterstitialEnabled,
+      title: settings.downloadInterstitialTitle,
+      description: settings.downloadInterstitialDescription,
+      buttonText: settings.downloadInterstitialButtonText,
+      buyUrl: settings.downloadInterstitialBuyUrl
+    },
     downloadUrl: permission.allowed ? serialized.downloadUrl ?? null : null,
     downloadLinks: permission.allowed ? serialized.downloadLinks : [],
     downloadPermission: permission,

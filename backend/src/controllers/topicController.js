@@ -4,7 +4,7 @@ import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
 import { normalizeString, serializeTopic } from '../utils/serializers.js';
 
-const topicStatuses = ['draft', 'published', 'archived'];
+const topicStatuses = ['published', 'hidden', 'archived'];
 
 const listValidation = validate([query('status').optional().isIn(topicStatuses).withMessage('status is invalid')]);
 
@@ -71,8 +71,8 @@ function patchTopicData(current, body) {
 
 export async function list(req, res) {
   const where = {};
-  if (req.user && req.query.status) where.status = normalizeString(req.query.status).trim();
-  else if (!req.user) where.status = 'published';
+  if (req.query.status && req.user?.role === 'admin') where.status = normalizeString(req.query.status).trim();
+  else if (!req.user || req.user.role !== 'admin') where.status = 'published';
   const topics = await prisma.topic.findMany({ where, orderBy: [{ createdAt: 'desc' }], include: includeTopicRelations() });
   return sendSuccess(res, topics.map(serializeTopic));
 }
@@ -101,7 +101,7 @@ export async function create(req, res) {
       title: normalizeString(req.body.title).trim(),
       description: normalizeString(req.body.description).trim(),
       coverImage: normalizeString(req.body.coverImage, ''),
-      status: normalizeString(req.body.status, 'draft'),
+      status: normalizeString(req.body.status, 'hidden'),
       ...buildRelationData(req.body.relatedAppSlugs, req.body.relatedPostSlugs)
     },
     include: includeTopicRelations()

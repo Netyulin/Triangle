@@ -6,8 +6,8 @@ import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { request, type HomePayload } from "@/lib/api"
-import { resolveAssetUrl } from "@/lib/utils"
-import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, Download, Eye, MessageSquare, RefreshCw, Star, TrendingUp } from "lucide-react"
+import { looksLikeImageUrl, resolveAssetUrl } from "@/lib/utils"
+import { ArrowRight, Bell, BookOpen, ChevronLeft, ChevronRight, Download, Eye, MessageSquare, RefreshCw, Star, TrendingUp } from "lucide-react"
 
 function getInitial(text: string) {
   return text.trim().slice(0, 2).toUpperCase() || "TR"
@@ -101,6 +101,7 @@ export default function HomePage() {
   }, [currentSlide, home?.heroSlides.length])
 
   const activeSlide = home?.heroSlides[currentSlide] ?? null
+  const announcements = home?.announcements ?? []
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,12 +154,27 @@ export default function HomePage() {
                     </div>
 
                     <div className="flex items-center justify-center">
-                      <div
-                        className={`flex h-28 w-28 items-center justify-center rounded-[2rem] bg-slate-800 text-4xl font-black shadow-2xl md:h-36 md:w-36 ${activeSlide.coverColor} ${coverTextClass}`}
-                        style={resolveSolidColorStyle(activeSlide.coverBg)}
-                      >
-                        {activeSlide.coverText}
-                      </div>
+                      {activeSlide.icon ? (
+                        <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-[2rem] border border-white/20 bg-white/10 shadow-2xl md:h-36 md:w-36">
+                          {looksLikeImageUrl(activeSlide.icon) ? (
+                            <img src={resolveAssetUrl(activeSlide.icon)} alt={activeSlide.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <AppIcon
+                              value={activeSlide.icon}
+                              name={activeSlide.title}
+                              className="flex h-full w-full items-center justify-center text-4xl font-black text-white"
+                              imageClassName="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <div
+                          className={`flex h-28 w-28 items-center justify-center rounded-[2rem] bg-slate-800 text-4xl font-black shadow-2xl md:h-36 md:w-36 ${activeSlide.coverColor} ${coverTextClass}`}
+                          style={resolveSolidColorStyle(activeSlide.coverBg)}
+                        >
+                          {activeSlide.coverText}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -188,6 +204,33 @@ export default function HomePage() {
           )}
         </section>
 
+        <section className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+            <Bell className="h-4 w-4 text-accent" />
+            <div>
+              <h2 className="text-sm font-bold text-foreground">网站公告</h2>
+              <p className="mt-1 text-xs text-muted-foreground">优先展示最新的重要公告，方便快速查看站点动态。</p>
+            </div>
+          </div>
+          {announcements.length ? (
+            <div className="grid gap-0 md:grid-cols-2">
+              {announcements.slice(0, 4).map((item) => (
+                <article key={item.id} className="border-b border-border px-5 py-4 md:border-r md:last:border-r-0">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="rounded-full bg-secondary px-2 py-1 font-medium text-foreground">{item.kind === "system" ? "系统公告" : item.kind === "activity" ? "活动通知" : "站内通知"}</span>
+                    {item.pinned ? <span className="rounded-full bg-accent/10 px-2 py-1 font-medium text-accent">置顶</span> : null}
+                    <span>{item.createdAt}</span>
+                  </div>
+                  <h3 className="mt-3 text-base font-bold text-foreground">{item.title}</h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-7 text-muted-foreground">{item.content}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="px-5 py-6 text-sm text-muted-foreground">暂时还没有公告，后续站点消息会显示在这里。</div>
+          )}
+        </section>
+
         <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">软件总数</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{home?.stats.publishedApps ?? 0}</p></div>
           <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">文章总数</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{home?.stats.publishedPosts ?? 0}</p></div>
@@ -202,7 +245,7 @@ export default function HomePage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">编辑推荐</p>
                 <h2 className="mt-1 heading-2 text-foreground">值得先看</h2>
               </div>
-              <Link href="/articles" className="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover">
+              <Link href="/news" className="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover">
                 查看全部文章
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -211,7 +254,7 @@ export default function HomePage() {
             {home?.featuredPosts.length ? (
               <div className="space-y-3">
                 {home.featuredPosts.map((post) => (
-                  <Link key={post.slug} href={`/articles/${post.slug}`} className="group card-custom flex gap-4 p-4 transition-all hover:border-accent/25">
+                  <Link key={post.slug} href={`/news/${post.slug}`} className="group card-custom flex gap-4 p-4 transition-all hover:border-accent/25">
                     <div className={`flex flex-shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl font-black text-foreground ${post.displayMode !== "icon" && post.coverImage ? "h-20 w-32 overflow-hidden p-0" : "h-20 w-20"}`}>
                       {post.displayMode !== "icon" && post.coverImage ? (
                         <img src={resolveAssetUrl(post.coverImage)} alt={post.title} className="h-full w-full object-cover" />
@@ -253,7 +296,7 @@ export default function HomePage() {
                 <ol className="divide-y divide-border">
                   {home.editorPicks.map((item, index) => (
                     <li key={item.slug}>
-                      <Link href={`/articles/${item.slug}`} className="flex gap-3 px-5 py-4 transition-colors hover:bg-muted">
+                      <Link href={`/news/${item.slug}`} className="flex gap-3 px-5 py-4 transition-colors hover:bg-muted">
                         <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-foreground">{index + 1}</span>
                         <div className="min-w-0"><p className="line-clamp-2 text-sm font-medium text-foreground">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.category}</p></div>
                       </Link>
@@ -293,7 +336,7 @@ export default function HomePage() {
                 <ol className="divide-y divide-border">
                   {home.readingRanks.map((item) => (
                     <li key={item.slug}>
-                      <Link href={`/articles/${item.slug}`} className="flex gap-3 px-5 py-4 transition-colors hover:bg-muted">
+                      <Link href={`/news/${item.slug}`} className="flex gap-3 px-5 py-4 transition-colors hover:bg-muted">
                         <span className="w-4 flex-shrink-0 text-center text-xs font-bold text-muted-foreground">{item.rank}</span>
                         <div className="min-w-0"><p className="line-clamp-2 text-sm text-foreground">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.readingTime}</p></div>
                       </Link>

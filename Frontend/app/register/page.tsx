@@ -9,7 +9,6 @@ import { Navbar } from "@/components/navbar"
 import { AvatarPicker } from "@/components/avatar-picker"
 import { useAppContext } from "@/components/app-provider"
 import { request, type AuthPayload } from "@/lib/api"
-import { avatarPresets } from "@/lib/avatar-presets"
 import { type AvatarGender } from "@/lib/avatar-random"
 import { cn } from "@/lib/utils"
 
@@ -43,7 +42,7 @@ export default function RegisterPage() {
     gender: "male" as AvatarGender,
     inviteCode: "",
   })
-  const [selectedAvatar, setSelectedAvatar] = useState(avatarPresets[0]?.src ?? "")
+  const [selectedAvatar, setSelectedAvatar] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)

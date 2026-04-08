@@ -25,6 +25,7 @@ router.get('/categories', categories);
 router.get('/:slug/access', optionalAuthenticate, accessValidation, access);
 router.post(
   '/:slug/netdisk-reports',
+  optionalAuthenticate,
   netdiskReportController.createValidation,
   netdiskReportController.create
 );

@@ -16,12 +16,27 @@ export type User = {
   name: string | null
   avatar: string | null
   gender: string
+  phone?: string | null
   role: string
   membershipLevel: string
+  status?: string
+  banUntil?: string | null
   canSubmitRequest: boolean
   canComment: boolean
   downloadQuotaDaily: number
   downloadCountDaily: number
+}
+
+export type InboxItem = {
+  id: string | number
+  title: string
+  content: string
+  kind: "notification" | "message"
+  read: boolean
+  createdAt: string
+  senderName?: string | null
+  actionUrl?: string | null
+  summary?: string | null
 }
 
 export type UserPermissions = {
@@ -183,6 +198,7 @@ export type HomeSlide = {
   coverBg: string
   coverText: string
   coverColor: string
+  icon?: string | null
   href: string
   downloadHref: string | null
 }
@@ -203,6 +219,14 @@ export type HomePayload = {
     supportedLocales?: string[]
     languageOptions?: Array<{ value: string; label: string }>
   }
+  announcements?: Array<{
+    id: string | number
+    title: string
+    content: string
+    kind: "system" | "notice" | "activity"
+    createdAt: string
+    pinned?: boolean
+  }>
   stats: {
     publishedApps: number
     publishedPosts: number

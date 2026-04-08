@@ -24,6 +24,15 @@ export const DEFAULT_SITE_SETTINGS = {
   homeFeaturedPostCount: 6,
   registrationEnabled: true,
   registrationRequiresInvite: false,
+  siteAnnouncementEnabled: true,
+  siteAnnouncementTitle: '站点公告',
+  siteAnnouncementContent: '欢迎来到 Triangle，这里会持续整理软件、文章与下载资源。',
+  siteAnnouncementLink: '',
+  downloadInterstitialEnabled: true,
+  downloadInterstitialTitle: '下载前确认',
+  downloadInterstitialDescription: '基础会员进入下载前会短暂停留，高等级会员将自动跳过。',
+  downloadInterstitialButtonText: '继续下载',
+  downloadInterstitialBuyUrl: '',
   defaultLocale: 'zh-CN',
   supportedLocales: ['zh-CN', 'zh-TW', 'en']
 };
@@ -56,13 +65,49 @@ export function normalizeSiteSettings(input = {}) {
   return {
     siteName: normalizeString(input.siteName, DEFAULT_SITE_SETTINGS.siteName).trim() || DEFAULT_SITE_SETTINGS.siteName,
     siteDescription:
-      normalizeString(input.siteDescription, DEFAULT_SITE_SETTINGS.siteDescription).trim() || DEFAULT_SITE_SETTINGS.siteDescription,
+      normalizeString(input.siteDescription, DEFAULT_SITE_SETTINGS.siteDescription).trim() ||
+      DEFAULT_SITE_SETTINGS.siteDescription,
     homeFeaturedPostCount: normalizeInteger(input.homeFeaturedPostCount, DEFAULT_SITE_SETTINGS.homeFeaturedPostCount),
     registrationEnabled: normalizeBoolean(input.registrationEnabled, DEFAULT_SITE_SETTINGS.registrationEnabled),
     registrationRequiresInvite: normalizeBoolean(
       input.registrationRequiresInvite,
       DEFAULT_SITE_SETTINGS.registrationRequiresInvite
     ),
+    siteAnnouncementEnabled: normalizeBoolean(
+      input.siteAnnouncementEnabled,
+      DEFAULT_SITE_SETTINGS.siteAnnouncementEnabled
+    ),
+    siteAnnouncementTitle:
+      normalizeString(input.siteAnnouncementTitle, DEFAULT_SITE_SETTINGS.siteAnnouncementTitle).trim() ||
+      DEFAULT_SITE_SETTINGS.siteAnnouncementTitle,
+    siteAnnouncementContent:
+      normalizeString(input.siteAnnouncementContent, DEFAULT_SITE_SETTINGS.siteAnnouncementContent).trim() ||
+      DEFAULT_SITE_SETTINGS.siteAnnouncementContent,
+    siteAnnouncementLink: normalizeString(
+      input.siteAnnouncementLink,
+      DEFAULT_SITE_SETTINGS.siteAnnouncementLink
+    ).trim(),
+    downloadInterstitialEnabled: normalizeBoolean(
+      input.downloadInterstitialEnabled,
+      DEFAULT_SITE_SETTINGS.downloadInterstitialEnabled
+    ),
+    downloadInterstitialTitle:
+      normalizeString(input.downloadInterstitialTitle, DEFAULT_SITE_SETTINGS.downloadInterstitialTitle).trim() ||
+      DEFAULT_SITE_SETTINGS.downloadInterstitialTitle,
+    downloadInterstitialDescription:
+      normalizeString(
+        input.downloadInterstitialDescription,
+        DEFAULT_SITE_SETTINGS.downloadInterstitialDescription
+      ).trim() || DEFAULT_SITE_SETTINGS.downloadInterstitialDescription,
+    downloadInterstitialButtonText:
+      normalizeString(
+        input.downloadInterstitialButtonText,
+        DEFAULT_SITE_SETTINGS.downloadInterstitialButtonText
+      ).trim() || DEFAULT_SITE_SETTINGS.downloadInterstitialButtonText,
+    downloadInterstitialBuyUrl: normalizeString(
+      input.downloadInterstitialBuyUrl,
+      DEFAULT_SITE_SETTINGS.downloadInterstitialBuyUrl
+    ).trim(),
     defaultLocale,
     supportedLocales,
     languageOptions: supportedLocales.map((code) => LANGUAGE_OPTIONS[code])

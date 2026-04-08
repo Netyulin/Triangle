@@ -49,9 +49,14 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-10 sm:px-6">
-        <div className="admin-panel px-8 py-10 text-center">
-          <p className="text-lg font-black text-foreground">正在检查后台权限...</p>
-          <p className="mt-2 text-sm text-muted-foreground">未登录或权限不足时会自动跳回登录页。</p>
+        <div className="admin-panel w-full max-w-md p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-300">
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7l7-4z" />
+            </svg>
+          </div>
+          <p className="text-lg font-semibold text-foreground">正在检查后台权限</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">未登录或权限不足时，会自动跳回登录页。</p>
         </div>
       </main>
     )

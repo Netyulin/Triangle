@@ -94,6 +94,10 @@ export async function create(req, res) {
     return sendError(res, ErrorCodes.FORBIDDEN, 'comment permission denied');
   }
 
+  if (parentId && user && !user.canReply) {
+    return sendError(res, ErrorCodes.FORBIDDEN, 'reply permission denied');
+  }
+
   const authorName = user ? normalizeString(user.name || user.username).trim() : normalizeString(req.body.authorName).trim();
   if (!authorName) {
     return sendError(res, ErrorCodes.PARAM_ERROR, 'authorName is required');

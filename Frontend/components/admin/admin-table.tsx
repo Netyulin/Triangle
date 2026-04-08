@@ -1,6 +1,6 @@
 "use client"
 
-import { PencilLine, Trash2, Plus } from "lucide-react"
+import { EyeOff, PencilLine, Plus, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type AdminTableRow = {
@@ -20,14 +20,30 @@ type AdminTableProps = {
   onNew?: () => void
   onEdit?: (row: AdminTableRow) => void
   onDelete?: (row: AdminTableRow) => void
+  onToggleVisibility?: (row: AdminTableRow) => void
 }
 
 function statusClass(status: string) {
-  if (status === "published" || status === "done") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-  if (status === "processing") return "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-200 dark:border-sky-800"
-  if (status === "pending" || status === "draft") return "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-  if (status === "rejected" || status === "archived") return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-  return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+  if (status === "published" || status === "done") return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50"
+  if (status === "processing") return "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-900/50"
+  if (status === "pending" || status === "draft") return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50"
+  if (status === "rejected" || status === "archived" || status === "hidden") return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800"
+  return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800"
+}
+
+function statusLabel(status: string) {
+  if (status === "published") return "已发布"
+  if (status === "hidden") return "已隐藏"
+  if (status === "archived") return "已归档"
+  if (status === "pending") return "待处理"
+  if (status === "processing") return "处理中"
+  if (status === "done") return "已完成"
+  if (status === "rejected") return "已拒绝"
+  if (status === "draft") return "草稿"
+  if (status === "active") return "正常"
+  if (status === "disabled") return "已禁用"
+  if (status === "banned") return "已封禁"
+  return status || "-"
 }
 
 export function AdminTable({
@@ -39,19 +55,17 @@ export function AdminTable({
   onNew,
   onEdit,
   onDelete,
+  onToggleVisibility,
 }: AdminTableProps) {
   return (
     <section className="admin-panel p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
-          {description ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p> : null}
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
         </div>
         {onNew ? (
-          <button
-            onClick={onNew}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/20"
-          >
+          <button onClick={onNew} className="admin-primary-btn">
             <Plus className="h-4 w-4" />
             {newLabel}
           </button>
@@ -59,8 +73,8 @@ export function AdminTable({
       </div>
 
       {rows.length ? (
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-          <div className="grid grid-cols-[1.6fr_0.8fr_0.8fr_0.8fr_0.9fr] bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
+        <div className="overflow-hidden rounded-2xl border border-border">
+          <div className="grid grid-cols-[1.6fr_0.8fr_0.8fr_0.8fr_1.1fr] bg-secondary/60 px-4 py-3 text-xs font-semibold tracking-[0.16em] text-muted-foreground">
             <span>标题</span>
             <span>类型</span>
             <span>作者</span>
@@ -70,29 +84,29 @@ export function AdminTable({
           {rows.map((row, index) => (
             <div
               key={row.id || `${row.title}-${index}`}
-              className="grid grid-cols-[1.6fr_0.8fr_0.8fr_0.8fr_0.9fr] items-center border-t border-slate-200 bg-white px-4 py-4 text-sm transition-colors hover:bg-slate-50/60 dark:border-slate-800 dark:bg-transparent dark:hover:bg-slate-900/40"
+              className="grid grid-cols-[1.6fr_0.8fr_0.8fr_0.8fr_1.1fr] items-center border-t border-border bg-card px-4 py-4 text-sm transition-colors hover:bg-secondary/40 dark:hover:bg-slate-900/35"
             >
-              <span className="font-semibold text-slate-900 dark:text-white">{row.title}</span>
-              <span className="text-slate-500 dark:text-slate-400">{row.type}</span>
-              <span className="text-slate-500 dark:text-slate-400">{row.author}</span>
+              <span className="font-semibold text-foreground">{row.title}</span>
+              <span className="text-muted-foreground">{row.type}</span>
+              <span className="text-muted-foreground">{row.author}</span>
               <span>
-                <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", statusClass(row.status))}>{row.status}</span>
+                <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", statusClass(row.status))}>{statusLabel(row.status)}</span>
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {onEdit ? (
-                  <button
-                    onClick={() => onEdit(row)}
-                    className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                  >
+                  <button onClick={() => onEdit(row)} className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-accent/25 hover:text-accent">
                     <PencilLine className="h-3.5 w-3.5" />
                     编辑
                   </button>
                 ) : null}
+                {onToggleVisibility ? (
+                  <button onClick={() => onToggleVisibility(row)} className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-sky-300 hover:text-sky-600">
+                    <EyeOff className="h-3.5 w-3.5" />
+                    {row.status === "hidden" ? "显示" : "隐藏"}
+                  </button>
+                ) : null}
                 {onDelete ? (
-                  <button
-                    onClick={() => onDelete(row)}
-                    className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/40"
-                  >
+                  <button onClick={() => onDelete(row)} className="inline-flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-rose-300 hover:text-rose-600">
                     <Trash2 className="h-3.5 w-3.5" />
                     删除
                   </button>
@@ -102,9 +116,7 @@ export function AdminTable({
           ))}
         </div>
       ) : (
-        <div className="admin-muted-panel border-dashed px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
-          {emptyText}
-        </div>
+        <div className="admin-muted-panel border-dashed px-6 py-10 text-center text-sm text-muted-foreground">{emptyText}</div>
       )}
     </section>
   )

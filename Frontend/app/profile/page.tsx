@@ -3,14 +3,17 @@
 import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Bookmark, CreditCard, LogOut, MessageSquare, RefreshCw, User as UserIcon } from "lucide-react"
+import { Bookmark, CreditCard, LogOut, Mail, MessageSquare, RefreshCw, Trash2, User as UserIcon } from "lucide-react"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { AppIcon } from "@/components/app-icon"
+import { MembershipBadge } from "@/components/membership-badge"
 import { AvatarPicker } from "@/components/avatar-picker"
 import { useAppContext } from "@/components/app-provider"
+import { deleteUserInbox, fetchUserInbox, markUserInboxRead } from "@/lib/admin-api"
 import {
   request,
+  type InboxItem,
   type AppSummary,
   type PostSummary,
   type ProfilePayload,
@@ -18,17 +21,17 @@ import {
   type RequestItem,
   type User,
 } from "@/lib/api"
-import { avatarPresets } from "@/lib/avatar-presets"
 import { type AvatarGender } from "@/lib/avatar-random"
 import { cn } from "@/lib/utils"
 
-type TabKey = "profile" | "favorites" | "requests" | "recharge"
+type TabKey = "profile" | "favorites" | "requests" | "recharge" | "messages"
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "profile", label: "资料" },
   { key: "favorites", label: "收藏" },
   { key: "requests", label: "需求" },
   { key: "recharge", label: "充值" },
+  { key: "messages", label: "消息中心" },
 ]
 
 const rechargeOptions = [18, 68, 168]
@@ -44,12 +47,6 @@ function genderText(value: string) {
   if (value === "male") return "男"
   if (value === "female") return "女"
   return "其他"
-}
-
-function membershipLabel(level: string) {
-  if (level === "premium") return "高级会员"
-  if (level === "member") return "会员"
-  return "普通用户"
 }
 
 function FavoriteApps({ items }: { items: AppSummary[] }) {
@@ -76,6 +73,84 @@ function FavoriteApps({ items }: { items: AppSummary[] }) {
   )
 }
 
+function InboxList({
+  items,
+  loading,
+  onMarkRead,
+  onDelete,
+}: {
+  items: InboxItem[]
+  loading: boolean
+  onMarkRead: (item: InboxItem) => Promise<void>
+  onDelete: (item: InboxItem) => Promise<void>
+}) {
+  if (loading) {
+    return <div className="rounded-3xl border border-border bg-background p-6 text-sm text-muted-foreground">消息加载中...</div>
+  }
+
+  if (!items.length) {
+    return (
+      <div className="rounded-3xl border border-dashed border-border bg-background p-8 text-center">
+        <Mail className="mx-auto h-8 w-8 text-muted-foreground" />
+        <p className="mt-3 text-sm text-muted-foreground">暂时还没有消息。</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {items.map((item) => (
+        <article
+          key={item.id}
+          className={cn(
+            "rounded-3xl border p-5 transition",
+            item.read ? "border-border bg-background" : "border-accent/20 bg-accent/5",
+          )}
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
+                  {item.kind === "message" ? "站内信" : "通知"}
+                </span>
+                <span className="text-xs text-muted-foreground">{item.senderName || "系统消息"}</span>
+                <span className="text-xs text-muted-foreground">{item.createdAt}</span>
+              </div>
+              <h3 className="mt-3 text-base font-bold text-foreground">{item.title}</h3>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{item.content}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {!item.read ? (
+                <button
+                  onClick={() => void onMarkRead(item)}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-accent/30 hover:text-accent"
+                >
+                  标记已读
+                </button>
+              ) : null}
+              <button
+                onClick={() => void onDelete(item)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-destructive/30 hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                删除
+              </button>
+            </div>
+          </div>
+          {item.actionUrl ? (
+            <Link
+              href={item.actionUrl}
+              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+            >
+              查看详情
+            </Link>
+          ) : null}
+        </article>
+      ))}
+    </div>
+  )
+}
+
 function FavoritePosts({ items }: { items: PostSummary[] }) {
   if (!items.length) {
     return <p className="text-sm text-muted-foreground">还没有收藏的文章。</p>
@@ -84,7 +159,7 @@ function FavoritePosts({ items }: { items: PostSummary[] }) {
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <Link key={item.slug} href={`/articles/${item.slug}`} className="block rounded-2xl border border-border bg-background p-4 transition hover:border-primary/25">
+        <Link key={item.slug} href={`/news/${item.slug}`} className="block rounded-2xl border border-border bg-background p-4 transition hover:border-primary/25">
           <p className="text-base font-bold text-foreground">{item.title}</p>
           <p className="mt-1 text-sm text-muted-foreground">{item.excerpt}</p>
         </Link>
@@ -108,6 +183,8 @@ function ProfileContent() {
 
   const [activeTab, setActiveTab] = useState<TabKey>(tabs.some((item) => item.key === initialTab) ? initialTab : "profile")
   const [profile, setProfile] = useState<ProfilePayload | null>(null)
+  const [inbox, setInbox] = useState<InboxItem[]>([])
+  const [inboxLoading, setInboxLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
@@ -119,7 +196,7 @@ function ProfileContent() {
     gender: "other" as AvatarGender,
     currentPassword: "",
     newPassword: "",
-    avatar: avatarPresets[0]?.src ?? "",
+    avatar: "",
   })
 
   useEffect(() => {
@@ -145,7 +222,7 @@ function ProfileContent() {
         gender: (data.user.gender as AvatarGender) || "other",
         currentPassword: "",
         newPassword: "",
-        avatar: data.user.avatar || avatarPresets[0]?.src || "",
+        avatar: data.user.avatar || "",
       })
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "个人资料加载失败，请稍后再试。")
@@ -154,9 +231,29 @@ function ProfileContent() {
     }
   }
 
+  const loadInbox = async () => {
+    if (!token) return
+
+    setInboxLoading(true)
+    try {
+      const data = await fetchUserInbox()
+      setInbox(data.list)
+    } catch {
+      setInbox([])
+    } finally {
+      setInboxLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadProfile()
   }, [token])
+
+  useEffect(() => {
+    if (activeTab === "messages") {
+      void loadInbox()
+    }
+  }, [activeTab, token])
 
   const stats = useMemo(
     () => ({
@@ -196,6 +293,28 @@ function ProfileContent() {
       setError(nextError instanceof Error ? nextError.message : "保存失败，请稍后再试。")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleMarkInboxRead = async (item: InboxItem) => {
+    if (!token) return
+
+    try {
+      await markUserInboxRead(item.id)
+      setInbox((current) => current.map((entry) => (entry.id === item.id ? { ...entry, read: true } : entry)))
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : "标记已读失败。")
+    }
+  }
+
+  const handleDeleteInbox = async (item: InboxItem) => {
+    if (!token) return
+
+    try {
+      await deleteUserInbox(item.id)
+      setInbox((current) => current.filter((entry) => entry.id !== item.id))
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : "删除消息失败。")
     }
   }
 
@@ -267,9 +386,10 @@ function ProfileContent() {
                 <img src={form.avatar} alt={profile.user.name || profile.user.username} className="mx-auto h-20 w-20 rounded-3xl object-cover" />
                 <h1 className="mt-4 text-xl font-black text-foreground">{profile.user.name || profile.user.username}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">@{profile.user.username}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {membershipLabel(profile.user.membershipLevel)}，今日剩余下载 {profile.permissions.remainingDownloads}
-                </p>
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  <MembershipBadge level={profile.user.membershipLevel} />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">今日剩余下载 {profile.permissions.remainingDownloads}</p>
               </section>
 
               <section className="grid grid-cols-2 gap-3">
@@ -413,6 +533,25 @@ function ProfileContent() {
                   >
                     {saving ? "保存中..." : "保存资料"}
                   </button>
+                </div>
+              ) : null}
+
+              {activeTab === "messages" ? (
+                <div className="space-y-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h2 className="text-2xl font-black text-foreground">消息中心</h2>
+                      <p className="mt-2 text-sm text-muted-foreground">这里会显示站内通知和站内信，你可以标记已读或者直接删除。</p>
+                    </div>
+                    <button
+                      onClick={() => void loadInbox()}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-accent/30 hover:text-accent"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      刷新
+                    </button>
+                  </div>
+                  <InboxList items={inbox} loading={inboxLoading} onMarkRead={handleMarkInboxRead} onDelete={handleDeleteInbox} />
                 </div>
               ) : null}
 

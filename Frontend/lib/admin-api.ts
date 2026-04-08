@@ -1,4 +1,4 @@
-import { API_BASE_URL, clearToken, formatDateLabel, getToken, type AppSummary, type NetdiskReportListPayload, type PostSummary, type ProfilePayload, type RequestItem, type SiteSettings, type User } from "@/lib/api"
+import { API_BASE_URL, clearToken, formatDateLabel, getToken, type AppSummary, type InboxItem, type NetdiskReportListPayload, type PostSummary, type ProfilePayload, type RequestItem, type SiteSettings, type User } from "@/lib/api"
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -14,7 +14,7 @@ export type TopicItem = {
   title: string
   description: string
   coverImage: string | null
-  status: "draft" | "published" | "archived"
+  status: "hidden" | "published" | "archived"
   relatedAppSlugs: string[]
   relatedPostSlugs: string[]
   createdAt?: string
@@ -56,8 +56,9 @@ export type AdminStats = {
   pendingRequests: number
   processingRequests: number
   publishedApps: number
-  draftApps: number
+  hiddenApps: number
   publishedPosts: number
+  hiddenPosts: number
   newAppsThisWeek: number
   newPostsThisWeek: number
   newRequestsThisWeek: number
@@ -80,6 +81,24 @@ export type AdminRequestListPayload = {
     rejected: number
     total: number
   }
+}
+
+export type AdminUserItem = User & {
+  createdAt?: string
+  updatedAt?: string
+  lastLoginAt?: string | null
+  banUntil?: string | null
+  canReply?: boolean
+}
+
+export type AdminInboxTemplate = {
+  id: number | string
+  title: string
+  content: string
+  kind: "notification" | "message"
+  enabled: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 type RequestOptions = Omit<RequestInit, "body"> & {
@@ -229,11 +248,11 @@ export async function updateAdminSettings(payload: SiteSettings) {
 export async function fetchAdminRequests(status = "") {
   const query = new URLSearchParams({ pageSize: "100" })
   if (status) query.set("status", status)
-  return adminRequest<AdminRequestListPayload>(`/api/requests/admin/list?${query.toString()}`)
+  return adminRequest<AdminRequestListPayload>(`/api/admin/requests?${query.toString()}`)
 }
 
 export async function updateAdminRequest(id: number | string, payload: { status?: string; adminReply?: string }) {
-  return adminRequest<RequestItem>(`/api/requests/admin/${id}`, {
+  return adminRequest<RequestItem>(`/api/admin/requests/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   })
@@ -366,5 +385,83 @@ export async function importAdminRemoteImage(url: string, kind: "post-cover" | "
   return adminRequest<{ path: string; sourceUrl: string; mimeType: string; size: number }>("/api/assets/images/import", {
     method: "POST",
     body: JSON.stringify({ url, kind }),
+  })
+}
+
+export async function fetchAdminUsers() {
+  return adminRequest<{ list: AdminUserItem[] }>("/api/admin/users")
+}
+
+export async function updateAdminUser(userId: number, payload: Record<string, unknown>) {
+  return adminRequest<AdminUserItem>(`/api/admin/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateAdminUserPassword(userId: number, password: string) {
+  return adminRequest<AdminUserItem>(`/api/admin/users/${userId}/password`, {
+    method: "PATCH",
+    body: JSON.stringify({ password }),
+  })
+}
+
+export async function deleteAdminUser(userId: number) {
+  return adminRequest<null>(`/api/admin/users/${userId}`, {
+    method: "DELETE",
+  })
+}
+
+export async function fetchAdminInboxTemplates() {
+  return adminRequest<AdminInboxTemplate[]>("/api/admin/notification-templates")
+}
+
+export async function saveAdminInboxTemplate(templateId: number | string | null, payload: Record<string, unknown>) {
+  if (!templateId) {
+    throw new Error("缺少模板标识")
+  }
+  return adminRequest<AdminInboxTemplate>(`/api/admin/notification-templates/${templateId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function sendAdminInboxMessage(payload: Record<string, unknown>) {
+  return adminRequest<{ count: number }>("/api/admin/notifications/send", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchUserInbox() {
+  const data = await adminRequest<{ list: Array<Record<string, unknown>>; unreadCount: number }>("/api/notifications")
+  return {
+    unreadCount: data.unreadCount,
+    list: (data.list ?? []).map((item): InboxItem => {
+      const kind: InboxItem["kind"] = String(item.type ?? "notification") === "message" ? "message" : "notification"
+      return {
+        id: Number(item.id ?? 0),
+        title: String(item.title ?? ""),
+        content: String(item.content ?? ""),
+        kind,
+        read: Boolean(item.isRead),
+        createdAt: String(item.createdAt ?? ""),
+        senderName: null,
+        actionUrl: item.link ? String(item.link) : null,
+        summary: null,
+      }
+    }),
+  }
+}
+
+export async function markUserInboxRead(messageId: string | number) {
+  return adminRequest<null>(`/api/notifications/${messageId}/read`, {
+    method: "PATCH",
+  })
+}
+
+export async function deleteUserInbox(messageId: string | number) {
+  return adminRequest<null>(`/api/notifications/${messageId}`, {
+    method: "DELETE",
   })
 }

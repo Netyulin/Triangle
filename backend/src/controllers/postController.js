@@ -5,8 +5,9 @@ import { validate } from '../middleware/validate.js';
 import { normalizeBoolean, normalizeInteger, normalizeString, serializePost } from '../utils/serializers.js';
 import { importContentFromSource } from '../utils/contentImport.js';
 import { localizeHtmlImages, localizeRemoteImage } from '../utils/imageLocalization.js';
+import { upsertPostCategory, listPostCategories } from '../utils/postCategories.js';
 
-const postStatuses = ['published', 'archived', 'scheduled'];
+const postStatuses = ['published', 'hidden', 'archived'];
 
 const listValidation = validate([
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
@@ -78,8 +79,8 @@ function includePostRelations() {
 function buildWhere(queryArgs, isAuthenticated) {
   const where = {};
   if (queryArgs.category) where.category = normalizeString(queryArgs.category).trim();
-  if (isAuthenticated && queryArgs.status) where.status = normalizeString(queryArgs.status).trim();
-  else if (!isAuthenticated) where.status = 'published';
+  if (queryArgs.status && isAuthenticated?.role === 'admin') where.status = normalizeString(queryArgs.status).trim();
+  else if (!isAuthenticated || isAuthenticated?.role !== 'admin') where.status = 'published';
   if (queryArgs.featured !== undefined) where.featured = normalizeBoolean(queryArgs.featured);
   if (queryArgs.search) {
     const keyword = normalizeString(queryArgs.search).trim();
@@ -114,7 +115,7 @@ function buildPostData(body) {
     readingTime: normalizeString(body.readingTime).trim(),
     dateLabel: normalizeString(body.dateLabel).trim(),
     publishedAt: normalizeString(body.publishedAt).trim(),
-    status: body.status !== undefined ? normalizeString(body.status).trim() : 'published',
+    status: body.status !== undefined ? normalizeString(body.status).trim() : 'hidden',
     seoTitle: body.seoTitle !== undefined ? normalizeString(body.seoTitle, '') : '',
     seoDescription: body.seoDescription !== undefined ? normalizeString(body.seoDescription, '') : ''
   };
@@ -187,7 +188,7 @@ function patchPostData(current, body) {
 export async function list(req, res) {
   const page = normalizeInteger(req.query.page, 1);
   const pageSize = normalizeInteger(req.query.pageSize, 10);
-  const where = buildWhere(req.query, Boolean(req.user));
+  const where = buildWhere(req.query, req.user ?? null);
   const [items, total] = await Promise.all([
     prisma.post.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }], include: includePostRelations() }),
     prisma.post.count({ where })
@@ -202,12 +203,8 @@ export async function featured(req, res) {
 }
 
 export async function categories(req, res) {
-  const rows = await prisma.post.findMany({ where: { status: 'published' }, select: { category: true } });
-  const grouped = rows.reduce((acc, row) => {
-    acc[row.category] = (acc[row.category] || 0) + 1;
-    return acc;
-  }, {});
-  return sendSuccess(res, Object.entries(grouped).map(([name, count]) => ({ name, count })));
+  const rows = await listPostCategories({ publishedOnly: true });
+  return sendSuccess(res, rows);
 }
 
 export async function detail(req, res) {
@@ -230,6 +227,7 @@ export async function create(req, res) {
   const existed = await prisma.post.findUnique({ where: { slug: payload.slug } });
   if (existed) return sendError(res, ErrorCodes.SLUG_EXISTS, 'slug already exists');
   const post = await prisma.post.create({ data: { ...payload, authorId: req.user.id }, include: includePostRelations() });
+  await upsertPostCategory(payload.category);
   return sendSuccess(res, serializePost(post), 'created', 201);
 }
 
@@ -249,6 +247,7 @@ export async function update(req, res) {
   }
   const nextPayload = await localizePostAssets(patchPostData(current, req.body));
   const post = await prisma.post.update({ where: { slug: current.slug }, data: nextPayload, include: includePostRelations() });
+  await upsertPostCategory(nextPayload.category);
   return sendSuccess(res, serializePost(post), 'updated');
 }
 

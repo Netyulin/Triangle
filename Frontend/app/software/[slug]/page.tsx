@@ -7,10 +7,10 @@ import { ArrowLeft, Bookmark, CheckCircle2, Download, RefreshCw, ShieldCheck, St
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
-import { resolveAssetUrl } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAppContext } from "@/components/app-provider"
 import { request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
+import { resolveAssetUrl } from "@/lib/utils"
 
 function accessMessage(reason: string) {
   if (reason === "login required") return "登录后才能查看下载链接。"
@@ -26,18 +26,12 @@ function accessLabel(level: string) {
   return "免费"
 }
 
-function netdiskButtonClass(name: string) {
-  return `inline-flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition ${
-    name.includes("百度") ? "bg-primary text-primary-foreground" : "border border-border bg-background text-foreground"
-  }`
-}
-
 const reportReasonOptions = ["链接已失效", "提取信息有误", "压缩密码不对"] as const
 
 export default function SoftwareDetailPage() {
   const pathname = usePathname()
   const router = useRouter()
-  const { token } = useAppContext()
+  const { token, permissions } = useAppContext()
 
   const [app, setApp] = useState<AppSummary | null>(null)
   const [access, setAccess] = useState<AppAccessPayload | null>(null)
@@ -56,6 +50,8 @@ export default function SoftwareDetailPage() {
   const slug = decodeURIComponent(pathname.split("/").filter(Boolean).pop() || "")
   const downloadPermission = access?.downloadPermission ?? { allowed: false, reason: "", requiresLogin: true }
   const downloadLinks = access?.downloadLinks ?? []
+  const shouldShowIntermediary = (permissions?.membershipLevel ?? "free") === "free"
+  const primaryDownload = downloadLinks[0]?.url || access?.downloadUrl || app?.downloadUrl || ""
 
   const loadDetail = async () => {
     if (!slug) return
@@ -86,7 +82,7 @@ export default function SoftwareDetailPage() {
   }
 
   useEffect(() => {
-    loadDetail()
+    void loadDetail()
   }, [slug, token])
 
   useEffect(() => {
@@ -127,6 +123,27 @@ export default function SoftwareDetailPage() {
     }
   }
 
+  const openDownloadFlow = () => {
+    if (!downloadLinks.length) return
+    setDownloadOpen(true)
+    setReportExpanded(false)
+    setReportNetdisk(downloadLinks[0]?.name ?? "")
+    setReportReason(reportReasonOptions[0])
+    setReportMessage("")
+    setReportError("")
+  }
+
+  const handleDownloadLink = (url: string) => {
+    if (!url) return
+
+    if (shouldShowIntermediary) {
+      router.push(`/download/${encodeURIComponent(slug)}?target=${encodeURIComponent(url)}&name=${encodeURIComponent(app?.name || slug)}`)
+      return
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
+
   const handleReportSubmit = async () => {
     if (!slug || !access) return
     const reason = reportReason.trim()
@@ -161,53 +178,53 @@ export default function SoftwareDetailPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="container-custom px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <Link href="/software" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           返回软件库
         </Link>
 
         {loading ? (
-          <section className="mt-6 card-custom p-8 text-sm text-muted-foreground">软件详情加载中...</section>
+          <section className="mt-6 rounded-[28px] border border-border bg-card p-8 text-sm text-muted-foreground">软件详情加载中...</section>
         ) : error || !app || !access ? (
-          <section className="mt-6 card-custom p-8 text-center">
+          <section className="mt-6 rounded-[28px] border border-border bg-card p-8 text-center">
             <p className="text-sm text-muted-foreground">{error || "没有找到这条软件记录。"}</p>
-            <button onClick={loadDetail} className="mt-4 btn-primary">
+            <button onClick={loadDetail} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
               <RefreshCw className="h-4 w-4" />
               重新加载
             </button>
           </section>
         ) : (
           <div className="mt-6 space-y-6">
-            {app.displayMode !== "icon" && app.heroImage ? (
-              <div className="overflow-hidden rounded-2xl border border-border">
-                <img src={resolveAssetUrl(app.heroImage)} alt={app.name} className="h-[320px] w-full object-cover" />
+            {app.heroImage ? (
+              <div className="overflow-hidden rounded-[30px] border border-border bg-card">
+                <img src={resolveAssetUrl(app.heroImage)} alt={app.name} className="h-[260px] w-full object-cover md:h-[340px]" />
               </div>
             ) : null}
 
-            <section className="card-custom p-6 md:p-8">
+            <section className="rounded-[30px] border border-border bg-card p-6 shadow-[0_24px_56px_-42px_rgba(15,23,42,0.24)] md:p-8">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 flex-1 gap-5 lg:max-w-[760px]">
-                  <div className="flex h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-secondary text-2xl font-black text-foreground">
+                  <div className="flex h-20 w-20 flex-shrink-0 overflow-hidden rounded-[28px] border border-border bg-secondary">
                     <AppIcon
                       value={app.icon}
                       name={app.name}
-                      className="flex h-full w-full items-center justify-center"
+                      className="flex h-full w-full items-center justify-center text-xl font-black text-foreground"
                       imageClassName="h-full w-full object-cover"
                     />
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="badge badge-secondary">{app.category}</span>
-                      <span className="badge border border-border px-2 py-1 text-xs text-muted-foreground">{accessLabel(app.accessLevel)}</span>
+                      <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">{app.category}</span>
+                      <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">{accessLabel(app.accessLevel)}</span>
                       {app.verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                           <ShieldCheck className="h-3 w-3" />
                           已认证
                         </span>
                       ) : null}
                     </div>
-                    <h1 className="mt-3 heading-1 text-foreground">{app.name}</h1>
+                    <h1 className="mt-3 text-4xl font-black leading-tight text-foreground">{app.name}</h1>
                     <p className="mt-2 text-base leading-7 text-muted-foreground">{app.subtitle}</p>
                     <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <span>
@@ -227,12 +244,12 @@ export default function SoftwareDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 rounded-[26px] border border-border/70 bg-secondary/35 p-2.5 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)] backdrop-blur-sm">
+                <div className="flex flex-wrap gap-3 rounded-[28px] border border-border bg-secondary/30 p-2.5">
                   <button
                     onClick={handleFavorite}
                     disabled={favoriteLoading}
-                    className={`detail-action-btn detail-action-btn-secondary whitespace-nowrap ${
-                      favorited ? "border-slate-900/10 bg-slate-900 text-slate-50 dark:border-sky-400/20 dark:bg-slate-100 dark:text-slate-950" : ""
+                    className={`inline-flex items-center gap-2 rounded-2xl border px-5 py-3 text-sm font-semibold transition ${
+                      favorited ? "border-slate-900/10 bg-slate-900 text-slate-50 dark:border-sky-400/20 dark:bg-slate-100 dark:text-slate-950" : "border-border bg-background text-foreground"
                     }`}
                   >
                     <Bookmark className="h-4 w-4" />
@@ -240,15 +257,8 @@ export default function SoftwareDetailPage() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setDownloadOpen(true)
-                      setReportExpanded(false)
-                      setReportNetdisk(downloadLinks[0]?.name ?? "")
-                      setReportReason(reportReasonOptions[0])
-                      setReportMessage("")
-                      setReportError("")
-                    }}
-                    className="detail-action-btn detail-action-btn-primary min-w-[148px] whitespace-nowrap"
+                    onClick={openDownloadFlow}
+                    className="inline-flex min-w-[148px] items-center gap-2 rounded-2xl border border-slate-900/90 bg-slate-950 px-5 py-3 text-sm font-semibold text-slate-50 transition hover:-translate-y-0.5 hover:border-sky-400/40"
                   >
                     <Download className="h-4 w-4" />
                     立即下载
@@ -259,17 +269,17 @@ export default function SoftwareDetailPage() {
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
               <section className="space-y-6">
-                <div className="card-custom p-6">
-                  <h2 className="heading-3 text-foreground">软件简介</h2>
+                <div className="rounded-[28px] border border-border bg-card p-6">
+                  <h2 className="text-xl font-black text-foreground">软件简介</h2>
                   <div
                     className="prose prose-neutral dark:prose-invert mt-4 max-w-none text-muted-foreground prose-headings:text-foreground prose-p:text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: app.summary || "<p>暂时还没有简介。</p>" }}
+                    dangerouslySetInnerHTML={{ __html: app.summary || "" }}
                   />
                 </div>
 
                 {app.highlights.length > 0 ? (
-                  <div className="card-custom p-6">
-                    <h2 className="heading-3 text-foreground">亮点</h2>
+                  <div className="rounded-[28px] border border-border bg-card p-6">
+                    <h2 className="text-xl font-black text-foreground">亮点</h2>
                     <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
                       {app.highlights.map((item) => (
                         <li key={item} className="flex gap-3">
@@ -282,21 +292,21 @@ export default function SoftwareDetailPage() {
                 ) : null}
 
                 {app.review ? (
-                  <div className="card-custom p-6">
-                    <h2 className="heading-3 text-foreground">编辑点评</h2>
+                  <div className="rounded-[28px] border border-border bg-card p-6">
+                    <h2 className="text-xl font-black text-foreground">编辑点评</h2>
                     <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{app.review}</p>
                   </div>
                 ) : null}
 
                 {relatedPosts.length > 0 ? (
-                  <div className="card-custom p-6">
-                    <h2 className="heading-3 text-foreground">相关文章</h2>
+                  <div className="rounded-[28px] border border-border bg-card p-6">
+                    <h2 className="text-xl font-black text-foreground">相关文章</h2>
                     <div className="mt-4 space-y-3">
                       {relatedPosts.map((post) => (
                         <Link
                           key={post.slug}
-                          href={`/articles/${post.slug}`}
-                          className="block rounded-xl border border-border bg-background px-4 py-3 transition-colors hover:border-accent/25"
+                          href={`/news/${post.slug}`}
+                          className="block rounded-2xl border border-border bg-background px-4 py-3 transition-colors hover:border-accent/25"
                         >
                           <p className="font-semibold text-foreground">{post.title}</p>
                           <p className="mt-1 text-sm text-muted-foreground">{post.excerpt}</p>
@@ -308,7 +318,7 @@ export default function SoftwareDetailPage() {
               </section>
 
               <aside className="space-y-5">
-                <div className="card-custom p-5">
+                <div className="rounded-[28px] border border-border bg-card p-5">
                   <h3 className="text-base font-bold text-foreground">基础信息</h3>
                   <div className="mt-4 space-y-3 text-sm text-muted-foreground">
                     <p><span className="font-medium text-foreground">收费方式：</span>{app.pricing}</p>
@@ -319,7 +329,7 @@ export default function SoftwareDetailPage() {
                 </div>
 
                 {app.requirements.length > 0 ? (
-                  <div className="card-custom p-5">
+                  <div className="rounded-[28px] border border-border bg-card p-5">
                     <h3 className="text-base font-bold text-foreground">使用要求</h3>
                     <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                       {app.requirements.map((item) => (
@@ -330,7 +340,7 @@ export default function SoftwareDetailPage() {
                 ) : null}
 
                 {app.tags.length > 0 ? (
-                  <div className="card-custom p-5">
+                  <div className="rounded-[28px] border border-border bg-card p-5">
                     <h3 className="text-base font-bold text-foreground">标签</h3>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {app.tags.map((tag) => (
@@ -357,7 +367,7 @@ export default function SoftwareDetailPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>下载链接</DialogTitle>
-            <DialogDescription>先选择一个网盘下载。如果链接失效，也可以直接在下面反馈。</DialogDescription>
+            <DialogDescription>如果你是基础会员，会先进入中间页；更高等级账号则会直接下载。</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
@@ -365,15 +375,19 @@ export default function SoftwareDetailPage() {
               downloadPermission.allowed && downloadLinks.length > 0 ? (
                 <div className="flex flex-col items-start gap-3">
                   {downloadLinks.map((link) => (
-                    <a key={`${link.name}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className={netdiskButtonClass(link.name)}>
+                    <button key={`${link.name}-${link.url}`} onClick={() => handleDownloadLink(link.url)} className="inline-flex items-center rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground transition hover:border-accent/30 hover:text-accent">
                       {link.name}下载
-                    </a>
+                    </button>
                   ))}
+                  {primaryDownload ? (
+                    <button onClick={() => handleDownloadLink(primaryDownload)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+                      <Download className="h-4 w-4" />
+                      前往下载页
+                    </button>
+                  ) : null}
                 </div>
               ) : (
-                <div className="rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">
-                  {accessMessage(downloadPermission.reason)}
-                </div>
+                <div className="rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">{accessMessage(downloadPermission.reason)}</div>
               )
             ) : (
               <div className="rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">正在加载下载信息...</div>

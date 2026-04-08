@@ -488,29 +488,29 @@ export default function AdminAppEditorPage() {
   }
 
   if (loading) {
-    return <main className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">正在加载软件信息...</main>
+    return <main className="admin-panel p-6 text-sm text-muted-foreground">正在加载软件信息...</main>
   }
 
   return (
     <main className="space-y-6">
       {/* Page Header */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-950/40 dark:to-indigo-950/20 border border-blue-100 dark:border-blue-900">
+      <div className="admin-hero">
         <div className="p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 shadow-[0_12px_24px_-20px_rgba(14,165,233,0.7)] dark:bg-sky-950/30 dark:text-sky-300">
                 <Package className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">
                   {editingSlug ? "编辑软件" : "新建软件"}
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <p className="mt-1 text-sm text-muted-foreground">
                   添加新的软件条目到软件库
                 </p>
               </div>
             </div>
-            <Link href="/admin/apps" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+            <Link href="/admin/apps" className="admin-secondary-btn px-4 py-2 text-sm">
               <ArrowLeft className="h-4 w-4" />
               返回列表
             </Link>
@@ -532,7 +532,7 @@ export default function AdminAppEditorPage() {
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 md:p-8">
+      <form onSubmit={handleSubmit} className="admin-panel p-6 md:p-8">
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <Field label="软件名称">
@@ -628,37 +628,7 @@ export default function AdminAppEditorPage() {
             </Field>
           </div>
 
-          {/* 头部展示设置 - 将显示模式、封面图、图标放在一起，逻辑连贯 */}
-          <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-4 w-1 rounded-full bg-blue-600" />
-              <h3 className="text-sm font-semibold text-foreground">头部展示设置</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background p-3">
-                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer px-2 py-2 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30">
-                  <input
-                    type="radio"
-                    checked={form.displayMode === "cover"}
-                    onChange={() => setDisplayMode("cover")}
-                  />
-                  <span>显示大封面图</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer px-2 py-2 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30">
-                  <input
-                    type="radio"
-                    checked={form.displayMode === "icon"}
-                    onChange={() => setDisplayMode("icon")}
-                  />
-                  <span>仅显示应用图标</span>
-                </label>
-              </div>
-              <p className="text-xs text-muted-foreground">选择「显示大封面图」会在详情页顶部显示一张横幅封面，选择「仅显示应用图标」只在卡片内显示图标。</p>
-            </div>
-
-            {true && (
-              <div className="space-y-3">
+          <div className="space-y-3">
                 <Field label="封面图">
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-3">
@@ -666,7 +636,7 @@ export default function AdminAppEditorPage() {
                         type="button"
                         disabled={uploadingCover}
                         onClick={() => coverFileInputRef.current?.click()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-blue-500/25 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         {uploadingCover ? "上传中..." : "上传本地封面"}
@@ -675,7 +645,7 @@ export default function AdminAppEditorPage() {
                         type="button"
                         onClick={() => void handlePasteImage("heroImage")}
                         disabled={uploadingCover}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-blue-500/25 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         粘贴剪贴板图片
@@ -699,10 +669,7 @@ export default function AdminAppEditorPage() {
                   </div>
                 </Field>
               </div>
-            )}
-
-            {true && (
-              <div className="space-y-3">
+            <div className="space-y-3">
                 <Field label="应用图标">
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-3">
@@ -710,7 +677,7 @@ export default function AdminAppEditorPage() {
                         type="button"
                         disabled={uploadingIcon}
                         onClick={() => iconFileInputRef.current?.click()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-blue-500/25 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         {uploadingIcon ? "上传中..." : "上传本地图标"}
@@ -719,7 +686,7 @@ export default function AdminAppEditorPage() {
                         type="button"
                         onClick={() => void handlePasteImage("icon")}
                         disabled={uploadingIcon}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-blue-50/25 dark:hover:bg-blue-950/20"
+                        className="admin-secondary-btn px-4 py-2 text-sm"
                       >
                         <Upload className="h-4 w-4" />
                         粘贴剪贴板图片
@@ -755,8 +722,6 @@ export default function AdminAppEditorPage() {
                   </div>
                 </Field>
               </div>
-            )}
-          </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <Field label="适用平台">
@@ -942,7 +907,7 @@ export default function AdminAppEditorPage() {
                     downloadLinks: [...current.downloadLinks, { name: "", url: "" }],
                   }))
                 }
-                className="inline-flex items-center gap-2 rounded-2xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-blue-500/25"
+                className="admin-secondary-btn px-4 py-2 text-sm"
               >
                 <Plus className="h-4 w-4" />
                 添加网盘
@@ -951,7 +916,7 @@ export default function AdminAppEditorPage() {
           </Field>
 
           <div className="flex items-center gap-3 pt-2">
-            <button type="submit" disabled={saving} className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            <button type="submit" disabled={saving} className="admin-primary-btn px-6 py-3">
               {saving ? "保存中..." : "保存软件"}
             </button>
             {editingSlug ? (
@@ -960,7 +925,7 @@ export default function AdminAppEditorPage() {
               </button>
             ) : null}
             <div className="flex-1" />
-            <Link href="/admin/app-categories" className="rounded-2xl border border-border px-5 py-3 text-sm font-medium text-foreground">
+            <Link href="/admin/app-categories" className="admin-secondary-btn px-5 py-3 text-sm">
               管理分类
             </Link>
           </div>
@@ -986,4 +951,4 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-const inputClass = "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-blue-500/40"
+const inputClass = "admin-input"

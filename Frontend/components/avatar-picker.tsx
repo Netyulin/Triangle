@@ -1,7 +1,7 @@
 "use client"
 
-import { ChangeEvent, useId, useState } from "react"
-import { ImagePlus, Shuffle, Upload } from "lucide-react"
+import { ChangeEvent, useEffect, useId, useState } from "react"
+import { ImagePlus, Shuffle, Upload, User } from "lucide-react"
 import { avatarPresets } from "@/lib/avatar-presets"
 import { createRandomAvatar, type AvatarGender } from "@/lib/avatar-random"
 import { cn } from "@/lib/utils"
@@ -52,10 +52,44 @@ async function fileToAvatarDataUrl(file: File) {
 export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPickerProps) {
   const inputId = useId()
   const [message, setMessage] = useState("")
+  const [presetOptions, setPresetOptions] = useState<Array<{ id: number; src: string }>>([])
+  const [presetLoading, setPresetLoading] = useState(true)
 
-  const handleRandomAvatar = () => {
-    onChange(createRandomAvatar(gender))
-    setMessage("已经换成随机生成的头像。")
+  useEffect(() => {
+    let active = true
+    setPresetLoading(true)
+
+    Promise.all(
+      avatarPresets.map(async (avatar) => ({
+        id: avatar.id,
+        src: await createRandomAvatar(gender, { seed: avatar.seed }),
+      })),
+    )
+      .then((nextOptions) => {
+        if (!active) return
+        setPresetOptions(nextOptions)
+      })
+      .catch(() => {
+        if (!active) return
+        setPresetOptions([])
+      })
+      .finally(() => {
+        if (active) setPresetLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [gender])
+
+  const handleRandomAvatar = async () => {
+    try {
+      const avatar = await createRandomAvatar(gender)
+      onChange(avatar)
+      setMessage("已经生成新的随机头像，保存后会写入本地。")
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "随机头像生成失败，请稍后再试。")
+    }
   }
 
   const handleUploadAvatar = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -82,12 +116,22 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-secondary/40 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div className="overflow-hidden rounded-2xl border border-border bg-background">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt="当前头像" className="h-16 w-16 object-cover" />
+            {value ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={value} alt="当前头像" className="h-16 w-16 object-cover" />
+              </>
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center bg-secondary text-muted-foreground">
+                <User className="h-6 w-6" />
+              </div>
+            )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">已选头像</p>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">默认头像照旧保留，你也可以直接随机换一个，或者上传自己的图片。</p>
+            <p className="text-sm font-semibold text-foreground">当前头像</p>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground">
+              不选择时会保留系统默认头像。你也可以从下面的默认头像里手动挑选，或者上传自己的图片。
+            </p>
             {message ? <p className="mt-2 text-xs text-accent">{message}</p> : null}
           </div>
         </div>
@@ -95,13 +139,12 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <button
             type="button"
-            onClick={handleRandomAvatar}
+            onClick={() => void handleRandomAvatar()}
             className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:border-primary/30 hover:text-primary"
           >
             <Shuffle className="h-4 w-4" />
             随机生成头像
           </button>
-
           <label
             htmlFor={inputId}
             className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:border-primary/30 hover:text-primary"
@@ -114,7 +157,11 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
       </div>
 
       <div className="grid grid-cols-5 gap-3">
-        {avatarPresets.map((avatar) => (
+        {presetLoading
+          ? Array.from({ length: 10 }, (_, index) => (
+              <div key={index} className="h-16 animate-pulse rounded-2xl border border-border bg-secondary/60" />
+            ))
+          : presetOptions.map((avatar) => (
           <button
             key={avatar.id}
             type="button"
@@ -130,7 +177,7 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={avatar.src} alt={`默认头像 ${avatar.id}`} className="h-16 w-full object-cover" />
           </button>
-        ))}
+            ))}
       </div>
 
       <div className="flex items-center gap-2 rounded-2xl border border-dashed border-border bg-background/70 px-4 py-3 text-xs text-muted-foreground">
