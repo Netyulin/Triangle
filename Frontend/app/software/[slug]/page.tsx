@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useAppContext } from "@/components/app-provider"
 import { request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
 import { resolveAssetUrl } from "@/lib/utils"
+import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
 
 function accessMessage(reason: string) {
   if (reason === "login required") return "登录后才能查看下载链接。"
@@ -265,6 +266,18 @@ export default function SoftwareDetailPage() {
                   </button>
                 </div>
               </div>
+
+              {/* AdSense Slot #1 — 版本信息 block 之后（移动端正确位置） */}
+              {process.env.NEXT_PUBLIC_ADSENSE_DETAIL_SLOT_ID ? (
+                <div className="mt-4">
+                  <AdSenseSlot
+                    slotId={process.env.NEXT_PUBLIC_ADSENSE_DETAIL_SLOT_ID}
+                    width="auto"
+                    height={90}
+                    format="horizontal"
+                  />
+                </div>
+              ) : null}
             </section>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -313,6 +326,18 @@ export default function SoftwareDetailPage() {
                         </Link>
                       ))}
                     </div>
+                  </div>
+                ) : null}
+
+                {/* AdSense Slot #2 — 评论区/相关文章下方（设计文档 Section 4.1） */}
+                {process.env.NEXT_PUBLIC_ADSENSE_DETAIL_BOTTOM_SLOT_ID ? (
+                  <div className="mt-4">
+                    <AdSenseSlot
+                      slotId={process.env.NEXT_PUBLIC_ADSENSE_DETAIL_BOTTOM_SLOT_ID}
+                      width="auto"
+                      height={90}
+                      format="horizontal"
+                    />
                   </div>
                 ) : null}
               </section>

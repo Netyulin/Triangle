@@ -42,70 +42,73 @@ model User {
 }
 
 model App {
-  id             Int      @id @default(autoincrement())
-  slug           String   @unique
+  id             Int             @id @default(autoincrement())
+  slug           String          @unique
   name           String
   subtitle       String
   category       String
   icon           String?
   version        String
   size           String
-  rating         Float    @default(0)
+  rating         Float           @default(0)
   downloads      String
   updatedAt      String
   compatibility  Json
   platforms      Json
   heroImage      String?
-  displayMode    String   @default("cover")
+  displayMode    String          @default("cover")
   gallery        Json
   tags           Json
-  verified       Boolean  @default(false)
-  editorialScore Int      @default(0)
+  verified       Boolean         @default(false)
+  editorialScore Int             @default(0)
   pricing        String
   summary        String
   highlights     Json
   requirements   Json
   review         String?
-  featured       Boolean  @default(false)
-  status         String   @default("published")
-  accessLevel    String   @default("free")
-  isDownloadable Boolean  @default(true)
+  featured       Boolean         @default(false)
+  status         String          @default("published")
+  accessLevel    String          @default("free")
+  isDownloadable Boolean         @default(true)
   downloadUrl    String?
   downloadLinks  Json?
+  affiliateLink  String?
   seoTitle       String?
   seoDescription String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime        @default(now())
   authorId       Int?
-  author         User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  author         User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
   posts          Post[]
   comments       Comment[]
   topics         TopicApp[]
   netdiskReports NetdiskReport[]
+  downloadLogs   DownloadLog[]
+  cpsDownloads   CpsDownload[]
 }
 
 model Post {
-  id             Int      @id @default(autoincrement())
-  slug           String   @unique
+  id             Int         @id @default(autoincrement())
+  slug           String      @unique
   title          String
   excerpt        String
   content        String?
   category       String
   author         String
   authorId       Int?
-  adminAuthor    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  adminAuthor    User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
   coverImage     String
   icon           String?
-  displayMode    String   @default("cover")
+  displayMode    String      @default("cover")
   relatedAppSlug String?
-  relatedApp     App?     @relation(fields: [relatedAppSlug], references: [slug], onDelete: SetNull)
-  featured       Boolean  @default(false)
+  relatedApp     App?        @relation(fields: [relatedAppSlug], references: [slug], onDelete: SetNull)
+  featured       Boolean     @default(false)
   readingTime    String
   dateLabel      String
   publishedAt    String
-  status         String   @default("hidden")
+  status         String      @default("hidden")
   seoTitle       String?
   seoDescription String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime    @default(now())
   comments       Comment[]
   topics         TopicPost[]
 }
@@ -126,8 +129,8 @@ model Topic {
 model TopicApp {
   topicId Int
   appSlug String
-  topic   Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  app     App   @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  app     App    @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
 
   @@id([topicId, appSlug])
 }
@@ -135,8 +138,8 @@ model TopicApp {
 model TopicPost {
   topicId  Int
   postSlug String
-  topic    Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  post     Post  @relation(fields: [postSlug], references: [slug], onDelete: Cascade)
+  topic    Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  post     Post   @relation(fields: [postSlug], references: [slug], onDelete: Cascade)
 
   @@id([topicId, postSlug])
 }
@@ -163,35 +166,35 @@ model Comment {
 }
 
 model SoftwareRequest {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String
   authorName  String
   authorEmail String
-  status      String   @default("pending")
-  createdAt   DateTime @default(now())
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
   adminReply  String?
   repliedAt   DateTime?
   userId      Int?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model NetdiskReport {
-  id           Int      @id @default(autoincrement())
-  appSlug      String
-  app          App      @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
-  reporterId   Int?
-  reporter     User?    @relation("NetdiskReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
-  netdiskName  String
-  downloadUrl  String?
-  reason       String
-  contact      String?
-  status       String   @default("pending")
-  adminNote    String?
-  handledById   Int?
-  handledBy     User?    @relation("NetdiskReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
-  createdAt    DateTime @default(now())
-  handledAt    DateTime?
+  id          Int       @id @default(autoincrement())
+  appSlug     String
+  app         App       @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+  reporterId  Int?
+  reporter    User?     @relation("NetdiskReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  netdiskName String
+  downloadUrl String?
+  reason      String
+  contact     String?
+  status      String    @default("pending")
+  adminNote   String?
+  handledById Int?
+  handledBy   User?     @relation("NetdiskReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  handledAt   DateTime?
 }
 
 model HotSearch {
@@ -202,22 +205,22 @@ model HotSearch {
 }
 
 model Notification {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   userId      Int
-  user        User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
   senderId    Int?
-  sender      User?    @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
-  type        String   @default("system")
+  sender      User?     @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  type        String    @default("system")
   templateKey String?
   title       String
   content     String
   data        Json?
   link        String?
-  isRead      Boolean  @default(false)
+  isRead      Boolean   @default(false)
   readAt      DateTime?
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([userId, createdAt])
   @@index([userId, isRead, deletedAt])
@@ -231,4 +234,58 @@ model NotificationTemplate {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AdSlot {
+  id         String      @id @default(cuid())
+  name       String
+  type       String // banner, insertion, native, splash
+  position   String
+  width      Int
+  height     Int
+  isActive   Boolean     @default(true)
+  theme      String      @default("auto") // light/dark/auto
+  adContents AdContent[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model AdContent {
+  id          String   @id @default(cuid())
+  slotId      String
+  slot        AdSlot   @relation(fields: [slotId], references: [id])
+  title       String
+  description String?
+  imageUrl    String
+  targetUrl   String
+  ctaText     String   @default("了解更多")
+  advertiser  String
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DownloadLog {
+  id           String   @id @default(cuid())
+  softwareSlug String
+  software     App      @relation(fields: [softwareSlug], references: [slug])
+  ip           String
+  userAgent    String?
+  adClicked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model CpsDownload {
+  id           String   @id @default(cuid())
+  softwareSlug String
+  software     App      @relation(fields: [softwareSlug], references: [slug])
+  downloadUrl  String
+  affiliateUrl String
+  ipAddress    String
+  userAgent    String?
+  clickedAt    DateTime @default(now())
+
+  @@index([softwareSlug])
+  @@index([clickedAt])
 }

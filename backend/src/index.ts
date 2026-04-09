@@ -22,6 +22,8 @@ import adminRoutes from './routes/admin.js';
 import settingsRoutes from './routes/settings.js';
 import assetRoutes from './routes/assets.js';
 import homeRoutes from './routes/home.js';
+import adsRoutes from './routes/ads.js';
+import downloadsRoutes from './routes/downloads.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -82,6 +84,8 @@ app.use('/api/home', homeRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/assets', assetRoutes);
+app.use('/api/ads', adsRoutes);
+app.use('/api/download', downloadsRoutes);
 app.use('/uploads', express.static(uploadsDir));
 
 app.use((_req, res) => {

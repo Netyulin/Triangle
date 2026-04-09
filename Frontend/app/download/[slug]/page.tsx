@@ -1,117 +1,186 @@
-"use client"
+'use client';
 
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, ExternalLink, ShieldCheck, Sparkles } from "lucide-react"
-import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
-import { useAppContext } from "@/components/app-provider"
+import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { Navbar } from '@/components/navbar';
+import { Footer } from '@/components/footer';
+import { AdSenseSlot } from '@/components/ads/AdSenseSlot';
+import DownloadCountdown from '@/components/download/DownloadCountdown';
+import DownloadSkeleton from '@/components/download/DownloadSkeleton';
+import { fetchDownloadInfo } from '@/lib/api';
+import type { DownloadInfo } from '@/lib/api';
+
+// Google AdSense 中间页广告位 slot ID
+const ADSENSE_INTERSTITIAL_SLOT_ID = process.env.NEXT_PUBLIC_ADSENSE_INTERSTITIAL_SLOT_ID || '';
 
 export default function DownloadInterstitialPage() {
-  const params = useParams<{ slug: string }>()
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const { permissions, token } = useAppContext()
+  const params = useParams<{ slug: string }>();
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
-  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug
-  const target = searchParams.get("target") || ""
-  const name = searchParams.get("name") || "该软件"
-  const [countdown, setCountdown] = useState(5)
-
-  const isSessionPending = Boolean(token) && !permissions
-  const isInitialLevel = permissions ? permissions.membershipLevel === "free" : !token
+  const [downloadInfo, setDownloadInfo] = useState<DownloadInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!target || isSessionPending) return
+    if (!slug) return;
 
-    if (!isInitialLevel) {
-      window.location.replace(target)
-      return
+    async function loadData() {
+      try {
+        const info = await fetchDownloadInfo(slug);
+        setDownloadInfo(info);
+      } catch (err) {
+        console.error('Failed to load download info:', err);
+        setError('加载失败，请稍后重试');
+      } finally {
+        setLoading(false);
+      }
     }
 
-    if (countdown <= 0) {
-      window.location.replace(target)
-      return
-    }
+    loadData();
+  }, [slug]);
 
-    const timer = window.setTimeout(() => setCountdown((value) => value - 1), 1000)
-    return () => window.clearTimeout(timer)
-  }, [countdown, isInitialLevel, isSessionPending, target])
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container-custom py-8 md:py-12">
+          <div className="flex justify-center py-20">
+            <DownloadSkeleton />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    if (!target) {
-      router.replace(`/software/${slug}`)
-    }
-  }, [router, slug, target])
+  if (error || !downloadInfo) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container-custom py-8 md:py-12">
+          <Link
+            href={`/software/${slug}`}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            返回软件详情
+          </Link>
+          <div className="mt-12 text-center">
+            <p className="text-muted-foreground">{error || '软件不存在'}</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
-  const downloadLabel = useMemo(() => {
-    if (isSessionPending) return "正在确认当前账号权限..."
-    return isInitialLevel ? `倒计时 ${countdown} 秒后自动跳转` : "高级会员正在直达下载地址"
-  }, [countdown, isInitialLevel, isSessionPending])
-
-  if (!target) return null
+  // redirectUrl：后端已计算好最终 CPS 跳转目标（优先 affiliateLink，否则 downloadUrl）
+  const redirectUrl = downloadInfo.affiliateLink || downloadInfo.downloadUrl || '';
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-        <Link href={`/software/${slug}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-          返回软件详情
-        </Link>
+      {/* 中间页主体 — 垂直居中布局（设计文档 Section 4.2） */}
+      <main className="container-custom flex flex-col items-center justify-center py-12 md:py-16">
+        {/* 返回链接 */}
+        <div className="absolute left-1/2 top-4 -translate-x-1/2">
+          <Link
+            href={`/software/${slug}`}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            返回软件详情
+          </Link>
+        </div>
 
-        <section className="mt-6 overflow-hidden rounded-[30px] border border-border bg-card p-6 shadow-[0_24px_56px_-42px_rgba(15,23,42,0.24)] md:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-300">
-                <Sparkles className="h-3.5 w-3.5" />
-                下载中间页
+        {/* 垂直居中内容区 */}
+        <div className="mt-16 flex w-full max-w-md flex-col items-center gap-6 md:mt-0">
+          {/* 品牌标识 — Issue 3: 信任信号（设计文档） */}
+          <div className="flex items-center gap-2">
+            <TriangleLogo />
+            <span className="text-sm font-semibold text-foreground">Triangle</span>
+          </div>
+
+          {/* App Icon — 80px 居中（设计文档 Section 4.2） */}
+          <div className="h-20 w-20 overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+            {downloadInfo.heroImage || downloadInfo.icon ? (
+              <img
+                src={downloadInfo.heroImage || downloadInfo.icon || ''}
+                alt={downloadInfo.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                无图片
               </div>
-              <h1 className="mt-4 text-4xl font-black text-foreground">{name}</h1>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                这里预留给广告展示、购买提示或下载前确认。免费会员会短暂停留，高等级会员会自动跳过。
-              </p>
+            )}
+          </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  onClick={() => window.location.replace(target)}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  继续下载
-                </button>
-                <Link href={`/software/${slug}`} className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-5 py-3 text-sm font-medium text-foreground">
-                  返回详情
-                </Link>
-              </div>
+          {/* App Name + Version */}
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-foreground">{downloadInfo.name}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">v{downloadInfo.version}</p>
+          </div>
 
-              <p className="mt-4 text-sm text-muted-foreground">{downloadLabel}</p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3 lg:w-[360px] lg:grid-cols-1">
-              <div className="rounded-[24px] border border-border bg-secondary/30 p-4">
-                <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground">会员状态</p>
-                <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <ShieldCheck className="h-4 w-4 text-sky-600" />
-                  {isSessionPending ? "正在识别" : isInitialLevel ? "免费会员" : "高级会员"}
+          {/* AdSense 中间广告 — 320x100 水平广告，居中（设计文档 Section 4.2） */}
+          <div className="w-full max-w-sm">
+            {ADSENSE_INTERSTITIAL_SLOT_ID ? (
+              <AdSenseSlot
+                slotId={ADSENSE_INTERSTITIAL_SLOT_ID}
+                width={320}
+                height={100}
+                format="horizontal"
+                isInterstitial={true}
+              />
+            ) : (
+              <div className="flex h-[100px] w-full max-w-sm items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-900/50">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground/60">AdSense 占位</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground/40">
+                    设置 NEXT_PUBLIC_ADSENSE_INTERSTITIAL_SLOT_ID
+                  </p>
                 </div>
               </div>
-              <div className="rounded-[24px] border border-dashed border-border bg-background p-4">
-                <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground">广告位预留</p>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">这里可以接入广告展示内容、购买按钮或下载说明。</p>
-              </div>
-              <div className="rounded-[24px] border border-border bg-secondary/30 p-4">
-                <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground">当前倒计时</p>
-                <p className="mt-3 text-3xl font-black text-foreground">{isSessionPending ? "--" : isInitialLevel ? countdown : 0}</p>
-              </div>
-            </div>
+            )}
           </div>
-        </section>
+
+          {/* 倒计时组件 */}
+          <Suspense fallback={<DownloadSkeleton />}>
+            <DownloadCountdown
+              seconds={5}
+              redirectUrl={redirectUrl}
+              softwareName={downloadInfo.name}
+              membershipUrl="/membership"
+            />
+          </Suspense>
+        </div>
+
+        {/* 底部链接 */}
+        <div className="mt-16 space-x-4 text-center text-sm text-muted-foreground">
+          <a href="/report" className="hover:text-accent transition-colors">举报广告</a>
+          <a href="/copyright" className="hover:text-accent transition-colors">侵权投诉</a>
+          <a href="/about" className="hover:text-accent transition-colors">关于我们</a>
+        </div>
       </main>
 
       <Footer />
     </div>
-  )
+  );
+}
+
+function TriangleLogo() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2L2 19H22L12 2Z"
+        fill="rgb(var(--accent))"
+        stroke="rgb(var(--accent))"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }

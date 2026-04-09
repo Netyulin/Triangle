@@ -8,6 +8,7 @@ import { Navbar } from "@/components/navbar"
 import { request, type HomePayload } from "@/lib/api"
 import { looksLikeImageUrl, resolveAssetUrl } from "@/lib/utils"
 import { ArrowRight, Bell, BookOpen, ChevronLeft, ChevronRight, Download, Eye, MessageSquare, RefreshCw, Star, TrendingUp } from "lucide-react"
+import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
 
 function getInitial(text: string) {
   return text.trim().slice(0, 2).toUpperCase() || "TR"
@@ -203,6 +204,18 @@ export default function HomePage() {
             </div>
           )}
         </section>
+
+        {/* 首页轮播下方 AdSense 广告位 */}
+        {process.env.NEXT_PUBLIC_ADSENSE_HOMEPAGE_SLOT_ID ? (
+          <section className="overflow-hidden rounded-2xl">
+            <AdSenseSlot
+              slotId={process.env.NEXT_PUBLIC_ADSENSE_HOMEPAGE_SLOT_ID}
+              width="auto"
+              height={90}
+              format="horizontal"
+            />
+          </section>
+        ) : null}
 
         <section className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">

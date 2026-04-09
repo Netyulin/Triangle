@@ -308,6 +308,50 @@ export type NetdiskReportListPayload = {
   totalPages: number
 }
 
+export type AdSlotData = {
+  id: string
+  name: string
+  type: 'banner' | 'insertion' | 'native' | 'splash'
+  position: 'top' | 'bottom' | 'sidebar' | 'infeed'
+  width: number
+  height: number
+  isActive: boolean
+  theme: 'light' | 'dark' | 'auto'
+  _count?: { adContents: number }
+}
+
+export type AdContentData = {
+  id: string
+  slotId: string
+  title: string
+  description?: string
+  imageUrl: string
+  targetUrl: string
+  ctaText: string
+  advertiser: string
+  isActive: boolean
+  priority: number
+}
+
+export type AdSlotListPayload = {
+  list: AdSlotData[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export type DownloadInfo = {
+  slug: string
+  name: string
+  version: string
+  icon: string | null
+  heroImage: string | null
+  downloadUrl: string
+  /** CPS 联盟跳转链接 */
+  affiliateLink: string
+}
+
 export function getToken() {
   if (typeof window === "undefined") return ""
   return window.localStorage.getItem("triangle-token") ?? ""
@@ -354,4 +398,28 @@ export function formatDateLabel(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleDateString("zh-CN")
+}
+
+export async function fetchAdSlots(params?: { type?: string; position?: string; isActive?: boolean }) {
+  const searchParams = new URLSearchParams()
+  if (params?.type) searchParams.set('type', params.type)
+  if (params?.position) searchParams.set('position', params.position)
+  if (params?.isActive !== undefined) searchParams.set('isActive', String(params.isActive))
+  const query = searchParams.toString()
+  return request<AdSlotListPayload>(`/ads${query ? `?${query}` : ''}`)
+}
+
+export async function fetchAdContent(slotId: string) {
+  return request<AdContentData | null>(`/ads/content/${slotId}`)
+}
+
+export async function trackAdClick(adId: string, slotId?: string) {
+  return request<{ tracked: boolean }>('/ads/content/click', {
+    method: 'POST',
+    body: JSON.stringify({ adId, slotId })
+  })
+}
+
+export async function fetchDownloadInfo(slug: string) {
+  return request<DownloadInfo>(`/download/${slug}`)
 }

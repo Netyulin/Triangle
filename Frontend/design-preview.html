@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triangle Design System Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --background: 244 247 251;
+      --foreground: 15 23 42;
+      --surface: 255 255 255;
+      --primary: 11 18 32;
+      --primary-foreground: 255 255 255;
+      --secondary: 234 240 248;
+      --secondary-foreground: 51 65 85;
+      --accent: 14 165 233;
+      --accent-hover: 2 132 199;
+      --muted: 238 243 249;
+      --muted-foreground: 100 116 139;
+      --border: 215 225 237;
+      --card: 255 255 255;
+      --card-foreground: 15 23 42;
+      --success: 16 185 129;
+      --warning: 245 158 11;
+      --error: 239 68 68;
+      --info: 59 130 246;
+      --hero-glow: rgba(14, 165, 233, 0.12);
+
+      /* Radius tokens */
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
+
+      font-family: 'Geist', system-ui, sans-serif;
+    }
+
+    .dark {
+      --background: 7 17 31;
+      --foreground: 232 240 251;
+      --surface: 15 28 46;
+      --primary: 223 234 255;
+      --primary-foreground: 8 17 30;
+      --secondary: 19 36 58;
+      --secondary-foreground: 213 227 247;
+      --accent: 56 189 248;
+      --accent-hover: 14 165 233;
+      --muted: 16 32 51;
+      --muted-foreground: 142 163 189;
+      --border: 32 50 74;
+      --card: 12 23 40;
+      --card-foreground: 237 245 255;
+      --hero-glow: rgba(56, 189, 248, 0.16);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: rgb(var(--background));
+      color: rgb(var(--foreground));
+      background-image: radial-gradient(circle at top, var(--hero-glow), transparent 30%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .dark body {
+      background-image: radial-gradient(circle at top, var(--hero-glow), transparent 30%);
+    }
+
+    /* Layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 48px 0; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgb(var(--muted-foreground));
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: rgb(var(--foreground));
+      margin-bottom: 32px;
+    }
+
+    /* Cards */
+    .card {
+      background: rgb(var(--card));
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: box-shadow 150ms ease-out, transform 150ms ease-out;
+    }
+    .card:hover {
+      box-shadow: 0 8px 32px -8px rgba(15, 23, 42, 0.12);
+    }
+    .card-sm {
+      background: rgb(var(--card));
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 150ms ease-out, transform 150ms ease-out, box-shadow 150ms ease-out;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: rgb(var(--accent));
+      color: white;
+    }
+    .btn-primary:hover {
+      background: rgb(var(--accent-hover));
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px -8px rgba(14, 165, 233, 0.4);
+    }
+    .btn-secondary {
+      background: rgb(var(--surface));
+      color: rgb(var(--foreground));
+      border: 1px solid rgb(var(--border));
+    }
+    .btn-secondary:hover {
+      border-color: rgb(var(--accent) / 0.3);
+      background: rgb(var(--muted));
+    }
+    .btn-ghost {
+      background: transparent;
+      color: rgb(var(--muted-foreground));
+    }
+    .btn-ghost:hover {
+      background: rgb(var(--muted));
+      color: rgb(var(--foreground));
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-default {
+      background: rgb(var(--secondary));
+      color: rgb(var(--secondary-foreground));
+    }
+    .badge-accent {
+      background: rgb(var(--accent) / 0.12);
+      color: rgb(var(--accent));
+    }
+    .badge-success {
+      background: rgb(var(--success) / 0.12);
+      color: rgb(var(--success));
+    }
+
+    /* Form */
+    .input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-sm);
+      background: rgb(var(--surface));
+      color: rgb(var(--foreground));
+      font-size: 14px;
+      outline: none;
+      transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+      font-family: inherit;
+    }
+    .input:focus {
+      border-color: rgb(var(--accent) / 0.5);
+      box-shadow: 0 0 0 3px rgb(var(--accent) / 0.12);
+    }
+    .input::placeholder { color: rgb(var(--muted-foreground)); }
+
+    /* App icon placeholder */
+    .app-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, rgb(var(--accent) / 0.2), rgb(var(--accent) / 0.05));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: rgb(var(--accent));
+      flex-shrink: 0;
+    }
+
+    /* Star */
+    .star { color: #f59e0b; }
+
+    /* Typography specimens */
+    .type-row {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgb(var(--border));
+    }
+    .type-meta {
+      min-width: 120px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgb(var(--muted-foreground));
+    }
+    .type-sample { color: rgb(var(--foreground)); }
+
+    /* Color swatch */
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .swatch {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid rgb(var(--border));
+    }
+    .swatch-color {
+      height: 64px;
+    }
+    .swatch-label {
+      padding: 8px 10px;
+      background: rgb(var(--card));
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgb(var(--muted-foreground));
+    }
+
+    /* Software card */
+    .software-card {
+      display: flex;
+      gap: 16px;
+      padding: 20px;
+      background: rgb(var(--card));
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-lg);
+      transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+      cursor: pointer;
+    }
+    .software-card:hover {
+      border-color: rgb(var(--accent) / 0.3);
+      box-shadow: 0 4px 24px -8px rgba(15, 23, 42, 0.1);
+    }
+    .software-info { flex: 1; min-width: 0; }
+    .software-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: rgb(var(--foreground));
+      margin-bottom: 4px;
+    }
+    .software-subtitle {
+      font-size: 13px;
+      color: rgb(var(--muted-foreground));
+      margin-bottom: 12px;
+    }
+    .software-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: rgb(var(--muted-foreground));
+    }
+    .software-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Stat card */
+    .stat-card {
+      background: rgb(var(--card));
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(var(--muted-foreground));
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 900;
+      color: rgb(var(--foreground));
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Alert */
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .alert-info {
+      background: rgb(var(--info) / 0.1);
+      color: rgb(var(--info));
+      border: 1px solid rgb(var(--info) / 0.2);
+    }
+    .alert-success {
+      background: rgb(var(--success) / 0.1);
+      color: rgb(var(--success));
+      border: 1px solid rgb(var(--success) / 0.2);
+    }
+    .alert-warning {
+      background: rgb(var(--warning) / 0.1);
+      color: rgb(var(--warning));
+      border: 1px solid rgb(var(--warning) / 0.2);
+    }
+    .alert-error {
+      background: rgb(var(--error) / 0.1);
+      color: rgb(var(--error));
+      border: 1px solid rgb(var(--error) / 0.2);
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid rgb(var(--border));
+      margin: 24px 0;
+    }
+
+    /* Grid layouts */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media (max-width: 768px) {
+      .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Toggle */
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: rgb(var(--border));
+      border-radius: var(--radius-full);
+      position: relative;
+      cursor: pointer;
+      transition: background 200ms ease-in-out;
+    }
+    .toggle.active { background: rgb(var(--accent)); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 200ms ease-in-out;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle.active::after { transform: translateX(20px); }
+
+    /* Progress bar */
+    .progress {
+      height: 6px;
+      background: rgb(var(--border));
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: rgb(var(--accent));
+      border-radius: var(--radius-full);
+      transition: width 300ms ease-out;
+    }
+
+    /* Dark mode toggle button */
+    .mode-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: rgb(var(--card));
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      transition: box-shadow 150ms ease-out;
+    }
+    .mode-toggle:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+
+    /* Nav bar mockup */
+    .navbar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 0 24px;
+      height: 60px;
+      background: rgb(var(--card) / 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgb(var(--border));
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .nav-logo {
+      font-family: 'Geist', monospace;
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: 0.12em;
+      color: rgb(var(--foreground));
+    }
+    .nav-link {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgb(var(--muted-foreground));
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      transition: background 150ms ease-out, color 150ms ease-out;
+    }
+    .nav-link:hover, .nav-link.active {
+      background: rgb(var(--muted));
+      color: rgb(var(--foreground));
+    }
+    .nav-link.active { font-weight: 600; }
+    .nav-search {
+      flex: 1;
+      max-width: 320px;
+      padding: 8px 12px 8px 36px;
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-full);
+      background: rgb(var(--muted));
+      font-size: 13px;
+      color: rgb(var(--foreground));
+      outline: none;
+      transition: border-color 150ms ease-out;
+    }
+    .nav-search:focus { border-color: rgb(var(--accent) / 0.5); }
+    .nav-search::placeholder { color: rgb(var(--muted-foreground)); }
+
+    /* Comment item */
+    .comment {
+      display: flex;
+      gap: 12px;
+      padding: 16px 0;
+    }
+    .comment-body {
+      flex: 1;
+    }
+    .comment-author {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgb(var(--foreground));
+    }
+    .comment-time {
+      font-size: 11px;
+      color: rgb(var(--muted-foreground));
+      margin-left: 8px;
+    }
+    .comment-text {
+      font-size: 14px;
+      color: rgb(var(--foreground));
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+
+    /* Toast */
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: rgb(var(--card));
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-lg);
+      box-shadow: 0 16px 48px -12px rgba(15, 23, 42, 0.18);
+      font-size: 14px;
+      font-weight: 500;
+      color: rgb(var(--foreground));
+      min-width: 280px;
+    }
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgb(var(--success));
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<button class="mode-toggle" onclick="document.documentElement.classList.toggle('dark')">
+  <span id="mode-icon">◐</span> <span id="mode-label">Light</span>
+</button>
+
+<!-- NAVBAR -->
+<div class="navbar" style="margin-bottom: 32px;">
+  <div class="nav-logo">TRIANGLE</div>
+  <a href="#" class="nav-link active">首页</a>
+  <a href="#" class="nav-link">软件库</a>
+  <a href="#" class="nav-link">资讯</a>
+  <a href="#" class="nav-link">需求墙</a>
+  <input class="nav-search" placeholder="搜索软件、工具、游戏..." style="position:relative">
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <button class="btn btn-ghost" style="padding:6px 10px;font-size:13px;">登录</button>
+    <button class="btn btn-primary" style="padding:6px 14px;font-size:13px;">注册</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <section class="section" style="padding-top: 32px;">
+    <div class="card" style="padding: 40px; background: linear-gradient(135deg, rgb(var(--accent) / 0.06), rgb(var(--accent) / 0.02)); border-color: rgb(var(--accent) / 0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
+        <div>
+          <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgb(var(--accent)); margin-bottom: 8px;">编辑推荐</div>
+          <h1 style="font-size: 32px; font-weight: 900; letter-spacing: -0.02em; color: rgb(var(--foreground)); margin-bottom: 8px;">Chrome 浏览器</h1>
+          <p style="font-size: 15px; color: rgb(var(--muted-foreground)); max-width: 480px; line-height: 1.6;">全球最流行的浏览器，快速、安全、稳定，支持扩展程序和同步功能。</p>
+          <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
+            <button class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              立即下载
+            </button>
+            <button class="btn btn-secondary">查看详情</button>
+          </div>
+        </div>
+        <div class="app-icon" style="width: 80px; height: 80px; font-size: 28px;">CR</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHY -->
+  <section class="section">
+    <div class="section-label">Typography</div>
+    <h2 class="section-title">Geist + JetBrains Mono</h2>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="type-row">
+        <span class="type-meta">text-4xl / 36px</span>
+        <span class="type-sample" style="font-size: 36px; font-weight: 900; letter-spacing: -0.02em;">Chrome 浏览器</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">text-3xl / 30px</span>
+        <span class="type-sample" style="font-size: 30px; font-weight: 800; letter-spacing: -0.02em;">Chrome 浏览器</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">text-2xl / 24px</span>
+        <span class="type-sample" style="font-size: 24px; font-weight: 700;">软件详情</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">text-xl / 20px</span>
+        <span class="type-sample" style="font-size: 20px; font-weight: 600;">v134.0.6998.123</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">text-base / 16px</span>
+        <span class="type-sample" style="font-size: 16px; font-weight: 400;">全球最流行的浏览器，快速、安全、稳定。</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">text-sm / 14px</span>
+        <span class="type-sample" style="font-size: 14px; color: rgb(var(--muted-foreground));">最近更新：2026-03-15 · Windows / macOS / Linux</span>
+      </div>
+      <div class="type-row" style="border-bottom: none;">
+        <span class="type-meta">text-xs / 12px</span>
+        <span class="type-sample" style="font-size: 12px; font-weight: 500; color: rgb(var(--muted-foreground)); letter-spacing: 0.04em; text-transform: uppercase;">免费软件 · 123.4 MB</span>
+      </div>
+    </div>
+
+    <div class="card" style="background: rgb(var(--primary); color: rgb(var(--primary-foreground)); padding: 20px; font-family: 'JetBrains Mono', monospace;">
+      <div style="font-size: 11px; opacity: 0.6; margin-bottom: 8px; letter-spacing: 0.1em;">JetBrains Mono — Code & Data</div>
+      <div style="font-size: 14px; line-height: 1.6;">
+        $ sha256sum chrome-installer.exe<br>
+        a3f7c2d9e8b4... &nbsp;→&nbsp; chrome-installer.exe<br>
+        Downloaded: <span style="color: rgb(var(--success));">123.4 MB</span> &nbsp; Speed: <span style="color: rgb(var(--accent));">8.2 MB/s</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLOR -->
+  <section class="section">
+    <div class="section-label">Color</div>
+    <h2 class="section-title">Design Tokens</h2>
+
+    <div class="section-label" style="margin-top: 16px;">Accent + Backgrounds</div>
+    <div class="swatch-grid" style="margin-bottom: 24px;">
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(14 165 233);"></div>
+        <div class="swatch-label">accent — 14 165 233</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(2 132 199);"></div>
+        <div class="swatch-label">accent-hover — 2 132 199</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(244 247 251); border-bottom: 1px solid rgb(var(--border));"></div>
+        <div class="swatch-label">background — 244 247 251</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(15 23 42);"></div>
+        <div class="swatch-label">foreground — 15 23 42</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(255 255 255); border-bottom: 1px solid rgb(var(--border));"></div>
+        <div class="swatch-label">surface — 255 255 255</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(234 240 248);"></div>
+        <div class="swatch-label">secondary — 234 240 248</div>
+      </div>
+    </div>
+
+    <div class="section-label">Semantic</div>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(16 185 129);"></div>
+        <div class="swatch-label">success — 16 185 129</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(245 158 11);"></div>
+        <div class="swatch-label">warning — 245 158 11</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(239 68 68);"></div>
+        <div class="swatch-label">error — 239 68 68</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: rgb(59 130 246);"></div>
+        <div class="swatch-label">info — 59 130 246</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section class="section">
+    <div class="section-label">Components</div>
+    <h2 class="section-title">Buttons, Badges & Form</h2>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px; color: rgb(var(--muted-foreground));">Buttons</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+        <button class="btn btn-primary">立即下载</button>
+        <button class="btn btn-secondary">查看详情</button>
+        <button class="btn btn-ghost">取消</button>
+        <button class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">加载中...</button>
+      </div>
+      <hr class="divider">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px; color: rgb(var(--muted-foreground));">Badges</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px;">
+        <span class="badge badge-default">免费</span>
+        <span class="badge badge-accent">限时特惠</span>
+        <span class="badge badge-success">已验证</span>
+        <span class="badge" style="background: rgb(var(--info) / 0.12); color: rgb(var(--info));">Windows</span>
+        <span class="badge" style="background: rgb(var(--warning) / 0.12); color: rgb(var(--warning));">macOS</span>
+      </div>
+      <hr class="divider">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px; color: rgb(var(--muted-foreground));">Input</div>
+      <div style="max-width: 360px;">
+        <input class="input" placeholder="搜索软件、工具、游戏..." style="margin-bottom: 12px;">
+        <input class="input" placeholder="输入邮箱" value="netyulin@example.com" style="margin-bottom: 12px;">
+        <input class="input" placeholder="密码" type="password" style="margin-bottom: 12px;">
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px; color: rgb(var(--muted-foreground));">Alerts</div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="alert alert-info">ℹ️ 这是一个信息提示，用于告诉用户重要更新。</div>
+        <div class="alert alert-success">✓ 下载完成，Chrome 134 已成功安装。</div>
+        <div class="alert alert-warning">⚠ 当前网络不稳定，下载可能会中断。</div>
+        <div class="alert alert-error">✕ 下载链接已失效，请尝试其他镜像。</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px; color: rgb(var(--muted-foreground));">Toggle + Progress</div>
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+        <div class="toggle active"></div>
+        <span style="font-size: 14px; font-weight: 500;">深色模式</span>
+      </div>
+      <div style="margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 12px; color: rgb(var(--muted-foreground));">
+        <span>下载进度</span><span>67%</span>
+      </div>
+      <div class="progress">
+        <div class="progress-bar" style="width: 67%;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOFTWARE CARDS -->
+  <section class="section">
+    <div class="section-label">Layout</div>
+    <h2 class="section-title">Software Cards</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px;">
+      <div class="software-card">
+        <div class="app-icon">CR</div>
+        <div class="software-info">
+          <div class="software-name">Chrome 浏览器</div>
+          <div class="software-subtitle">全球最流行的浏览器，快速安全稳定</div>
+          <div class="software-meta">
+            <span>免费</span>
+            <span>★ 4.8</span>
+            <span>▼ 12.3M</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="padding: 8px 14px; font-size: 13px; align-self: center;">下载</button>
+      </div>
+
+      <div class="software-card">
+        <div class="app-icon" style="background: linear-gradient(135deg, rgb(var(--success) / 0.2), rgb(var(--success) / 0.05)); color: rgb(var(--success));">VS</div>
+        <div class="software-info">
+          <div class="software-name">Visual Studio Code</div>
+          <div class="software-subtitle">现代代码编辑器，支持千种扩展</div>
+          <div class="software-meta">
+            <span class="badge badge-success" style="font-size: 10px; padding: 2px 6px;">免费</span>
+            <span>★ 4.9</span>
+            <span>▼ 8.7M</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="padding: 8px 14px; font-size: 13px; align-self: center;">下载</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAT CARDS -->
+  <section class="section">
+    <div class="section-label">Layout</div>
+    <h2 class="section-title">Stat Cards</h2>
+
+    <div class="grid-4">
+      <div class="stat-card">
+        <div class="stat-label">软件总数</div>
+        <div class="stat-value">1,284</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">文章总数</div>
+        <div class="stat-value">456</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">下载次数</div>
+        <div class="stat-value">12.8M</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">活跃用户</div>
+        <div class="stat-value">3.4K</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMENTS -->
+  <section class="section">
+    <div class="section-label">Content</div>
+    <h2 class="section-title">Comments</h2>
+
+    <div class="card">
+      <div class="comment">
+        <div class="app-icon" style="width:36px;height:36px;font-size:13px;background:rgb(var(--accent) / 0.15);color:rgb(var(--accent));">张</div>
+        <div class="comment-body">
+          <div><span class="comment-author">张三</span><span class="comment-time">2 小时前</span></div>
+          <div class="comment-text">这个版本的 Chrome 省电效果明显提升，续航时间多了约 15%。</div>
+        </div>
+      </div>
+      <hr class="divider" style="margin: 0;">
+      <div class="comment">
+        <div class="app-icon" style="width:36px;height:36px;font-size:13px;background:rgb(var(--success) / 0.15);color:rgb(var(--success));">李</div>
+        <div class="comment-body">
+          <div><span class="comment-author">李四</span><span class="comment-time">5 小时前</span></div>
+          <div class="comment-text">下载速度很快，推荐使用迅雷会员加速。测试镜像也不错，峰值跑满带宽。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOAST -->
+  <section class="section">
+    <div class="section-label">Feedback</div>
+    <h2 class="section-title">Toast Notification</h2>
+    <div class="toast">
+      <div class="toast-dot"></div>
+      <span>下载完成，Chrome 134 已成功安装。</span>
+    </div>
+  </section>
+
+</div>
+
+<div style="height: 64px;"></div>
+
+<script>
+  // Dark mode toggle
+  document.querySelector('.mode-toggle').addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    document.getElementById('mode-label').textContent = isDark ? 'Dark' : 'Light';
+  });
+</script>
+
+</body>
+</html>

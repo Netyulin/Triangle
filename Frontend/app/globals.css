@@ -145,17 +145,17 @@
     @apply border-border/70 bg-background/40 text-muted-foreground hover:border-accent/25 hover:bg-secondary/70 hover:text-foreground;
   }
   .admin-shell {
-    @apply relative overflow-hidden rounded-[30px] border border-border/80 bg-background shadow-[0_30px_80px_-56px_rgba(14,165,233,0.2)] backdrop-blur-sm;
+    @apply relative overflow-hidden rounded-[30px] border border-border/80 bg-background shadow-[0_20px_60px_-40px_rgba(14,165,233,0.08)] backdrop-blur-sm;
   }
   .dark .admin-shell {
     background-color: rgb(7 17 31 / 0.98);
   }
   .admin-shell::before {
     content: "";
-    @apply pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-accent/45 to-transparent;
+    @apply pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent;
   }
   .admin-panel {
-    @apply rounded-[26px] border border-border/70 shadow-[0_24px_60px_-46px_rgba(15,23,42,0.18)] backdrop-blur-sm;
+    @apply rounded-[26px] border border-border/70 shadow-[0_16px_48px_-36px_rgba(15,23,42,0.1)] backdrop-blur-sm;
     background-color: rgb(255 255 255 / 0.96);
   }
   .dark .admin-panel {
@@ -163,12 +163,12 @@
     border-color: rgb(var(--border) / 0.95);
   }
   .admin-hero {
-    @apply overflow-hidden rounded-[28px] border border-border/70 bg-background shadow-[0_28px_70px_-52px_rgba(14,165,233,0.18)];
+    @apply overflow-hidden rounded-[28px] border border-border/70 bg-background shadow-[0_20px_56px_-44px_rgba(14,165,233,0.08)];
   }
   .dark .admin-hero {
     background-color: rgb(12 23 40 / 0.96);
     background-image: linear-gradient(135deg, rgba(12, 23, 40, 0.96), rgba(16, 32, 51, 0.94) 46%, rgba(8, 47, 73, 0.82));
-    box-shadow: 0 30px 80px -56px rgba(56, 189, 248, 0.24);
+    box-shadow: 0 20px 64px -48px rgba(56, 189, 248, 0.12);
   }
   .admin-muted-panel {
     @apply rounded-2xl border border-border/70 bg-secondary/60;
