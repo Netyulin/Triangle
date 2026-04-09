@@ -1,5 +1,6 @@
 // API 调用通过 Next.js /api/[...path] 代理路由访问后端
-export const API_BASE_URL = "/api"
+// 注意：所有 request() 路径已包含 /api 前缀，因此这里留空
+export const API_BASE_URL = ""
 
 export type ApiEnvelope<T> = {
   success: boolean
@@ -377,7 +378,8 @@ export async function request<T>(path: string, options: RequestOptions = {}) {
 
   const token = options.token ?? getToken()
   if (token) {
-    headers.set("Authorization", `Bearer ${token}`)
+    // 使用 X-Token 而非 Authorization（Next.js 路由可能 strip Authorization）
+    headers.set("X-Token", token)
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {

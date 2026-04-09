@@ -2,37 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:54735'
 
+function buildProxyHeaders(request: NextRequest): Record<string, string> {
+  const headers: Record<string, string> = {}
+  // X-Token 转换为 Authorization 传给后端
+  const xToken = request.headers.get('x-token')
+  if (xToken) headers['Authorization'] = `Bearer ${xToken}`
+  return headers
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params
   const pathStr = path.join('/')
-  const url = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
-  try {
-    const response = await fetch(url, {
-      headers: {
-        ...Object.fromEntries(
-          Object.entries(request.headers).filter(
-            ([key]) => !['host', 'connection'].includes(key.toLowerCase())
-          )
-        ),
-      },
-    })
-    const text = await response.text()
-    return new NextResponse(text, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, code: 500, message: 'Proxy error', data: null },
-      { status: 500 }
-    )
-  }
+  const search = request.nextUrl.search
+  const apiUrl = `${API_BASE}/api/${pathStr}${search}`
+
+  const response = await fetch(apiUrl, {
+    headers: buildProxyHeaders(request),
+  })
+  const text = await response.text()
+
+  return new NextResponse(text, {
+    status: response.status,
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  })
 }
 
 export async function POST(
@@ -41,35 +39,22 @@ export async function POST(
 ) {
   const { path } = await params
   const pathStr = path.join('/')
-  const url = `${API_BASE}/api/${pathStr}`
-  try {
-    const body = await request.text()
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...Object.fromEntries(
-          Object.entries(request.headers).filter(
-            ([key]) => !['host', 'connection', 'content-length'].includes(key.toLowerCase())
-          )
-        ),
-      },
-      body,
-    })
-    const text = await response.text()
-    return new NextResponse(text, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, code: 500, message: 'Proxy error', data: null },
-      { status: 500 }
-    )
-  }
+  const apiUrl = `${API_BASE}/api/${pathStr}`
+  const body = await request.text()
+
+  const headers = buildProxyHeaders(request)
+  headers['Content-Type'] = 'application/json'
+
+  const response = await fetch(apiUrl, { method: 'POST', headers, body })
+  const text = await response.text()
+
+  return new NextResponse(text, {
+    status: response.status,
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  })
 }
 
 export async function PUT(
@@ -78,35 +63,22 @@ export async function PUT(
 ) {
   const { path } = await params
   const pathStr = path.join('/')
-  const url = `${API_BASE}/api/${pathStr}`
-  try {
-    const body = await request.text()
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...Object.fromEntries(
-          Object.entries(request.headers).filter(
-            ([key]) => !['host', 'connection', 'content-length'].includes(key.toLowerCase())
-          )
-        ),
-      },
-      body,
-    })
-    const text = await response.text()
-    return new NextResponse(text, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, code: 500, message: 'Proxy error', data: null },
-      { status: 500 }
-    )
-  }
+  const apiUrl = `${API_BASE}/api/${pathStr}`
+  const body = await request.text()
+
+  const headers = buildProxyHeaders(request)
+  headers['Content-Type'] = 'application/json'
+
+  const response = await fetch(apiUrl, { method: 'PUT', headers, body })
+  const text = await response.text()
+
+  return new NextResponse(text, {
+    status: response.status,
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  })
 }
 
 export async function DELETE(
@@ -115,32 +87,21 @@ export async function DELETE(
 ) {
   const { path } = await params
   const pathStr = path.join('/')
-  const url = `${API_BASE}/api/${pathStr}`
-  try {
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        ...Object.fromEntries(
-          Object.entries(request.headers).filter(
-            ([key]) => !['host', 'connection'].includes(key.toLowerCase())
-          )
-        ),
-      },
-    })
-    const text = await response.text()
-    return new NextResponse(text, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, code: 500, message: 'Proxy error', data: null },
-      { status: 500 }
-    )
-  }
+  const apiUrl = `${API_BASE}/api/${pathStr}`
+
+  const response = await fetch(apiUrl, {
+    method: 'DELETE',
+    headers: buildProxyHeaders(request),
+  })
+  const text = await response.text()
+
+  return new NextResponse(text, {
+    status: response.status,
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  })
 }
 
 export async function PATCH(
@@ -149,33 +110,20 @@ export async function PATCH(
 ) {
   const { path } = await params
   const pathStr = path.join('/')
-  const url = `${API_BASE}/api/${pathStr}`
-  try {
-    const body = await request.text()
-    const response = await fetch(url, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...Object.fromEntries(
-          Object.entries(request.headers).filter(
-            ([key]) => !['host', 'connection', 'content-length'].includes(key.toLowerCase())
-          )
-        ),
-      },
-      body,
-    })
-    const text = await response.text()
-    return new NextResponse(text, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, code: 500, message: 'Proxy error', data: null },
-      { status: 500 }
-    )
-  }
+  const apiUrl = `${API_BASE}/api/${pathStr}`
+  const body = await request.text()
+
+  const headers = buildProxyHeaders(request)
+  headers['Content-Type'] = 'application/json'
+
+  const response = await fetch(apiUrl, { method: 'PATCH', headers, body })
+  const text = await response.text()
+
+  return new NextResponse(text, {
+    status: response.status,
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  })
 }

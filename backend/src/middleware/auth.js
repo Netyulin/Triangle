@@ -33,13 +33,20 @@ async function resolveAuthenticatedUser(payload) {
 }
 
 export function authenticate(req, res, next) {
-  const header = req.headers.authorization;
+  // 支持 Authorization: Bearer <token> 和 X-Token: <token>
+  const authHeader = req.headers.authorization;
+  const xToken = req.headers['x-token'];
 
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json(error(ErrorCodes.UNAUTHORIZED, 'login required'));
+  let token = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else if (xToken) {
+    token = xToken;
   }
 
-  const token = header.slice(7);
+  if (!token) {
+    return res.status(401).json(error(ErrorCodes.UNAUTHORIZED, 'login required'));
+  }
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
@@ -73,17 +80,22 @@ export function authenticate(req, res, next) {
 }
 
 export function optionalAuthenticate(req, res, next) {
-  const header = req.headers.authorization;
+  // 支持 Authorization: Bearer <token> 和 X-Token: <token>
+  const authHeader = req.headers.authorization;
+  const xToken = req.headers['x-token'];
 
-  if (!header) {
+  if (!authHeader && !xToken) {
     return next();
   }
 
-  if (!header.startsWith('Bearer ')) {
+  let token = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else if (xToken) {
+    token = xToken;
+  } else {
     return res.status(401).json(error(ErrorCodes.TOKEN_INVALID, 'invalid token'));
   }
-
-  const token = header.slice(7);
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
