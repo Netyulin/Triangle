@@ -1,0 +1,4 @@
+/.runlogs/
+/_handover_*.*
+**/_tmp_*.log
+.gstack/

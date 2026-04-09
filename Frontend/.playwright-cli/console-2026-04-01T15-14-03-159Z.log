@@ -1,3 +1,0 @@
-[     199ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://127.0.0.1:3108/login?redirect=%2Fadmin%2Fsettings:0
-[    2124ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:3001/api/settings:0
-[   31646ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:3001/api/auth/login:0

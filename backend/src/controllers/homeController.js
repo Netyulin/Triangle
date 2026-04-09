@@ -126,10 +126,7 @@ export async function summary(req, res) {
   return sendSuccess(res, {
     site: {
       siteName: settings.siteName,
-      siteDescription: settings.siteDescription,
-      defaultLocale: settings.defaultLocale,
-      supportedLocales: settings.supportedLocales,
-      languageOptions: settings.languageOptions
+      siteDescription: settings.siteDescription
     },
     announcements,
     stats: {

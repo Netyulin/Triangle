@@ -63,9 +63,6 @@ export type SiteSettings = {
   homeFeaturedPostCount: number
   registrationEnabled: boolean
   registrationRequiresInvite: boolean
-  defaultLocale?: string
-  supportedLocales?: string[]
-  languageOptions?: Array<{ value: string; label: string }>
   updatedAt?: string
 }
 
@@ -216,9 +213,6 @@ export type HomePayload = {
   site: {
     siteName: string
     siteDescription: string
-    defaultLocale?: string
-    supportedLocales?: string[]
-    languageOptions?: Array<{ value: string; label: string }>
   }
   announcements?: Array<{
     id: string | number
@@ -408,20 +402,20 @@ export async function fetchAdSlots(params?: { type?: string; position?: string; 
   if (params?.position) searchParams.set('position', params.position)
   if (params?.isActive !== undefined) searchParams.set('isActive', String(params.isActive))
   const query = searchParams.toString()
-  return request<AdSlotListPayload>(`/ads${query ? `?${query}` : ''}`)
+  return request<AdSlotListPayload>(`/api/ads${query ? `?${query}` : ''}`)
 }
 
 export async function fetchAdContent(slotId: string) {
-  return request<AdContentData | null>(`/ads/content/${slotId}`)
+  return request<AdContentData | null>(`/api/ads/content/${slotId}`)
 }
 
 export async function trackAdClick(adId: string, slotId?: string) {
-  return request<{ tracked: boolean }>('/ads/content/click', {
+  return request<{ tracked: boolean }>('/api/ads/content/click', {
     method: 'POST',
     body: JSON.stringify({ adId, slotId })
   })
 }
 
 export async function fetchDownloadInfo(slug: string) {
-  return request<DownloadInfo>(`/download/${slug}`)
+  return request<DownloadInfo>(`/api/download/${slug}`)
 }

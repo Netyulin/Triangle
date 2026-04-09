@@ -1,7 +1,0 @@
-
-> triangle-portal-backend@1.0.0 start
-> tsx src/index.ts
-
-[assetStorage] uploadsRoot = E:\Project\Triangle\Frontend\public\uploads
-Triangle Portal CMS API is running on http://localhost:58085
-API docs: http://localhost:58085/api-docs

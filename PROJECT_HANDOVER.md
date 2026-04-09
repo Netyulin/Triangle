@@ -446,227 +446,119 @@ D:\Claudecode\Triangle\
 
 ---
 
-## 2026-04-08 全局设计规划
-
-详见 Obsidian 知识库文档：
-**`Triangle项目全景设计文档.md`** — 包含全项目现状诊断、四阶段路线图、文件归属表、立即行动项。
-
-**商业模式已确认：Google AdSense + CPS 联盟**
-- 不需要广告管理后台（AdSense 自动管理广告内容）
-- 核心任务：AdSense 代码位植入 + CPS 联盟链接跟踪中间页
-- 广告收入：Google AdSense 按展示/点击付费
-- 下载返利：CPS 联盟跟踪链接，用户下载后结算返利
-
-详细规划见 Obsidian 文档。
+*文档生成时间：2026-04-03 | 最近更新：2026-04-09（回归测试修复与启动配置对齐）*
 
 ---
 
-*文档生成时间：2026-04-03 | 最近更新：2026-04-08（全项目全景设计规划）*
+## 十四、最新变更记录（2026-04-09）
+
+### 1) 回归测试修复
+
+- 现象：执行 `cd backend && npm test` 时，回归测试在用户头像路径断言失败。
+- 根因：当前实现允许默认头像保持 `/avatars/avatar-gen-defaults/...`，但测试仅接受 `/uploads/avatars/generated/...`。
+- 修改文件：`backend/scripts/regression.test.mjs`
+- 修复方式：断言同时接受两种合法路径。
+- 验证：`cd backend && node scripts/run-tests.mjs` 通过（退出码 `0`）。
+
+### 2) 启动配置对齐
+
+- `Frontend/.env.local` 中 `NEXT_PUBLIC_API_BASE_URL` 已对齐为 `http://localhost:58085`。
+- `Frontend/app/api/[...path]/route.ts` 的本地后端默认地址已同步为 `http://localhost:58085`。
+- 本地联调以 `backend/.env` 的 `PORT=58085` 为准。
+
+### 3) gstack 本地安装补充
+
+- 当前是 Windows 环境，且未安装 `bun`，未使用仓库内 `./setup`。
+- 已手工接入 `gstack` 到 `C:\Users\Administrator\.codex\skills\`，并链接 `gstack-*` 技能目录。
+- `gstack` 运行根已链接到 `C:\Users\Administrator\.claude\skills\gstack`，`bin/`、`browse/`、`review/`、`gstack-upgrade/`、`agents/` 和 `SKILL.md` 可访问。
 
 ---
 
-## 2026-04-08 �������������¼
+## 十五、外部文档同步落地（2026-04-09）
 
-### 1. ����ģ����״̬�ھ�
+> 来源目录：`E:\iCloudDrive\iCloud~md~obsidian\obi\Triangle项目`
 
-- ������ Prisma Ǩ�ƣ�
-  - `backend/prisma/migrations/20260408030157_add_notifications_and_user_controls/`
-- �û������ֶΣ�
-  - `canReply`
-  - `bannedUntil`
-  - `banReason`
-- ����ģ�ͣ�
-  - `Notification`
-  - `NotificationTemplate`
-- ��Ա�ȼ�ͳһ�ھ���
-  - `free`
-  - `sponsor`
-  - `lifetime`
-  - `supreme`
-- ��ֵ����ӳ�䣺
-  - `member -> sponsor`
-  - `premium -> lifetime`
-  - `vip -> supreme`
-- ����״̬ͳһ�տڣ�
-  - `published`
-  - `hidden`
-  - `archived`
-- ����ʧЧ����״̬��
-  - `pending`
-  - `handled`
+### 15.1 外部文档清单与采纳状态
 
-### 2. ��������/�����ӿ�
+| 文档名 | 状态 | 本地落地结论 |
+|------|------|------|
+| `Google Adsense.md` | ✅ 已采纳（权威配置） | 作为 AdSense `client/slot` 主数据来源 |
+| `Triangle项目全景设计文档.md` | ✅ 已采纳（方向） | 商业模式确认为「AdSense + CPS」 |
+| `Triangle项目UI设计审查-20260409.md` | ✅ 已采纳（UI结论） | 中间页布局、倒计时尺寸、广告容器样式按审查结论执行 |
+| `Triangle目前问题.md` | ✅ 已采纳（问题池） | 作为历史问题清单，仅逐条按代码现状核验，不直接视为已实现事实 |
+| `Triangle广告位管理后台-设计文档.md` | ⚠️ 已降级（历史方案） | 与 AdSense 自动投放策略冲突，不再作为主实现依据 |
+| `Triangle广告位组件-下载中间页设计文档.md` | ⚠️ 已降级（历史方案） | 其中 `AdSlot/AdContent/DownloadLog` 方案已被 `AdSense + CpsDownload` 替代 |
+| `Triangle广告位组件 & 下载跳转中间页 设计文档（整合更新版）.md` | ℹ️ 参考 | 样式与交互细节可参考，数据模型以当前 Prisma/接口为准 |
 
-- �û�֪ͨ��
-  - `GET /api/notifications`
-  - `GET /api/notifications/unread-count`
-  - `PATCH /api/notifications/read-all`
-  - `PATCH /api/notifications/:id/read`
-  - `DELETE /api/notifications/:id`
-- ��̨�û�������
-  - `GET /api/admin/users`
-  - `GET /api/admin/users/levels`
-  - `PATCH /api/admin/users/:id`
-  - `PATCH /api/admin/users/:id/password`
-  - `DELETE /api/admin/users/:id`
-- ��̨վ������ģ�壺
-  - `GET /api/admin/notification-templates`
-  - `PUT /api/admin/notification-templates/:key`
-  - `POST /api/admin/notifications/send`
-  - `POST /api/admin/notifications/users/:id`
-- ר������ѡ������
-  - `GET /api/admin/content-picker/apps`
-  - `GET /api/admin/content-picker/posts`
-- ����ʧЧ���洦����
-  - `PATCH /api/admin/netdisk-reports/:id`
+### 15.2 AdSense 权威参数（本地固化）
 
-### 3. ǰ��������տ�
+- `client`: `ca-pub-7143421934912272`
+- `triangle_home_top`: `6517724385`
+- `triangle_detail_top`: `9554951266`
+- `triangle_detail_bottom`: `5502259258`
+- `triangle_download_interstitial`: `3419021394`
 
-- ��ҳ `GET /api/home` �����ӣ�
-  - `announcements`
-  - `heroSlides[].icon`
-- վ�������Ѳ��䣺
-  - `siteAnnouncementEnabled`
-  - `siteAnnouncementTitle`
-  - `siteAnnouncementContent`
-  - `siteAnnouncementLink`
-  - `downloadInterstitialEnabled`
-  - `downloadInterstitialTitle`
-  - `downloadInterstitialDescription`
-  - `downloadInterstitialButtonText`
-  - `downloadInterstitialBuyUrl`
-- ǰ����Ϣ�����ѴӾɵ� `/api/auth/inbox` �տڵ� `/api/notifications`
-- ǰ�˺�̨�û����������е� `/api/admin/users/:id/password`
-- ע���������޸�ʱ�����ͷ�񱣴����䵽��
-  - `/uploads/avatars/generated/...`
+## 十六、2026-04-09 回归测试补充（Playwright 等价执行）
 
-### 4. 2026-04-08 ʵ�ʻز��¼
+### 16.1 测试范围
 
-- ǰ����������ͨ����
-  - `Frontend/npm run build`
-- ���ݿ�Ǩ����ִ�У�
-  - `npx prisma migrate dev --name add_notifications_and_user_controls`
-- ���ֶ��ز�ͨ���Ĺ��ܣ�
-  - ��ҳ����ӿڷ�������
-  - ��ҳ�ֲ�ͼͼ���ֶη�������
-  - ע���û�Ĭ��ͷ���ѱ��ػ�
-  - �����м�ҳ���÷�������
-  - ����Ա����վ���ţ��û��鿴/����Ѷ�/ɾ������
-  - ��̨�û���������������Ч
-  - ����ʧЧ���洦����״̬����Ϊ�Ѵ���
-  - ����ʧЧ���洦�����û����յ�վ��֪ͨ
-  - ר������ѡ����Ӧ��/���½ӿڿɷ��ؽ��
+- 后端自动化：
+  - `backend/npm run test`
+  - `backend/npm run smoke`
+  - `backend/npm run regression`
+- 前端自动化（Playwright）：
+  - 公共页面：`/`、`/software`、`/articles`、`/download/obsidian`、`/login`
+  - 登录后后台页面：`/admin`、`/admin/ad-slots`、`/admin/ad-contents`、`/admin/ads-stats`
+  - 采集项：状态码、页面跳转、console error、response error、截图
 
-### 5. ��������
+### 16.2 结果
 
-- �ɵ� `backend/scripts/regression.test.mjs` �Ժ� `draft/member/premium` ����ʷ�ھ��������������ýű�����Ҫ������״̬��ȼ������������ԡ�
-- ��������������̨��վ����ģ�����á�ҳ�棬��ֱ��ʹ���µ�֪ͨ�ӿڣ���Ҫ�ٽӾɵ� inbox ·����
+- 后端：
+  - `npm run test`：通过
+  - `npm run smoke`：通过
+  - `npm run regression`：通过
+- 前端（Playwright）：
+  - 登录：成功（跳转 `/profile`，`localStorage` 存在 `triangle-token`）
+  - 公共页与后台广告页：全部可访问
+  - `consoleErrorCount = 0`
+  - `responseErrorCount = 0`
 
-### 2026-04-08 �����ű�����
+### 16.3 本轮修复项
 
-- `Frontend/package.json` �� `dev` �ű��Ѵ� `next dev --webpack -p 3004` ����Ϊ `next dev -p 3004`
-- ԭ�򣺵�ǰ���ذ�װ�� Next ��������ٽ��� `--webpack` ������ֱ��ִ�лᱨ `unknown option --webpack`
-- ��ǰ������֤�����ǰ�˿�ͨ�� `Frontend/npm run dev` ���������� `http://localhost:3004`
-- ������֤��`Frontend/npm run dev` ���� 3004 �˿�ʵ�������
-- ������֤��`backend/npm run dev` ���� 58085 �˿�ʵ�������
+1. 回归脚本去多语言适配  
+   文件：`backend/scripts/regression.test.mjs`  
+   处理：移除 `defaultLocale/supportedLocales` 的更新与断言，改为校验 `siteName`。
 
-## 2026-04-08 ·�ɵ�������
+2. seed 清库外键冲突修复  
+   文件：`backend/src/prisma/seed.ts`  
+   处理：补全并前置删除依赖表（`downloadLog`、`cpsDownload`、`adContent`、`adSlot`、`notification`、`feedback`、`notificationTemplate`），再删 `app/user` 主表。
 
-- ǰ��������·���Ѵ� `/articles` �л�Ϊ `/news`
-- ��������
-  - `Frontend/app/news/page.tsx`
-  - `Frontend/app/news/[slug]/page.tsx`
-- ��ҳ��������ҳ�š�������������������ղء���������������µ��ڲ���ת��ͳһ��Ϊ `/news`
-- �����ҳ�ӿ� `GET /api/home` ���ص������ֲ�/�Ƽ�����Ҳ��ͬ����Ϊ `/news/:slug`
-- 2026-04-08 ʵ�⣺
-  - `Frontend/npm run build` ͨ��
-  - `backend/node scripts/run-tests.mjs` ͨ��
-## 2026-04-08 ��ҳ�ֲ�ͼ�� 404 �޸�
+3. 下载页 JSON 解析报错修复  
+   文件：`Frontend/lib/api.ts`  
+   根因：`fetchDownloadInfo` 错误请求了页面路由 `/download/:slug`。  
+   处理：改为请求接口路由 `/api/download/:slug`，同时统一 `fetchAdSlots/fetchAdContent/trackAdClick` 为 `/api/ads/*`。
 
-- ��������
-  - ��ҳ�ֲ��Ҳ�ͼ���ֶ��������� emoji������ `??`��`??`��ǰ�˻����ص���ͼƬ��ַ����
-  - ���������̨����֣�
-    - `GET /%F0%9F%A7%A9 404`
-    - `GET /%F0%9F%8E%A8 404`
-- �޸����ݣ�
-  - `Frontend/app/page.tsx` �Ѹ�Ϊ���ж� `activeSlide.icon` �Ƿ�Ϊ��ʵͼƬ��ַ
-  - �����ͼƬ��ַ��������Ⱦ `<img>`
-  - �������ͼƬ��ַ�������Ϊ `AppIcon` �ı��� emoji ��Ⱦ�����ٷ����������
-- ��֤�����
-  - ���� `Frontend/.next` ���������ִ�� `Frontend/npm run build`������ͨ��
-  - ֮ǰż���� `<Html> should not be imported outside of pages/_document` ���ڻ���̬���⣬���� `.next` ��δ����
-## 2026-04-08 ͷ��ѡ�����̨��������
+4. 静态资源 404 根因收敛  
+   文件：`backend/prisma/seed.ts`  
+   处理：将种子中的本地缺失路径（`/icons/*`、`/images/*`）替换为可用占位图 URL，避免后续再次种出 404 数据。
 
-- ���Ƴ�ǰ��ͷ��ѡ�����еġ��������ͷ����ڣ���ǰ��������ϵͳĬ��ͷ�� + Ĭ��ͷ����ֶ�ѡ�� + �����ϴ���������ȷ·��
-- ע��ҳ����Ĭ��Ԥѡ `avatar-01`���û����ֶ�ѡ��ͷ��ʱ���ᱣ��������ɲ����ػ����ϵͳĬ��ͷ��
-- �����������̨�˺�����ҳҲ������ `avatar-01` ��Ϊ��ʼ���ף�����δ����ʱ����ʾΪ��һ��Ԥ��ͷ��
-- `/admin` ��ҳ��һ��ͳ�ƿ��ĸ���ɫ�ѴӸ߱�������Ƶ���Ϊ�����Ƶ�����ɫ��������۸�
-- 2026-04-08 ʵ�⣺`Frontend/npm run build` ͨ��
-## 2026-04-08 avatar-gen ���ͷ�����
+### 16.4 报告与截图产物
 
-- �Ѳο� `wave-charts/avatar-gen`��MIT�������µ����ͷ����������Դ�ֿ⣺`https://github.com/wave-charts/avatar-gen`
-- �òֿⱾ���Ǵ�ǰ�� SVG ͷ�����������������ⲿͷ����񣻱���Ŀ�ѽ����������زı��ػ�����
-  - `Frontend/lib/avatar-gen/`
-  - `Frontend/public/avatars/avatar-gen/`
-- ��ǰǰ����Ϊ��
-  - �û�������������ͷ��ʱ��ǰ�˼�ʱ����һ���µ� SVG ͷ��Ԥ��
-  - ͷ���� `data:image/svg+xml;base64,...` ��ʽ�����������ϱ�������
-  - �û��������󣬺�˻����ü��б��ػ��߼�����ͷ��д�� `/uploads/avatars/generated/...`
-- ͬ��������
-  - ע��ҳ����Ĭ��Ԥѡ��һ��Ĭ��ͷ��
-  - ���ͷ���ѴӾɵġ�10 ��Ĭ��ͷ��α������л�Ϊ������ SVG ������
-- 2026-04-08 ʵ�⣺`Frontend/npm run build` ͨ��
-## 2026-04-08 ���Ĭ��ͷ��ͳһΪ avatar-gen
+- `E:\\Project\\Triangle\\.gstack\\qa-reports\\playwright\\report-full-final-safe.json`
+- `E:\\Project\\Triangle\\.gstack\\qa-reports\\playwright\\report-full.json`
+- `E:\\Project\\Triangle\\.gstack\\qa-reports\\playwright\\report-login-admin-full.json`
+- `E:\\Project\\Triangle\\.gstack\\qa-reports\\playwright\\*.png`
 
-- ��� `buildDefaultAvatar` �ѴӾɵ� avataaars �����߼��л�Ϊ���� `avatar-gen` Ĭ��ͷ��Ŀ¼
-- �µ�ϵͳĬ��ͷ��·����ʽ��`/avatars/avatar-gen-defaults/{gender}/avatar-xx.svg`
-- ������Ԥ���ɽű���`backend/scripts/generate-avatar-defaults.ts`
-- ��ʵ������ 30 ��Ĭ��ͷ���ļ���
-  - `Frontend/public/avatars/avatar-gen-defaults/female/`
-  - `Frontend/public/avatars/avatar-gen-defaults/male/`
-  - `Frontend/public/avatars/avatar-gen-defaults/other/`
-- ͬ��������
-  - `isGeneratedAvatar` ��ʶ���µı���Ĭ��ͷ��·��
-  - `localizeGeneratedAvatar` �����µı���Ĭ��ͷ��·��ʱ��ֱ�ӱ�����������ץȡ
-  - `authController` ͷ��У�������� `/avatars/avatar-gen-defaults/` ·��
-- 2026-04-08 ʵ�⣺
-  - `Frontend/npm run build` ͨ��
-  - `buildDefaultAvatar()` �����µı��� SVG Ĭ��ͷ��·��
-  - `localizeGeneratedAvatar()` ���µ�Ĭ��ͷ��·������ԭ������
-- ����˵����
-  - `backend/node scripts/run-tests.mjs` ����ִ�г��ֳ�ʱ��δ�õ���Ч�ع���������������Ų�ű�����
+对应本地环境变量命名规范：
 
-## 2026-04-08 �ɸ��þ������
+- `NEXT_PUBLIC_ADSENSE_PUBLISHER_ID`
+- `NEXT_PUBLIC_ADSENSE_HOMEPAGE_SLOT_ID`
+- `NEXT_PUBLIC_ADSENSE_DETAIL_SLOT_ID`
+- `NEXT_PUBLIC_ADSENSE_DETAIL_BOTTOM_SLOT_ID`
+- `NEXT_PUBLIC_ADSENSE_INTERSTITIAL_SLOT_ID`
 
-�ⲿ��ƫͨ�ã���������ĿʱҲ��ֱ�������ã�������ֻ���� Triangle ר�����顣
+### 15.3 冲突处理原则（防止后续反复）
 
-1.  ��̨�б�ҳ�Ĳ������ʺ�Ĭ������
-    - ֻ������չ����������ڣ������Լ��ٿ�Ƭӵ���Ͱ�ť��ѹ���⡣
-    - �ʺ��û��б��������б�������б����ࡰ�鿴��Ϣ�ࡢ������ť�ࡱ��ҳ�档
-    - չ��״̬�����õ��� `expandedId` ���ƣ�����һҳͬʱչ��̫�������塣
-
-2.  �ȼ�����Ա��Ȩ�������ֶ�Ҫ��ͳһ�ھ���
-    - ���ֻ����һ�� canonical ֵ��ǰ��չʾ����������ӳ�䡣
-    - ��ֵҪ�� alias ���ݣ���Ҫ��ҳ��ֱ��������ʷ�ַ�����
-    - �����򡢻ձꡢͼ�ꡢ��ɫ��ù���һ�� meta ӳ�������������ֻ��һ����
-
-3.  �ȼ� badge �� icon �ʺ����ɹ��������
-    - ҳ��ֻ���ȼ�ֵ����Ҫ�ֹ�ƴ�İ���ͼ�����ɫ��
-    - �����ĵȼ��������� icon������ɫ������ɢ�䵽ÿ��ҳ���
-
-4.  ��̨����㼶Ҫһ��ͬ����
-    - ��ֻ����������`shell / panel / hero / card / input / secondary button` ��Щ������ҲҪһ��ġ�
-    - �Ӿ�����ͨ��������ɫ���ˣ�����ĳ�������������ɵ�ɫ��
-    - ���������㼶�����ɿɸ��õ���� token��
-
-5.  Next.js ���ؿ������� manifest / segment explorer ���������ȿ� devtools ���úͻ��档
-    - �ȹ����ʵ�����ԣ����� `.next`��Ȼ��������������
-    - ��Ҫ�ѻ���̬����ֱ�ӵ���ҵ��������
-
-6.  ҳ������Ժ�Ҫ���ܹ�����
-    - ֻҪ����ҳ��ṹ��������Ⱦ���ܿر�������̨�б���������Ӧ����һ�� `npm run build`��
-    - ����Ķ��������������ʹ��󡢿�ֵ��֧���⡢������©�Ͱ�ɫģʽ���
-
-7.  ��������û��ĺ�̨����վ��ҳ��ɼ��İ�Ĭ��ͳһ�������ġ�
-    - ��Ҫ��Ϊ�����ʾ����Ӣ�ģ��ͰѰ�ť��ռλ������ʾ�İ�һ�����Ӣ�ġ�
-    - ����Ժ���Ҫ�������ԣ���ð��İ�Դ������������Ҫ��Ӳ����
+1. 商业模式冲突时，以「Google AdSense 自动投放 + CPS 跳转跟踪」为准。
+2. 历史文档中出现的自建广告素材管理（`AdSlot/AdContent`）仅作历史记录，不再作为默认实现。
+3. 若后续再次读取外部 Obsidian 文档，必须在本地交接文档增加“来源 + 采纳结论 + 生效范围”后才算同步完成。

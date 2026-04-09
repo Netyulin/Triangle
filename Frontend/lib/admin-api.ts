@@ -101,6 +101,81 @@ export type AdminInboxTemplate = {
   updatedAt?: string
 }
 
+export type AdminAdSlot = {
+  id: string
+  name: string
+  type: "banner" | "insertion" | "native" | "splash"
+  position: "top" | "bottom" | "sidebar" | "infeed"
+  width: number
+  height: number
+  isActive: boolean
+  theme: "light" | "dark" | "auto"
+  createdAt: string
+  updatedAt: string
+  _count?: { adContents: number }
+}
+
+export type AdminAdContent = {
+  id: string
+  slotId: string
+  title: string
+  description?: string | null
+  imageUrl: string
+  targetUrl: string
+  ctaText: string
+  advertiser: string
+  isActive: boolean
+  priority: number
+  createdAt: string
+  updatedAt: string
+  slot?: {
+    id: string
+    name: string
+    type: string
+    position: string
+    isActive: boolean
+  }
+}
+
+export type AdminAdSlotListPayload = {
+  list: AdminAdSlot[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export type AdminAdContentListPayload = {
+  list: AdminAdContent[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export type AdminAdsStatsPayload = {
+  summary: {
+    totalSlots: number
+    activeSlots: number
+    totalContents: number
+    activeContents: number
+    totalDownloadLogs: number
+    totalCpsClicks: number
+  }
+  slots: Array<{
+    id: string
+    name: string
+    type: string
+    position: string
+    isActive: boolean
+    _count: { adContents: number }
+  }>
+  trend: Array<{
+    date: string
+    count: number
+  }>
+}
+
 type RequestOptions = Omit<RequestInit, "body"> & {
   token?: string
   body?: BodyInit | null
@@ -116,7 +191,7 @@ async function adminRequest<T>(path: string, options: RequestOptions = {}) {
   }
 
   if (token) {
-    headers.set("Authorization", `Bearer ${token}`)
+    headers.set("X-Token", token)
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -128,9 +203,6 @@ async function adminRequest<T>(path: string, options: RequestOptions = {}) {
 
   const payload = (await response.json()) as ApiEnvelope<T>
   if (!response.ok || !payload.success) {
-    if (response.status === 401) {
-      clearToken()
-    }
     throw new Error(payload.message || "请求失败")
   }
 
@@ -431,6 +503,106 @@ export async function sendAdminInboxMessage(payload: Record<string, unknown>) {
     method: "POST",
     body: JSON.stringify(payload),
   })
+}
+
+export async function fetchAdminAdSlots(params?: {
+  page?: number
+  pageSize?: number
+  type?: string
+  position?: string
+  isActive?: boolean
+}) {
+  const query = new URLSearchParams()
+  if (params?.page) query.set("page", String(params.page))
+  if (params?.pageSize) query.set("pageSize", String(params.pageSize))
+  if (params?.type) query.set("type", params.type)
+  if (params?.position) query.set("position", params.position)
+  if (params?.isActive !== undefined) query.set("isActive", String(params.isActive))
+  const suffix = query.toString() ? `?${query.toString()}` : ""
+  return adminRequest<AdminAdSlotListPayload>(`/api/ads/admin/slots${suffix}`)
+}
+
+export async function createAdminAdSlot(payload: {
+  name: string
+  type: string
+  position: string
+  width: number
+  height: number
+  theme?: string
+  isActive?: boolean
+}) {
+  return adminRequest<AdminAdSlot>("/api/ads", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateAdminAdSlot(id: string, payload: Record<string, unknown>) {
+  return adminRequest<AdminAdSlot>(`/api/ads/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAdminAdSlot(id: string) {
+  return adminRequest<null>(`/api/ads/${id}`, {
+    method: "DELETE",
+  })
+}
+
+export async function fetchAdminAdContents(params?: {
+  page?: number
+  pageSize?: number
+  slotId?: string
+  isActive?: boolean
+  search?: string
+}) {
+  const query = new URLSearchParams()
+  if (params?.page) query.set("page", String(params.page))
+  if (params?.pageSize) query.set("pageSize", String(params.pageSize))
+  if (params?.slotId) query.set("slotId", params.slotId)
+  if (params?.isActive !== undefined) query.set("isActive", String(params.isActive))
+  if (params?.search) query.set("search", params.search)
+  const suffix = query.toString() ? `?${query.toString()}` : ""
+  return adminRequest<AdminAdContentListPayload>(`/api/ads/admin/contents${suffix}`)
+}
+
+export async function fetchAdminAdContentDetail(id: string) {
+  return adminRequest<AdminAdContent>(`/api/ads/admin/contents/${id}`)
+}
+
+export async function createAdminAdContent(payload: {
+  slotId: string
+  title: string
+  description?: string
+  imageUrl: string
+  targetUrl: string
+  ctaText?: string
+  advertiser: string
+  isActive?: boolean
+  priority?: number
+}) {
+  return adminRequest<AdminAdContent>("/api/ads/admin/contents", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateAdminAdContent(id: string, payload: Record<string, unknown>) {
+  return adminRequest<AdminAdContent>(`/api/ads/admin/contents/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAdminAdContent(id: string) {
+  return adminRequest<null>(`/api/ads/admin/contents/${id}`, {
+    method: "DELETE",
+  })
+}
+
+export async function fetchAdminAdsStats() {
+  return adminRequest<AdminAdsStatsPayload>("/api/ads/admin/stats")
 }
 
 export async function fetchUserInbox() {

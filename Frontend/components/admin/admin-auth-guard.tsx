@@ -1,41 +1,60 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { fetchAdminMe } from "@/lib/admin-api"
-import { clearToken, getToken } from "@/lib/api"
 
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [ready, setReady] = useState(false)
+  const authDoneRef = useRef(false)
+
+  const isPublic = ["/login", "/register", "/forgot-password"].some(
+    (p) => pathname?.startsWith(p)
+  )
 
   useEffect(() => {
+    if (isPublic) {
+      setReady(true)
+      return
+    }
+
+    // Prevent stale calls from previous renders
+    if (authDoneRef.current) return
+
     let active = true
 
     const check = async () => {
-      const token = getToken()
+      // Always read fresh from localStorage (synchronous, reliable)
+      const token = localStorage.getItem("triangle-token")
       if (!token) {
-        router.replace(`/login?redirect=${encodeURIComponent(pathname || "/admin")}`)
+        if (active) {
+          router.replace(`/login?redirect=${encodeURIComponent(pathname || "/admin")}`)
+        }
         return
       }
 
       try {
         const { user } = await fetchAdminMe()
-        if (!active) return
+        if (!active || authDoneRef.current) return
 
         if (user.role !== "admin") {
-          clearToken()
-          router.replace(`/login?redirect=${encodeURIComponent(pathname || "/admin")}`)
+          authDoneRef.current = true
+          if (active) {
+            router.replace(`/login?redirect=${encodeURIComponent(pathname || "/admin")}`)
+          }
           return
         }
 
-        setReady(true)
+        authDoneRef.current = true
+        if (active) setReady(true)
       } catch {
-        if (!active) return
-        clearToken()
-        router.replace(`/login?redirect=${encodeURIComponent(pathname || "/admin")}`)
+        if (active && !authDoneRef.current) {
+          authDoneRef.current = true
+          router.replace(`/login?redirect=${encodeURIComponent(pathname || "/admin")}`)
+        }
       }
     }
 
@@ -44,7 +63,11 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     return () => {
       active = false
     }
-  }, [pathname, router])
+  }, [pathname, router, isPublic])
+
+  if (isPublic) {
+    return <>{children}</>
+  }
 
   if (!ready) {
     return (

@@ -1,18 +1,17 @@
 "use client"
 
 import Link from "next/link"
-import { languageOptions } from "@/lib/i18n"
 import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
 
 export function Footer() {
-  const { language, setLanguage, siteSettings, t } = useAppContext()
+  const { siteSettings, t } = useAppContext()
 
   const footerLinks = {
     [t.footerLinks]: [
       { label: t.navHome, href: "/" },
       { label: t.navSoftware, href: "/software" },
-  { label: t.navArticles, href: "/news" },
+      { label: t.navArticles, href: "/news" },
       { label: t.navRequests, href: "/requests" },
     ],
     [t.footerAccount]: [
@@ -27,7 +26,7 @@ export function Footer() {
     <footer className="footer-shell">
       <div className="container-custom py-10 md:py-12">
         <div className="footer-panel">
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.35fr)_repeat(3,minmax(0,0.8fr))]">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.35fr)_repeat(2,minmax(0,0.8fr))]">
             <div>
               <Link href="/" className="mb-5 flex w-fit items-center gap-3 transition-opacity hover:opacity-80">
                 <SiteLogo className="h-9 w-auto" tone="auto" />
@@ -37,7 +36,7 @@ export function Footer() {
                 </div>
               </Link>
               <p className="max-w-sm text-[15px] leading-7 text-muted-foreground">
-                {siteSettings?.siteDescription ?? "把软件、工具、文章和真实需求放到一个清楚、好找、值得信赖的入口里。"}
+                {siteSettings?.siteDescription ?? "把软件、工具、文章和真实需求放到一个清晰、好找、值得信赖的入口里。"}
               </p>
             </div>
 
@@ -55,23 +54,6 @@ export function Footer() {
                 </ul>
               </div>
             ))}
-
-            <div>
-              <h3 className="footer-title">{t.footerLanguage}</h3>
-              <div className="flex flex-col items-start gap-2">
-                {languageOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setLanguage(option.value)}
-                    className={`footer-language-btn ${
-                      option.value === language ? "footer-language-btn-active" : "footer-language-btn-idle"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="mt-8 border-t border-border/70 pt-5">

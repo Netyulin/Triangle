@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 // Google AdSense publisher ID — 替换为你的实际 ca-pub-XXXXX
-export const ADSENSE_PUBLISHER_ID = process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-XXXXXXXX';
+export const ADSENSE_PUBLISHER_ID = process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-7143421934912272';
 
 interface AdSenseSlotProps {
   slotId: string;

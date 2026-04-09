@@ -9,9 +9,16 @@ async function resetDatabase() {
   await prisma.topicApp.deleteMany();
   await prisma.topicPost.deleteMany();
   await prisma.netdiskReport.deleteMany();
+  await prisma.downloadLog.deleteMany();
+  await prisma.cpsDownload.deleteMany();
   await prisma.post.deleteMany();
+  await prisma.adContent.deleteMany();
+  await prisma.adSlot.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.app.deleteMany();
   await prisma.softwareRequest.deleteMany();
+  await prisma.feedback.deleteMany();
+  await prisma.notificationTemplate.deleteMany();
   await prisma.topic.deleteMany();
   await prisma.hotSearch.deleteMany();
   await prisma.user.deleteMany();
@@ -27,9 +34,7 @@ async function main() {
     siteDescription: 'Software, articles, and real requests for Mac users.',
     homeFeaturedPostCount: 6,
     registrationEnabled: true,
-    registrationRequiresInvite: true,
-    defaultLocale: 'zh-CN',
-    supportedLocales: ['zh-CN', 'zh-TW', 'en']
+    registrationRequiresInvite: true
   });
 
   const admin = await prisma.user.create({

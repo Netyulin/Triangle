@@ -10,7 +10,7 @@
     "prisma:init": "prisma init",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "seed": "tsx src/prisma/seed.ts",
+    "seed": "tsx prisma/seed.ts",
     "smoke": "node scripts/smoke.test.mjs",
     "regression": "node scripts/regression.test.mjs",
     "test": "node scripts/run-tests.mjs"

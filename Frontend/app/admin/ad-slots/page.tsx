@@ -1,0 +1,306 @@
+"use client"
+
+import { FormEvent, useEffect, useMemo, useState } from "react"
+import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  createAdminAdSlot,
+  deleteAdminAdSlot,
+  fetchAdminAdSlots,
+  updateAdminAdSlot,
+  type AdminAdSlot,
+} from "@/lib/admin-api"
+
+type SlotForm = {
+  name: string
+  type: "banner" | "insertion" | "native" | "splash"
+  position: "top" | "bottom" | "sidebar" | "infeed"
+  width: string
+  height: string
+  theme: "light" | "dark" | "auto"
+  isActive: boolean
+}
+
+const initialForm: SlotForm = {
+  name: "",
+  type: "banner",
+  position: "top",
+  width: "728",
+  height: "90",
+  theme: "auto",
+  isActive: true,
+}
+
+export default function AdminAdSlotsPage() {
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
+  const [items, setItems] = useState<AdminAdSlot[]>([])
+  const [createForm, setCreateForm] = useState<SlotForm>(initialForm)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<SlotForm>(initialForm)
+
+  const totalContents = useMemo(
+    () => items.reduce((sum, item) => sum + Number(item._count?.adContents ?? 0), 0),
+    [items],
+  )
+
+  const loadSlots = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const data = await fetchAdminAdSlots({ page: 1, pageSize: 100 })
+      setItems(data.list)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "广告位加载失败")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadSlots()
+  }, [])
+
+  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSaving(true)
+    setError("")
+    setMessage("")
+    try {
+      await createAdminAdSlot({
+        name: createForm.name.trim(),
+        type: createForm.type,
+        position: createForm.position,
+        width: Number(createForm.width),
+        height: Number(createForm.height),
+        theme: createForm.theme,
+        isActive: createForm.isActive,
+      })
+      setMessage("广告位创建成功")
+      setCreateForm(initialForm)
+      await loadSlots()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "广告位创建失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const startEdit = (item: AdminAdSlot) => {
+    setMessage("")
+    setError("")
+    setEditingId(item.id)
+    setEditForm({
+      name: item.name,
+      type: item.type,
+      position: item.position,
+      width: String(item.width),
+      height: String(item.height),
+      theme: item.theme,
+      isActive: item.isActive,
+    })
+  }
+
+  const saveEdit = async () => {
+    if (!editingId) return
+    setSaving(true)
+    setError("")
+    setMessage("")
+    try {
+      await updateAdminAdSlot(editingId, {
+        name: editForm.name.trim(),
+        type: editForm.type,
+        position: editForm.position,
+        width: Number(editForm.width),
+        height: Number(editForm.height),
+        theme: editForm.theme,
+        isActive: editForm.isActive,
+      })
+      setMessage("广告位更新成功")
+      setEditingId(null)
+      await loadSlots()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "广告位更新失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (item: AdminAdSlot) => {
+    if (!window.confirm(`确定删除广告位「${item.name}」吗？`)) return
+    setSaving(true)
+    setError("")
+    setMessage("")
+    try {
+      await deleteAdminAdSlot(item.id)
+      setMessage("广告位已删除")
+      await loadSlots()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "广告位删除失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="admin-hero p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
+            <Megaphone className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">广告位管理</h1>
+            <p className="mt-1 text-sm text-muted-foreground">管理广告位类型、尺寸、位置与启用状态</p>
+          </div>
+        </div>
+      </div>
+
+      {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
+      {message ? <div className="admin-panel px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="admin-panel p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">广告位总数</p>
+          <p className="mt-2 text-3xl font-black text-foreground">{items.length}</p>
+        </div>
+        <div className="admin-panel p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">关联广告内容</p>
+          <p className="mt-2 text-3xl font-black text-foreground">{totalContents}</p>
+        </div>
+      </section>
+
+      <section className="admin-panel p-4">
+        <h2 className="mb-4 text-sm font-semibold text-foreground">新建广告位</h2>
+        <form onSubmit={handleCreate} className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <input
+            className="admin-input"
+            placeholder="广告位名称"
+            value={createForm.name}
+            onChange={(event) => setCreateForm((prev) => ({ ...prev, name: event.target.value }))}
+            required
+          />
+          <select className="admin-input" value={createForm.type} onChange={(event) => setCreateForm((prev) => ({ ...prev, type: event.target.value as SlotForm["type"] }))}>
+            <option value="banner">banner</option>
+            <option value="insertion">insertion</option>
+            <option value="native">native</option>
+            <option value="splash">splash</option>
+          </select>
+          <select className="admin-input" value={createForm.position} onChange={(event) => setCreateForm((prev) => ({ ...prev, position: event.target.value as SlotForm["position"] }))}>
+            <option value="top">top</option>
+            <option value="bottom">bottom</option>
+            <option value="sidebar">sidebar</option>
+            <option value="infeed">infeed</option>
+          </select>
+          <select className="admin-input" value={createForm.theme} onChange={(event) => setCreateForm((prev) => ({ ...prev, theme: event.target.value as SlotForm["theme"] }))}>
+            <option value="auto">auto</option>
+            <option value="light">light</option>
+            <option value="dark">dark</option>
+          </select>
+          <input className="admin-input" type="number" min={1} placeholder="宽度" value={createForm.width} onChange={(event) => setCreateForm((prev) => ({ ...prev, width: event.target.value }))} required />
+          <input className="admin-input" type="number" min={1} placeholder="高度" value={createForm.height} onChange={(event) => setCreateForm((prev) => ({ ...prev, height: event.target.value }))} required />
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" checked={createForm.isActive} onChange={(event) => setCreateForm((prev) => ({ ...prev, isActive: event.target.checked }))} />
+            启用
+          </label>
+          <button className="admin-primary-btn inline-flex items-center justify-center gap-2 px-4 py-2.5" disabled={saving}>
+            <Plus className="h-4 w-4" />
+            {saving ? "处理中..." : "创建"}
+          </button>
+        </form>
+      </section>
+
+      <section className="admin-panel p-4">
+        <h2 className="mb-4 text-sm font-semibold text-foreground">广告位列表</h2>
+        {loading ? (
+          <div className="py-10 text-center text-sm text-muted-foreground">正在加载...</div>
+        ) : items.length === 0 ? (
+          <div className="py-10 text-center text-sm text-muted-foreground">暂无广告位</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">名称</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">类型</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">位置</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">尺寸</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">主题</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">状态</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">内容数</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id} className="border-b border-border/60">
+                    <td className="px-3 py-2 text-foreground">{item.name}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{item.type}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{item.position}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {item.width} x {item.height}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">{item.theme}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{item.isActive ? "启用" : "禁用"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{item._count?.adContents ?? 0}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="admin-secondary-btn inline-flex h-8 w-8 items-center justify-center p-0" onClick={() => startEdit(item)} title="编辑">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button className="admin-secondary-btn inline-flex h-8 w-8 items-center justify-center p-0" onClick={() => void handleDelete(item)} title="删除">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {editingId ? (
+        <section className="admin-panel p-4">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">编辑广告位</h2>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <input className="admin-input" value={editForm.name} onChange={(event) => setEditForm((prev) => ({ ...prev, name: event.target.value }))} />
+            <select className="admin-input" value={editForm.type} onChange={(event) => setEditForm((prev) => ({ ...prev, type: event.target.value as SlotForm["type"] }))}>
+              <option value="banner">banner</option>
+              <option value="insertion">insertion</option>
+              <option value="native">native</option>
+              <option value="splash">splash</option>
+            </select>
+            <select className="admin-input" value={editForm.position} onChange={(event) => setEditForm((prev) => ({ ...prev, position: event.target.value as SlotForm["position"] }))}>
+              <option value="top">top</option>
+              <option value="bottom">bottom</option>
+              <option value="sidebar">sidebar</option>
+              <option value="infeed">infeed</option>
+            </select>
+            <select className="admin-input" value={editForm.theme} onChange={(event) => setEditForm((prev) => ({ ...prev, theme: event.target.value as SlotForm["theme"] }))}>
+              <option value="auto">auto</option>
+              <option value="light">light</option>
+              <option value="dark">dark</option>
+            </select>
+            <input className="admin-input" type="number" min={1} value={editForm.width} onChange={(event) => setEditForm((prev) => ({ ...prev, width: event.target.value }))} />
+            <input className="admin-input" type="number" min={1} value={editForm.height} onChange={(event) => setEditForm((prev) => ({ ...prev, height: event.target.value }))} />
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input type="checkbox" checked={editForm.isActive} onChange={(event) => setEditForm((prev) => ({ ...prev, isActive: event.target.checked }))} />
+              启用
+            </label>
+            <div className="flex items-center gap-2">
+              <button className="admin-primary-btn px-4 py-2.5" onClick={() => void saveEdit()} disabled={saving}>
+                保存
+              </button>
+              <button className="admin-secondary-btn px-4 py-2.5" onClick={() => setEditingId(null)} disabled={saving}>
+                取消
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+    </div>
+  )
+}

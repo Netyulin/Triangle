@@ -17,10 +17,7 @@ export const updateValidation = validate([
   body('downloadInterstitialTitle').optional().trim().isLength({ min: 1, max: 80 }).withMessage('downloadInterstitialTitle is invalid'),
   body('downloadInterstitialDescription').optional().trim().isLength({ min: 1, max: 500 }).withMessage('downloadInterstitialDescription is invalid'),
   body('downloadInterstitialButtonText').optional().trim().isLength({ min: 1, max: 40 }).withMessage('downloadInterstitialButtonText is invalid'),
-  body('downloadInterstitialBuyUrl').optional().trim().isLength({ max: 255 }).withMessage('downloadInterstitialBuyUrl is invalid'),
-  body('defaultLocale').optional().trim().isLength({ min: 2, max: 10 }).withMessage('defaultLocale is invalid'),
-  body('supportedLocales').optional().isArray({ min: 1 }).withMessage('supportedLocales must be a non-empty array'),
-  body('supportedLocales.*').optional().isString().trim().isLength({ min: 2, max: 10 }).withMessage('locale is invalid')
+  body('downloadInterstitialBuyUrl').optional().trim().isLength({ max: 255 }).withMessage('downloadInterstitialBuyUrl is invalid')
 ]);
 
 export async function getPublicSettings(_req, res) {

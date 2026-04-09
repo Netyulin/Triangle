@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:54735'
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:58085'
 
 function buildProxyHeaders(request: NextRequest): Record<string, string> {
+  // 显式提取所有认证相关 header
   const headers: Record<string, string> = {}
-  // X-Token 转换为 Authorization 传给后端
+  const auth = request.headers.get('authorization')
+  if (auth) headers['Authorization'] = auth
   const xToken = request.headers.get('x-token')
-  if (xToken) headers['Authorization'] = `Bearer ${xToken}`
+  if (xToken) headers['x-token'] = xToken
+  // 透传其他必要 header
+  const userAgent = request.headers.get('user-agent')
+  if (userAgent) headers['user-agent'] = userAgent
+  const referer = request.headers.get('referer')
+  if (referer) headers['referer'] = referer
   return headers
 }
 

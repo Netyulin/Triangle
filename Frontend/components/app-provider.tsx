@@ -2,12 +2,10 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { clearToken, request, setToken, type AuthPayload, type SiteSettings, type User, type UserPermissions } from "@/lib/api"
-import { type Language, getMessages, isLanguage } from "@/lib/i18n"
+import { getMessages } from "@/lib/i18n"
 import { Toaster } from "@/components/ui/toaster"
 
 type AppContextValue = {
-  language: Language
-  setLanguage: (language: Language) => void
   t: ReturnType<typeof getMessages>
   user: User | null
   permissions: UserPermissions | null
@@ -21,52 +19,33 @@ type AppContextValue = {
 const AppContext = createContext<AppContextValue | null>(null)
 const SITE_SETTINGS_UPDATED_EVENT = "triangle-site-settings-updated"
 
-function applyLanguage(language: Language) {
-  document.documentElement.lang = language
-  window.localStorage.setItem("triangle-language", language)
-}
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("zh-CN")
   const [token, setTokenState] = useState("")
   const [user, setUser] = useState<User | null>(null)
   const [permissions, setPermissions] = useState<UserPermissions | null>(null)
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null)
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("triangle-language")
-    const nextLanguage = isLanguage(storedLanguage) ? storedLanguage : "zh-CN"
-    setLanguageState(nextLanguage)
-    applyLanguage(nextLanguage)
+    document.documentElement.lang = "zh-CN"
     setTokenState(window.localStorage.getItem("triangle-token") ?? "")
   }, [])
 
   useEffect(() => {
     let active = true
-
     const loadSiteSettings = async () => {
       try {
         const settings = await request<SiteSettings>("/api/settings")
         if (!active) return
-
         setSiteSettings(settings)
-
-        const storedLanguage = window.localStorage.getItem("triangle-language")
-        if (!isLanguage(storedLanguage) && isLanguage(settings.defaultLocale)) {
-          setLanguageState(settings.defaultLocale)
-          applyLanguage(settings.defaultLocale)
-        }
       } catch {
         if (!active) return
       }
     }
 
     void loadSiteSettings()
-
     const handleSiteSettingsUpdated = () => {
       void loadSiteSettings()
     }
-
     window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleSiteSettingsUpdated)
 
     return () => {
@@ -90,23 +69,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user)
       setPermissions(data.permissions)
     } catch {
-      clearToken()
-      setTokenState("")
-      setUser(null)
-      setPermissions(null)
+      // 网络异常时保留 token，下次访问会自动重试
     }
   }
 
   useEffect(() => {
-    if (token) {
-      refreshSession()
+    const storedToken = window.localStorage.getItem("triangle-token")
+    if (storedToken) {
+      void refreshSession()
+    } else if (!token) {
+      setUser(null)
+      setPermissions(null)
     }
   }, [token])
-
-  const setLanguage = (nextLanguage: Language) => {
-    setLanguageState(nextLanguage)
-    applyLanguage(nextLanguage)
-  }
 
   const saveSession = (payload: AuthPayload) => {
     setToken(payload.token)
@@ -124,9 +99,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AppContextValue>(
     () => ({
-      language,
-      setLanguage,
-      t: getMessages(language),
+      t: getMessages(),
       user,
       permissions,
       token,
@@ -135,10 +108,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       saveSession,
       logout,
     }),
-    [language, user, permissions, token, siteSettings],
+    [user, permissions, token, siteSettings],
   )
 
-  return <AppContext.Provider value={value}>{children}<Toaster /></AppContext.Provider>
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+      <Toaster />
+    </AppContext.Provider>
+  )
 }
 
 export function useAppContext() {

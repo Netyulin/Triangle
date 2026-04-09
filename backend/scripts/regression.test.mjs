@@ -41,9 +41,7 @@ async function restoreSettings(token, originalSettings) {
       downloadInterstitialTitle: originalSettings.downloadInterstitialTitle,
       downloadInterstitialDescription: originalSettings.downloadInterstitialDescription,
       downloadInterstitialButtonText: originalSettings.downloadInterstitialButtonText,
-      downloadInterstitialBuyUrl: originalSettings.downloadInterstitialBuyUrl,
-      defaultLocale: originalSettings.defaultLocale,
-      supportedLocales: originalSettings.supportedLocales
+      downloadInterstitialBuyUrl: originalSettings.downloadInterstitialBuyUrl
     })
   });
 
@@ -111,17 +109,14 @@ async function main() {
         downloadInterstitialTitle: '自动化下载确认',
         downloadInterstitialDescription: '基础会员进入下载前需要停留。',
         downloadInterstitialButtonText: '继续下载',
-        downloadInterstitialBuyUrl: '/pricing',
-        defaultLocale: 'en',
-        supportedLocales: ['zh-CN', 'en']
+        downloadInterstitialBuyUrl: '/pricing'
       })
     });
     assertApiSuccess(updatedSettings, 'update settings failed');
 
     const publicSettings = await request('/api/settings');
     assertApiSuccess(publicSettings, 'public settings failed');
-    expect(publicSettings.body.data?.defaultLocale === 'en', `expected defaultLocale=en, got ${JSON.stringify(publicSettings.body.data)}`);
-    expect(Array.isArray(publicSettings.body.data?.supportedLocales), 'expected supportedLocales to be an array');
+    expect(publicSettings.body.data?.siteName === 'Triangle QA', `expected updated siteName, got ${JSON.stringify(publicSettings.body.data)}`);
 
     const homeAfterSettingsUpdate = await request('/api/home');
     assertApiSuccess(homeAfterSettingsUpdate, 'home summary failed after settings update');
@@ -284,7 +279,10 @@ async function main() {
     assertApiSuccess(readerProfile, 'reader profile failed');
     expect(
       typeof readerProfile.body.data?.user?.avatar === 'string' &&
-        readerProfile.body.data.user.avatar.includes('/uploads/avatars/generated/'),
+        (
+          readerProfile.body.data.user.avatar.includes('/uploads/avatars/generated/') ||
+          readerProfile.body.data.user.avatar.includes('/avatars/avatar-gen-defaults/')
+        ),
       `expected localized avatar path, got ${JSON.stringify(readerProfile.body.data?.user)}`
     );
 

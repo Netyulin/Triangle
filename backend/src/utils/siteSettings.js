@@ -3,24 +3,9 @@ import { normalizeBoolean, normalizeInteger, normalizeString } from './serialize
 
 const SETTINGS_KEY = 'site';
 
-export const LANGUAGE_OPTIONS = {
-  'zh-CN': {
-    code: 'zh-CN',
-    label: '简体中文'
-  },
-  'zh-TW': {
-    code: 'zh-TW',
-    label: '繁體中文'
-  },
-  en: {
-    code: 'en',
-    label: 'English'
-  }
-};
-
 export const DEFAULT_SITE_SETTINGS = {
   siteName: 'Triangle',
-  siteDescription: '为 Mac 用户整理软件、文章和真实需求。',
+  siteDescription: '为中文用户整理软件、文章和真实需求。',
   homeFeaturedPostCount: 6,
   registrationEnabled: true,
   registrationRequiresInvite: false,
@@ -30,11 +15,9 @@ export const DEFAULT_SITE_SETTINGS = {
   siteAnnouncementLink: '',
   downloadInterstitialEnabled: true,
   downloadInterstitialTitle: '下载前确认',
-  downloadInterstitialDescription: '基础会员进入下载前会短暂停留，高等级会员将自动跳过。',
+  downloadInterstitialDescription: '基础会员下载前会短暂停留，高等级会员将自动跳过。',
   downloadInterstitialButtonText: '继续下载',
-  downloadInterstitialBuyUrl: '',
-  defaultLocale: 'zh-CN',
-  supportedLocales: ['zh-CN', 'zh-TW', 'en']
+  downloadInterstitialBuyUrl: ''
 };
 
 export async function ensureSiteSettingsTable() {
@@ -47,21 +30,7 @@ export async function ensureSiteSettingsTable() {
   `);
 }
 
-function normalizeSupportedLocales(input) {
-  const raw = Array.isArray(input) ? input : DEFAULT_SITE_SETTINGS.supportedLocales;
-  const locales = raw
-    .map((item) => normalizeString(item).trim())
-    .filter((item) => Boolean(item) && LANGUAGE_OPTIONS[item]);
-
-  const uniqueLocales = [...new Set(locales)];
-  return uniqueLocales.length > 0 ? uniqueLocales : [...DEFAULT_SITE_SETTINGS.supportedLocales];
-}
-
 export function normalizeSiteSettings(input = {}) {
-  const supportedLocales = normalizeSupportedLocales(input.supportedLocales);
-  const defaultLocaleCandidate = normalizeString(input.defaultLocale, DEFAULT_SITE_SETTINGS.defaultLocale).trim();
-  const defaultLocale = supportedLocales.includes(defaultLocaleCandidate) ? defaultLocaleCandidate : supportedLocales[0];
-
   return {
     siteName: normalizeString(input.siteName, DEFAULT_SITE_SETTINGS.siteName).trim() || DEFAULT_SITE_SETTINGS.siteName,
     siteDescription:
@@ -107,10 +76,7 @@ export function normalizeSiteSettings(input = {}) {
     downloadInterstitialBuyUrl: normalizeString(
       input.downloadInterstitialBuyUrl,
       DEFAULT_SITE_SETTINGS.downloadInterstitialBuyUrl
-    ).trim(),
-    defaultLocale,
-    supportedLocales,
-    languageOptions: supportedLocales.map((code) => LANGUAGE_OPTIONS[code])
+    ).trim()
   };
 }
 

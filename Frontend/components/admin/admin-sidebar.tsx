@@ -2,7 +2,22 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { AlertTriangle, FolderKanban, KeyRound, LayoutDashboard, MessageSquareMore, Newspaper, Settings2, Shapes, Tags, UserCog, Users } from "lucide-react"
+import {
+  AlertTriangle,
+  BarChart3,
+  FolderKanban,
+  Images,
+  KeyRound,
+  LayoutDashboard,
+  Megaphone,
+  MessageSquareMore,
+  Newspaper,
+  Settings2,
+  Shapes,
+  Tags,
+  UserCog,
+  Users,
+} from "lucide-react"
 import { useAppContext } from "@/components/app-provider"
 import { cn } from "@/lib/utils"
 
@@ -30,6 +45,9 @@ const items: Array<{
   { href: "/admin/app-categories", label: "分类管理", icon: Tags, tone: "indigo" },
   { href: "/admin/topics", label: "专题管理", icon: Shapes, tone: "violet" },
   { href: "/admin/submissions", label: "需求管理", icon: MessageSquareMore, tone: "cyan" },
+  { href: "/admin/ad-slots", label: "广告位管理", icon: Megaphone, tone: "sky" },
+  { href: "/admin/ad-contents", label: "广告内容管理", icon: Images, tone: "indigo" },
+  { href: "/admin/ads-stats", label: "广告数据", icon: BarChart3, tone: "teal" },
   { href: "/admin/netdisk-reports", label: "失效报告", icon: AlertTriangle, tone: "rose" },
   { href: "/admin/account", label: "账号设置", icon: UserCog, tone: "slate" },
   { href: "/admin/users", label: "用户管理", icon: Users, tone: "slate" },
@@ -51,7 +69,7 @@ export function AdminSidebar() {
           </div>
           <div>
             <h1 className="text-base font-bold tracking-tight text-foreground">Triangle 后台</h1>
-            <p className="text-xs text-muted-foreground">统一管理软件、文章、专题和站点设置</p>
+            <p className="text-xs text-muted-foreground">统一管理软件、文章、专题、广告与站点设置</p>
           </div>
         </div>
       </div>
