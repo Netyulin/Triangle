@@ -1,5 +1,5 @@
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "/api"
+// API 调用通过 Next.js /api/[...path] 代理路由访问后端
+export const API_BASE_URL = "/api"
 
 export type ApiEnvelope<T> = {
   success: boolean

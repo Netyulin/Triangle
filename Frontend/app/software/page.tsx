@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Download, Filter, RefreshCw, Search, ShieldCheck, Star } from "lucide-react"
+import { Download, Filter, RefreshCw, ShieldCheck, Star } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
@@ -175,39 +175,27 @@ export default function SoftwarePage() {
               <p className="text-sm text-muted-foreground">当前共 {filteredApps.length} 个结果</p>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={keyword}
-                  onChange={(event) => setKeyword(event.target.value)}
-                  placeholder="搜索软件名称、简介、分类或标签"
-                  className="w-full rounded-2xl border border-border bg-background px-10 py-3 text-sm outline-none transition focus:border-primary/40"
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {[
-                  ["featured", "推荐优先"],
-                  ["downloads", "下载量"],
-                  ["updated", "更新时间"],
-                  ["rating", "评分"],
-                ].map(([value, label]) => (
-                  <button
-                    key={value}
-                    onClick={() => setSortKey(value as SortKey)}
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm transition",
-                      sortKey === value
-                        ? "border-sky-600 bg-sky-600 text-white"
-                        : "border-border bg-background text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {[
+                ["featured", "推荐优先"],
+                ["downloads", "下载量"],
+                ["updated", "更新时间"],
+                ["rating", "评分"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setSortKey(value as SortKey)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm transition",
+                    sortKey === value
+                      ? "border-sky-600 bg-sky-600 text-white"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Filter className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
             </div>
 
             <div className="flex flex-wrap gap-2">

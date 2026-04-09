@@ -7,8 +7,9 @@ import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { request, type HomePayload } from "@/lib/api"
 import { looksLikeImageUrl, resolveAssetUrl } from "@/lib/utils"
-import { ArrowRight, Bell, BookOpen, ChevronLeft, ChevronRight, Download, Eye, MessageSquare, RefreshCw, Star, TrendingUp } from "lucide-react"
+import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, Download, Eye, MessageSquare, RefreshCw, Star, TrendingUp } from "lucide-react"
 import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
+import { AnnouncementToast } from "@/components/announcement-toast"
 
 function getInitial(text: string) {
   return text.trim().slice(0, 2).toUpperCase() || "TR"
@@ -217,32 +218,7 @@ export default function HomePage() {
           </section>
         ) : null}
 
-        <section className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-            <Bell className="h-4 w-4 text-accent" />
-            <div>
-              <h2 className="text-sm font-bold text-foreground">网站公告</h2>
-              <p className="mt-1 text-xs text-muted-foreground">优先展示最新的重要公告，方便快速查看站点动态。</p>
-            </div>
-          </div>
-          {announcements.length ? (
-            <div className="grid gap-0 md:grid-cols-2">
-              {announcements.slice(0, 4).map((item) => (
-                <article key={item.id} className="border-b border-border px-5 py-4 md:border-r md:last:border-r-0">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="rounded-full bg-secondary px-2 py-1 font-medium text-foreground">{item.kind === "system" ? "系统公告" : item.kind === "activity" ? "活动通知" : "站内通知"}</span>
-                    {item.pinned ? <span className="rounded-full bg-accent/10 px-2 py-1 font-medium text-accent">置顶</span> : null}
-                    <span>{item.createdAt}</span>
-                  </div>
-                  <h3 className="mt-3 text-base font-bold text-foreground">{item.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-7 text-muted-foreground">{item.content}</p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="px-5 py-6 text-sm text-muted-foreground">暂时还没有公告，后续站点消息会显示在这里。</div>
-          )}
-        </section>
+        <AnnouncementToast announcements={announcements} />
 
         <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">软件总数</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{home?.stats.publishedApps ?? 0}</p></div>
@@ -323,25 +299,6 @@ export default function HomePage() {
 
             <div className="card-custom">
               <div className="flex items-center gap-2 border-b border-border px-5 py-4">
-                <MessageSquare className="h-4 w-4 text-accent" />
-                <h3 className="text-sm font-bold text-foreground">常用入口</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-3 px-5 py-5">
-                <Link href="/requests" className="card-custom bg-secondary/40 p-4 transition-all hover:border-accent/25">
-                  <MessageSquare className="h-4 w-4 text-accent" />
-                  <p className="mt-3 text-sm font-semibold text-foreground">需求墙</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{home?.stats.publicRequests ?? 0} 条公开需求</p>
-                </Link>
-                <Link href="/software" className="card-custom bg-secondary/40 p-4 transition-all hover:border-accent/25">
-                  <Download className="h-4 w-4 text-amber-500" />
-                  <p className="mt-3 text-sm font-semibold text-foreground">软件库</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{home?.stats.publishedApps ?? 0} 个已发布软件</p>
-                </Link>
-              </div>
-            </div>
-
-            <div className="card-custom">
-              <div className="flex items-center gap-2 border-b border-border px-5 py-4">
                 <Eye className="h-4 w-4 text-sky-500" />
                 <h3 className="text-sm font-bold text-foreground">阅读推荐</h3>
               </div>
@@ -390,6 +347,25 @@ export default function HomePage() {
               ) : (
                 <div className="px-5 py-6 text-sm text-muted-foreground">有下载数据后，这里会自动生成排行。</div>
               )}
+            </div>
+
+            <div className="card-custom">
+              <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+                <MessageSquare className="h-4 w-4 text-accent" />
+                <h3 className="text-sm font-bold text-foreground">常用入口</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3 px-5 py-5">
+                <Link href="/requests" className="card-custom bg-secondary/40 p-4 transition-all hover:border-accent/25">
+                  <MessageSquare className="h-4 w-4 text-accent" />
+                  <p className="mt-3 text-sm font-semibold text-foreground">需求墙</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{home?.stats.publicRequests ?? 0} 条公开需求</p>
+                </Link>
+                <Link href="/software" className="card-custom bg-secondary/40 p-4 transition-all hover:border-accent/25">
+                  <Download className="h-4 w-4 text-amber-500" />
+                  <p className="mt-3 text-sm font-semibold text-foreground">软件库</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{home?.stats.publishedApps ?? 0} 个已发布软件</p>
+                </Link>
+              </div>
             </div>
           </aside>
         </div>

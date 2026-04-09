@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { clearToken, request, setToken, type AuthPayload, type SiteSettings, type User, type UserPermissions } from "@/lib/api"
 import { type Language, getMessages, isLanguage } from "@/lib/i18n"
+import { Toaster } from "@/components/ui/toaster"
 
 type AppContextValue = {
   language: Language
@@ -137,7 +138,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [language, user, permissions, token, siteSettings],
   )
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+  return <AppContext.Provider value={value}>{children}<Toaster /></AppContext.Provider>
 }
 
 export function useAppContext() {

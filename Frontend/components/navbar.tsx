@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { ChevronDown, Menu, Moon, Search, Sun, X, Mail } from "lucide-react"
+import { ChevronDown, Menu, Moon, Search, Sun, X, Mail, MessageCircle } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
@@ -238,6 +238,14 @@ export function Navbar() {
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
+          <Link
+            href="/feedback"
+            aria-label="反馈"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/70 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <MessageCircle className="h-4 w-4" />
+          </Link>
+
           {user ? (
             <div ref={userMenuRef} className="relative">
               <button
@@ -303,13 +311,13 @@ export function Navbar() {
             <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary hover:text-accent sm:block"
+                className="hidden rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:block"
               >
                 {t.login}
               </Link>
               <Link
                 href="/register"
-                className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 {t.register}
               </Link>
@@ -356,6 +364,15 @@ export function Navbar() {
               </div>
             </Link>
           ) : null}
+
+          <Link
+            href="/feedback"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+          >
+            <MessageCircle className="h-5 w-5 text-accent" />
+            意见反馈
+          </Link>
 
           {navItems.map((item) => {
             const mobileDropdownOpen = mobileDropdownHref === item.href

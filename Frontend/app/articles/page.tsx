@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Clock3, RefreshCw, Search } from "lucide-react"
+import { Clock3, RefreshCw } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
@@ -104,16 +104,6 @@ export default function ArticlesPage() {
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">浏览站内文章内容，按分类或关键词快速筛选。</p>
               </div>
               <p className="text-sm text-muted-foreground">当前共 {filteredPosts.length} 篇文章</p>
-            </div>
-
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-                placeholder="搜索标题、摘要、作者或分类"
-                className="w-full rounded-2xl border border-border bg-background px-10 py-3 text-sm outline-none transition focus:border-emerald-500/40"
-              />
             </div>
 
             <div className="flex flex-wrap gap-2">

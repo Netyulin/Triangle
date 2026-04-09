@@ -39,6 +39,7 @@ model User {
   sentNotifications  Notification[]    @relation("NotificationSender")
   netdiskReports     NetdiskReport[]   @relation("NetdiskReportReporter")
   handledReports     NetdiskReport[]   @relation("NetdiskReportHandler")
+  feedbacks          Feedback[]
 }
 
 model App {
@@ -195,6 +196,19 @@ model NetdiskReport {
   handledBy   User?     @relation("NetdiskReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   handledAt   DateTime?
+}
+
+model Feedback {
+  id          Int       @id @default(autoincrement())
+  type        String    @default("other")
+  title       String
+  description String
+  contact     String?
+  status      String    @default("pending")
+  userId      Int?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model HotSearch {
