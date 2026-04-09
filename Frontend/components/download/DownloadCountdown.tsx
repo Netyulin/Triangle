@@ -24,11 +24,16 @@ export default function DownloadCountdown({
   onComplete,
   onSkip,
 }: DownloadCountdownProps) {
-  const [remaining, setRemaining] = useState(seconds);
+  const [remaining, setRemaining] = useState(Math.max(seconds, 0));
   const [redirected, setRedirected] = useState(false);
 
   useEffect(() => {
-    if (remaining <= 0 && !redirected) {
+    if (redirected) {
+      return;
+    }
+
+    if (remaining <= 0) {
+      setRemaining(0);
       setRedirected(true);
       onComplete?.();
       // 倒计时结束 → 自动跳转联盟链接
@@ -37,7 +42,7 @@ export default function DownloadCountdown({
     }
 
     const timer = setInterval(() => {
-      setRemaining((prev) => prev - 1);
+      setRemaining((prev) => Math.max(prev - 1, 0));
     }, 1000);
 
     return () => clearInterval(timer);
@@ -46,13 +51,16 @@ export default function DownloadCountdown({
   const handleSkip = () => {
     if (!redirected && remaining <= 0) {
       onSkip?.();
+      setRedirected(true);
       window.location.href = redirectUrl;
     }
   };
 
+  const clampedRemaining = Math.max(remaining, 0);
+  const safeSeconds = Math.max(seconds, 1);
   const circumference = 2 * Math.PI * 45;
-  const strokeDashoffset = circumference * (1 - remaining / seconds);
-  const isReady = remaining <= 0;
+  const strokeDashoffset = circumference * (1 - clampedRemaining / safeSeconds);
+  const isReady = clampedRemaining <= 0;
 
   return (
     <div className="w-full max-w-xs">
@@ -93,14 +101,14 @@ export default function DownloadCountdown({
             fontWeight="bold"
             fill="rgb(var(--foreground))"
           >
-            {remaining}
+            {clampedRemaining}
           </text>
         </svg>
       </div>
 
       {/* 状态文案 */}
       <p className="text-center text-muted-foreground mb-4 text-sm">
-        {isReady ? '下载已准备就绪，即将跳转...' : `将在 ${remaining} 秒后开始跳转`}
+        {isReady ? '下载已准备就绪，即将跳转...' : `将在 ${clampedRemaining} 秒后开始跳转`}
       </p>
 
       {/* 立即下载按钮 */}

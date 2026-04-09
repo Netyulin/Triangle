@@ -336,6 +336,31 @@ export type AdSlotListPayload = {
   totalPages: number
 }
 
+export const ADSENSE_SLOT_KEYS = [
+  "triangle_home_top",
+  "triangle_detail_top",
+  "triangle_detail_bottom",
+  "triangle_download_interstitial",
+] as const
+
+export type AdSenseSlotKey = (typeof ADSENSE_SLOT_KEYS)[number]
+
+export type AdSenseSlotToggles = Record<AdSenseSlotKey, boolean>
+
+export const DEFAULT_ADSENSE_SLOT_TOGGLES: AdSenseSlotToggles = {
+  triangle_home_top: true,
+  triangle_detail_top: true,
+  triangle_detail_bottom: true,
+  triangle_download_interstitial: true,
+}
+
+export const ADSENSE_SLOT_IDS: Record<AdSenseSlotKey, string> = {
+  triangle_home_top: process.env.NEXT_PUBLIC_ADSENSE_HOMEPAGE_SLOT_ID || "6517724385",
+  triangle_detail_top: process.env.NEXT_PUBLIC_ADSENSE_DETAIL_SLOT_ID || "9554951266",
+  triangle_detail_bottom: process.env.NEXT_PUBLIC_ADSENSE_DETAIL_BOTTOM_SLOT_ID || "5502259258",
+  triangle_download_interstitial: process.env.NEXT_PUBLIC_ADSENSE_INTERSTITIAL_SLOT_ID || "3419021394",
+}
+
 export type DownloadInfo = {
   slug: string
   name: string
@@ -396,13 +421,42 @@ export function formatDateLabel(value: string) {
   return date.toLocaleDateString("zh-CN")
 }
 
-export async function fetchAdSlots(params?: { type?: string; position?: string; isActive?: boolean }) {
+export async function fetchAdSlots(params?: {
+  page?: number
+  pageSize?: number
+  type?: string
+  position?: string
+  isActive?: boolean
+}) {
   const searchParams = new URLSearchParams()
+  if (params?.page) searchParams.set('page', String(params.page))
+  if (params?.pageSize) searchParams.set('pageSize', String(params.pageSize))
   if (params?.type) searchParams.set('type', params.type)
   if (params?.position) searchParams.set('position', params.position)
   if (params?.isActive !== undefined) searchParams.set('isActive', String(params.isActive))
   const query = searchParams.toString()
   return request<AdSlotListPayload>(`/api/ads${query ? `?${query}` : ''}`)
+}
+
+export function resolveAdSenseSlotToggles(slots: AdSlotData[] = []): AdSenseSlotToggles {
+  const toggles: AdSenseSlotToggles = { ...DEFAULT_ADSENSE_SLOT_TOGGLES }
+  const slotMap = new Map(slots.map((item) => [item.name, item]))
+  for (const key of ADSENSE_SLOT_KEYS) {
+    const slot = slotMap.get(key)
+    if (slot) {
+      toggles[key] = slot.isActive
+    }
+  }
+  return toggles
+}
+
+export async function fetchAdSenseSlotToggles() {
+  try {
+    const payload = await fetchAdSlots({ page: 1, pageSize: 200 })
+    return resolveAdSenseSlotToggles(payload.list)
+  } catch {
+    return { ...DEFAULT_ADSENSE_SLOT_TOGGLES }
+  }
 }
 
 export async function fetchAdContent(slotId: string) {

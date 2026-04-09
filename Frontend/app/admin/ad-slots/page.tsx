@@ -9,6 +9,7 @@ import {
   updateAdminAdSlot,
   type AdminAdSlot,
 } from "@/lib/admin-api"
+import { ADSENSE_SLOT_IDS } from "@/lib/api"
 
 type SlotForm = {
   name: string
@@ -30,6 +31,63 @@ const initialForm: SlotForm = {
   isActive: true,
 }
 
+const ADSENSE_SLOT_PRESETS: Array<{
+  key: string
+  label: string
+  description: string
+  slotId: string
+  type: SlotForm["type"]
+  position: SlotForm["position"]
+  width: number
+  height: number
+  theme: SlotForm["theme"]
+}> = [
+  {
+    key: "triangle_home_top",
+    label: "首页顶部广告",
+    description: "首页轮播下方",
+    slotId: ADSENSE_SLOT_IDS.triangle_home_top,
+    type: "banner",
+    position: "top",
+    width: 728,
+    height: 90,
+    theme: "auto",
+  },
+  {
+    key: "triangle_detail_top",
+    label: "详情页顶部广告",
+    description: "软件详情版本信息下方",
+    slotId: ADSENSE_SLOT_IDS.triangle_detail_top,
+    type: "banner",
+    position: "top",
+    width: 728,
+    height: 90,
+    theme: "auto",
+  },
+  {
+    key: "triangle_detail_bottom",
+    label: "详情页底部广告",
+    description: "软件详情相关文章下方",
+    slotId: ADSENSE_SLOT_IDS.triangle_detail_bottom,
+    type: "banner",
+    position: "bottom",
+    width: 728,
+    height: 90,
+    theme: "auto",
+  },
+  {
+    key: "triangle_download_interstitial",
+    label: "下载中间页广告",
+    description: "下载倒计时页中部",
+    slotId: ADSENSE_SLOT_IDS.triangle_download_interstitial,
+    type: "banner",
+    position: "infeed",
+    width: 320,
+    height: 100,
+    theme: "auto",
+  },
+]
+
 export default function AdminAdSlotsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -44,6 +102,14 @@ export default function AdminAdSlotsPage() {
     () => items.reduce((sum, item) => sum + Number(item._count?.adContents ?? 0), 0),
     [items],
   )
+
+  const presetRows = useMemo(() => {
+    const itemMap = new Map(items.map((item) => [item.name, item]))
+    return ADSENSE_SLOT_PRESETS.map((preset) => ({
+      ...preset,
+      slot: itemMap.get(preset.key) ?? null,
+    }))
+  }, [items])
 
   const loadSlots = async () => {
     setLoading(true)
@@ -143,6 +209,21 @@ export default function AdminAdSlotsPage() {
     }
   }
 
+  const handleTogglePreset = async (item: AdminAdSlot) => {
+    setSaving(true)
+    setError("")
+    setMessage("")
+    try {
+      await updateAdminAdSlot(item.id, { isActive: !item.isActive })
+      setMessage(`已${item.isActive ? "关闭" : "开启"}：${item.name}`)
+      await loadSlots()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "广告位开关更新失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="admin-hero p-5">
@@ -168,6 +249,47 @@ export default function AdminAdSlotsPage() {
         <div className="admin-panel p-4">
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">关联广告内容</p>
           <p className="mt-2 text-3xl font-black text-foreground">{totalContents}</p>
+        </div>
+      </section>
+
+      <section className="admin-panel p-4">
+        <h2 className="mb-1 text-sm font-semibold text-foreground">AdSense 固定广告位开关</h2>
+        <p className="mb-4 text-xs text-muted-foreground">
+          前台默认展示全部 SLOT_ID；只有这里显式关闭后，前台才会隐藏对应广告位。
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">广告位键</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">用途</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">SLOT_ID</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">状态</th>
+                <th className="px-3 py-2 text-right font-medium text-muted-foreground">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {presetRows.map((row) => (
+                <tr key={row.key} className="border-b border-border/60">
+                  <td className="px-3 py-2 text-foreground">{row.key}</td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {row.label}（{row.description}）
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.slotId || "未配置"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.slot?.isActive ?? true ? "启用" : "禁用"}</td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      className="admin-secondary-btn px-3 py-1.5"
+                      disabled={saving || !row.slot}
+                      onClick={() => row.slot && void handleTogglePreset(row.slot)}
+                    >
+                      {row.slot?.isActive ?? true ? "关闭" : "开启"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

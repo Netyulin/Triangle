@@ -9,11 +9,8 @@ import { Footer } from '@/components/footer';
 import { AdSenseSlot } from '@/components/ads/AdSenseSlot';
 import DownloadCountdown from '@/components/download/DownloadCountdown';
 import DownloadSkeleton from '@/components/download/DownloadSkeleton';
-import { fetchDownloadInfo } from '@/lib/api';
+import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, fetchDownloadInfo } from '@/lib/api';
 import type { DownloadInfo } from '@/lib/api';
-
-// Google AdSense 中间页广告位 slot ID
-const ADSENSE_INTERSTITIAL_SLOT_ID = process.env.NEXT_PUBLIC_ADSENSE_INTERSTITIAL_SLOT_ID || '';
 
 export default function DownloadInterstitialPage() {
   const params = useParams<{ slug: string }>();
@@ -22,6 +19,7 @@ export default function DownloadInterstitialPage() {
   const [downloadInfo, setDownloadInfo] = useState<DownloadInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [adSwitches, setAdSwitches] = useState(DEFAULT_ADSENSE_SLOT_TOGGLES);
 
   useEffect(() => {
     if (!slug) return;
@@ -40,6 +38,19 @@ export default function DownloadInterstitialPage() {
 
     loadData();
   }, [slug]);
+
+  useEffect(() => {
+    let active = true;
+    const loadAdSwitches = async () => {
+      const toggles = await fetchAdSenseSlotToggles();
+      if (!active) return;
+      setAdSwitches(toggles);
+    };
+    void loadAdSwitches();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -127,9 +138,9 @@ export default function DownloadInterstitialPage() {
 
           {/* AdSense 中间广告 — 320x100 水平广告，居中（设计文档 Section 4.2） */}
           <div className="w-full max-w-sm">
-            {ADSENSE_INTERSTITIAL_SLOT_ID ? (
+            {ADSENSE_SLOT_IDS.triangle_download_interstitial && adSwitches.triangle_download_interstitial ? (
               <AdSenseSlot
-                slotId={ADSENSE_INTERSTITIAL_SLOT_ID}
+                slotId={ADSENSE_SLOT_IDS.triangle_download_interstitial}
                 width={320}
                 height={100}
                 format="horizontal"

@@ -9,7 +9,7 @@ import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAppContext } from "@/components/app-provider"
-import { request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
+import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
 import { resolveAssetUrl } from "@/lib/utils"
 import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
 
@@ -47,6 +47,7 @@ export default function SoftwareDetailPage() {
   const [reporting, setReporting] = useState(false)
   const [reportMessage, setReportMessage] = useState("")
   const [reportError, setReportError] = useState("")
+  const [adSwitches, setAdSwitches] = useState(DEFAULT_ADSENSE_SLOT_TOGGLES)
 
   const slug = decodeURIComponent(pathname.split("/").filter(Boolean).pop() || "")
   const downloadPermission = access?.downloadPermission ?? { allowed: false, reason: "", requiresLogin: true }
@@ -91,6 +92,19 @@ export default function SoftwareDetailPage() {
     const firstLink = downloadLinks[0]
     setReportNetdisk((current) => current || firstLink?.name || "百度网盘")
   }, [downloadLinks, downloadOpen])
+
+  useEffect(() => {
+    let active = true
+    const loadAdSwitches = async () => {
+      const toggles = await fetchAdSenseSlotToggles()
+      if (!active) return
+      setAdSwitches(toggles)
+    }
+    void loadAdSwitches()
+    return () => {
+      active = false
+    }
+  }, [])
 
   const relatedPosts = useMemo(() => {
     if (!app) return []
@@ -268,10 +282,10 @@ export default function SoftwareDetailPage() {
               </div>
 
               {/* AdSense Slot #1 — 版本信息 block 之后（移动端正确位置） */}
-              {process.env.NEXT_PUBLIC_ADSENSE_DETAIL_SLOT_ID ? (
+              {ADSENSE_SLOT_IDS.triangle_detail_top && adSwitches.triangle_detail_top ? (
                 <div className="mt-4">
                   <AdSenseSlot
-                    slotId={process.env.NEXT_PUBLIC_ADSENSE_DETAIL_SLOT_ID}
+                    slotId={ADSENSE_SLOT_IDS.triangle_detail_top}
                     width="auto"
                     height={90}
                     format="horizontal"
@@ -330,10 +344,10 @@ export default function SoftwareDetailPage() {
                 ) : null}
 
                 {/* AdSense Slot #2 — 评论区/相关文章下方（设计文档 Section 4.1） */}
-                {process.env.NEXT_PUBLIC_ADSENSE_DETAIL_BOTTOM_SLOT_ID ? (
+                {ADSENSE_SLOT_IDS.triangle_detail_bottom && adSwitches.triangle_detail_bottom ? (
                   <div className="mt-4">
                     <AdSenseSlot
-                      slotId={process.env.NEXT_PUBLIC_ADSENSE_DETAIL_BOTTOM_SLOT_ID}
+                      slotId={ADSENSE_SLOT_IDS.triangle_detail_bottom}
                       width="auto"
                       height={90}
                       format="horizontal"

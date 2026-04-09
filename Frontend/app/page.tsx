@@ -5,7 +5,7 @@ import Link from "next/link"
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
-import { request, type HomePayload } from "@/lib/api"
+import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, request, type HomePayload } from "@/lib/api"
 import { looksLikeImageUrl, resolveAssetUrl } from "@/lib/utils"
 import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, Download, Eye, MessageSquare, RefreshCw, Star, TrendingUp } from "lucide-react"
 import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
@@ -73,6 +73,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [adSwitches, setAdSwitches] = useState(DEFAULT_ADSENSE_SLOT_TOGGLES)
 
   const loadHome = async () => {
     setLoading(true)
@@ -90,6 +91,19 @@ export default function HomePage() {
 
   useEffect(() => {
     loadHome()
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    const loadAdSwitches = async () => {
+      const toggles = await fetchAdSenseSlotToggles()
+      if (!active) return
+      setAdSwitches(toggles)
+    }
+    void loadAdSwitches()
+    return () => {
+      active = false
+    }
   }, [])
 
   useEffect(() => {
@@ -207,10 +221,10 @@ export default function HomePage() {
         </section>
 
         {/* 首页轮播下方 AdSense 广告位 */}
-        {process.env.NEXT_PUBLIC_ADSENSE_HOMEPAGE_SLOT_ID ? (
+        {ADSENSE_SLOT_IDS.triangle_home_top && adSwitches.triangle_home_top ? (
           <section className="overflow-hidden rounded-2xl">
             <AdSenseSlot
-              slotId={process.env.NEXT_PUBLIC_ADSENSE_HOMEPAGE_SLOT_ID}
+              slotId={ADSENSE_SLOT_IDS.triangle_home_top}
               width="auto"
               height={90}
               format="horizontal"

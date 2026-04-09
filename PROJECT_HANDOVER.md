@@ -542,6 +542,29 @@ D:\Claudecode\Triangle\
    文件：`backend/prisma/seed.ts`  
    处理：将种子中的本地缺失路径（`/icons/*`、`/images/*`）替换为可用占位图 URL，避免后续再次种出 404 数据。
 
+5. 下载中间页倒计时负数修复  
+   文件：`Frontend/components/download/DownloadCountdown.tsx`  
+   处理：触发跳转后立即停止计时；倒计时值钳制到 `0`，避免出现 `-1/-2/...`。
+
+6. AdSense 固定广告位开关接线（默认全开）  
+   文件：  
+   - `Frontend/lib/api.ts`  
+   - `Frontend/app/page.tsx`  
+   - `Frontend/app/software/[slug]/page.tsx`  
+   - `Frontend/app/download/[slug]/page.tsx`  
+   - `Frontend/app/admin/ad-slots/page.tsx`  
+   处理：  
+   - 新增固定广告位键开关解析：`triangle_home_top`、`triangle_detail_top`、`triangle_detail_bottom`、`triangle_download_interstitial`；  
+   - 固化默认 `slot_id`（可由 `NEXT_PUBLIC_ADSENSE_*_SLOT_ID` 覆盖）；  
+   - 前台首页/详情页/下载页根据 `AdSlot.isActive` 决定是否展示；  
+   - 后台广告位页新增固定广告位开关区；  
+   - 缺失配置按“开启”处理，满足“先默认显示全部 SLOT_ID 广告”。
+
+7. 固定广告位重复创建修复  
+   文件：`Frontend/app/admin/ad-slots/page.tsx`  
+   处理：移除页面加载时自动创建固定广告位逻辑，避免开发模式下重复执行导致 `triangle_*` 广告位重复。  
+   数据修复：已清理 `AdSlot` 重复记录，当前固定键每个仅保留 1 条。
+
 ### 16.4 报告与截图产物
 
 - `E:\\Project\\Triangle\\.gstack\\qa-reports\\playwright\\report-full-final-safe.json`
