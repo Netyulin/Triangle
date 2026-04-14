@@ -1,0 +1,395 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../src/generated/postgresql-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 Int               @id @default(autoincrement())
+  username           String            @unique
+  email              String?           @unique
+  password           String
+  name               String?
+  avatar             String?
+  gender             String            @default("other")
+  phone              String?
+  wechatOpenId       String?           @unique
+  role               String            @default("reader")
+  status             String            @default("active")
+  membershipLevel    String            @default("free")
+  membershipExpireAt DateTime?
+  bannedUntil        DateTime?
+  banReason          String?
+  downloadQuotaDaily Int               @default(3)
+  downloadCountDaily Int               @default(0)
+  canComment         Boolean           @default(true)
+  canReply           Boolean           @default(true)
+  canSubmitRequest   Boolean           @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  apps               App[]
+  posts              Post[]
+  comments           Comment[]
+  requests           SoftwareRequest[]
+  notifications      Notification[]    @relation("UserNotifications")
+  sentNotifications  Notification[]    @relation("NotificationSender")
+  netdiskReports     NetdiskReport[]   @relation("NetdiskReportReporter")
+  handledReports     NetdiskReport[]   @relation("NetdiskReportHandler")
+  feedbacks          Feedback[]
+}
+
+model App {
+  id             Int             @id @default(autoincrement())
+  slug           String          @unique
+  name           String
+  subtitle       String
+  category       String
+  icon           String?
+  version        String
+  size           String
+  rating         Float           @default(0)
+  downloads      String
+  updatedAt      String
+  compatibility  Json
+  platforms      Json
+  heroImage      String?
+  displayMode    String          @default("cover")
+  gallery        Json
+  tags           Json
+  verified       Boolean         @default(false)
+  editorialScore Int             @default(0)
+  pricing        String
+  summary        String
+  highlights     Json
+  requirements   Json
+  review         String?
+  featured       Boolean         @default(false)
+  status         String          @default("published")
+  accessLevel    String          @default("free")
+  isDownloadable Boolean         @default(true)
+  downloadUrl    String?
+  downloadLinks  Json?
+  affiliateLink  String?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime        @default(now())
+  authorId       Int?
+  author         User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  posts          Post[]
+  comments       Comment[]
+  topics         TopicApp[]
+  netdiskReports NetdiskReport[]
+  downloadLogs   DownloadLog[]
+  cpsDownloads   CpsDownload[]
+}
+
+model Post {
+  id             Int         @id @default(autoincrement())
+  slug           String      @unique
+  title          String
+  excerpt        String
+  content        String?
+  category       String
+  author         String
+  authorId       Int?
+  adminAuthor    User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  coverImage     String
+  icon           String?
+  displayMode    String      @default("cover")
+  relatedAppSlug String?
+  relatedApp     App?        @relation(fields: [relatedAppSlug], references: [slug], onDelete: SetNull)
+  featured       Boolean     @default(false)
+  readingTime    String
+  dateLabel      String
+  publishedAt    String
+  status         String      @default("hidden")
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime    @default(now())
+  comments       Comment[]
+  topics         TopicPost[]
+}
+
+model Topic {
+  id           Int         @id @default(autoincrement())
+  slug         String      @unique
+  title        String
+  description  String
+  coverImage   String?
+  status       String      @default("hidden")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  relatedApps  TopicApp[]
+  relatedPosts TopicPost[]
+}
+
+model TopicApp {
+  topicId Int
+  appSlug String
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  app     App    @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+
+  @@id([topicId, appSlug])
+}
+
+model TopicPost {
+  topicId  Int
+  postSlug String
+  topic    Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  post     Post   @relation(fields: [postSlug], references: [slug], onDelete: Cascade)
+
+  @@id([topicId, postSlug])
+}
+
+model Comment {
+  id           String    @id @default(uuid())
+  contentId    String
+  contentType  String
+  authorName   String
+  authorAvatar String?
+  content      String
+  parentId     String?
+  parent       Comment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[] @relation("Replies")
+  createdAt    DateTime  @default(now())
+  likes        Int       @default(0)
+  dislikes     Int       @default(0)
+  userId       Int?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appSlug      String?
+  app          App?      @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+  postSlug     String?
+  post         Post?     @relation(fields: [postSlug], references: [slug], onDelete: Cascade)
+}
+
+model SoftwareRequest {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  authorName  String
+  authorEmail String
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  adminReply  String?
+  repliedAt   DateTime?
+  userId      Int?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model NetdiskReport {
+  id          Int       @id @default(autoincrement())
+  appSlug     String
+  app         App       @relation(fields: [appSlug], references: [slug], onDelete: Cascade)
+  reporterId  Int?
+  reporter    User?     @relation("NetdiskReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  netdiskName String
+  downloadUrl String?
+  reason      String
+  contact     String?
+  status      String    @default("pending")
+  adminNote   String?
+  handledById Int?
+  handledBy   User?     @relation("NetdiskReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  handledAt   DateTime?
+}
+
+model Feedback {
+  id          Int      @id @default(autoincrement())
+  type        String   @default("other")
+  title       String
+  description String
+  contact     String?
+  status      String   @default("pending")
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model HotSearch {
+  id      Int    @id @default(autoincrement())
+  keyword String @unique
+  type    String @default("all")
+  count   Int    @default(1)
+}
+
+model Notification {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  senderId    Int?
+  sender      User?     @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  type        String    @default("system")
+  templateKey String?
+  title       String
+  content     String
+  data        Json?
+  link        String?
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, isRead, deletedAt])
+}
+
+model NotificationTemplate {
+  key         String   @id
+  title       String
+  content     String
+  enabled     Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AdSlot {
+  id         String      @id @default(cuid())
+  name       String
+  type       String // banner, insertion, native, splash
+  position   String
+  width      Int
+  height     Int
+  isActive   Boolean     @default(true)
+  theme      String      @default("auto") // light/dark/auto
+  adContents AdContent[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model AdContent {
+  id          String   @id @default(cuid())
+  slotId      String
+  slot        AdSlot   @relation(fields: [slotId], references: [id])
+  title       String
+  description String?
+  imageUrl    String
+  targetUrl   String
+  ctaText     String   @default("了解更多")
+  advertiser  String
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DownloadLog {
+  id           String   @id @default(cuid())
+  softwareSlug String
+  software     App      @relation(fields: [softwareSlug], references: [slug])
+  ip           String
+  userAgent    String?
+  adClicked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model CpsDownload {
+  id           String   @id @default(cuid())
+  softwareSlug String
+  software     App      @relation(fields: [softwareSlug], references: [slug])
+  downloadUrl  String
+  affiliateUrl String
+  ipAddress    String
+  userAgent    String?
+  clickedAt    DateTime @default(now())
+
+  @@index([softwareSlug])
+  @@index([clickedAt])
+}
+
+model SignDevice {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  udid       String
+  product    String?
+  version    String?
+  deviceName String?
+  source     String   @default("profile_service")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, udid], map: "idx_sign_devices_user_udid")
+  @@map("sign_devices")
+}
+
+model SignTask {
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  deviceId               Int?
+  certificateId          Int?
+  profileId              Int?
+  status                 String    @default("queued")
+  progress               Int       @default(0)
+  stage                  String?   @default("waiting")
+  ipaName                String?
+  ipaPath                String?
+  signedIpaPath          String?
+  manifestPath           String?
+  installUrl             String?
+  downloadUrl            String?
+  errorCode              String?
+  errorMessage           String?
+  certificateFingerprint String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  startedAt              DateTime?
+  completedAt            DateTime?
+  expiresAt              DateTime?
+  cleanedAt              DateTime?
+
+  @@index([userId, createdAt], map: "idx_sign_tasks_user_createdAt")
+  @@map("sign_tasks")
+}
+
+model SignCertificate {
+  id          Int      @id @default(autoincrement())
+  ownerUserId Int?
+  scope       String   @default("system")
+  name        String
+  fileName    String
+  filePath    String
+  password    String
+  subjectCn   String?
+  teamId      String?
+  isActive    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sign_certificates")
+}
+
+model SignProfile {
+  id          Int      @id @default(autoincrement())
+  ownerUserId Int?
+  scope       String   @default("system")
+  name        String
+  fileName    String
+  filePath    String
+  note        String?
+  appId       String?
+  teamId      String?
+  profileUuid String?
+  isActive    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sign_profiles")
+}
+
+model SignUserPermission {
+  userId      Int      @id
+  canSign     Int      @default(0)
+  canSelfSign Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sign_user_permissions")
+}

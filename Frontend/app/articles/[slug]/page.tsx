@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Bookmark, Clock3, RefreshCw } from "lucide-react"
+import { Bookmark, Clock3, RefreshCw } from "lucide-react"
 
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
@@ -71,7 +71,7 @@ export default function ArticleDetailPage() {
       })
       setFavorited(result.favorited)
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "收藏失败")
+      setError(nextError instanceof Error ? nextError.message : "操作失败，请稍后再试")
     } finally {
       setFavoriteLoading(false)
     }
@@ -82,16 +82,11 @@ export default function ArticleDetailPage() {
       <Navbar />
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <Link href="/news" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-          返回文章列表
-        </Link>
-
         {loading ? (
           <section className="mt-6 rounded-[28px] border border-border bg-card p-8 text-sm text-muted-foreground">文章详情加载中...</section>
         ) : error || !post ? (
           <section className="mt-6 rounded-[28px] border border-border bg-card p-8 text-center">
-            <p className="text-sm text-muted-foreground">{error || "没有找到这篇文章。"}</p>
+            <p className="text-sm text-muted-foreground">{error || "未找到该文章，可能已被删除或链接有误。"}</p>
             <button onClick={() => void loadDetail()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
               <RefreshCw className="h-4 w-4" />
               重新加载

@@ -23,6 +23,9 @@ export type User = {
   status?: string
   banUntil?: string | null
   canSubmitRequest: boolean
+  canReply?: boolean
+  canSign?: boolean
+  canSelfSign?: boolean
   canComment: boolean
   downloadQuotaDaily: number
   downloadCountDaily: number
@@ -44,7 +47,10 @@ export type UserPermissions = {
   role: string
   membershipLevel: string
   canComment: boolean
+  canReply?: boolean
   canSubmitRequest: boolean
+  canSign: boolean
+  canSelfSign: boolean
   allowedDownloadLevels: string[]
   downloadQuotaDaily: number
   downloadCountDaily: number
@@ -452,7 +458,7 @@ export function resolveAdSenseSlotToggles(slots: AdSlotData[] = []): AdSenseSlot
 
 export async function fetchAdSenseSlotToggles() {
   try {
-    const payload = await fetchAdSlots({ page: 1, pageSize: 200 })
+    const payload = await fetchAdSlots({ page: 1, pageSize: 100 })
     return resolveAdSenseSlotToggles(payload.list)
   } catch {
     return { ...DEFAULT_ADSENSE_SLOT_TOGGLES }

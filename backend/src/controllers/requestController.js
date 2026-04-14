@@ -4,6 +4,12 @@ import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
 import { normalizeInteger, normalizeString, serializeRequest } from '../utils/serializers.js';
 import { ensureUserFeatureTables, getRequestVoteSummary } from '../utils/userFeatures.js';
+import { executeRaw, queryRaw } from '../utils/dbRaw.js';
+import { isPostgresDatabase } from '../utils/signTables.js';
+
+const USER_ID_COLUMN = isPostgresDatabase() ? '"userId"' : 'userId';
+const REQUEST_ID_COLUMN = isPostgresDatabase() ? '"requestId"' : 'requestId';
+const CREATED_AT_COLUMN = isPostgresDatabase() ? '"createdAt"' : 'createdAt';
 
 const allowedStatuses = ['pending', 'processing', 'done', 'rejected'];
 
@@ -220,18 +226,18 @@ export async function vote(req, res) {
     return sendError(res, ErrorCodes.PERMISSION_DENIED, 'cannot vote your own request');
   }
 
-  const existed = await prisma.$queryRawUnsafe(
-    'SELECT requestId FROM request_votes WHERE userId = ? AND requestId = ? LIMIT 1',
+  const existed = await queryRaw(
+    `SELECT ${REQUEST_ID_COLUMN} AS "requestId" FROM request_votes WHERE ${USER_ID_COLUMN} = ? AND ${REQUEST_ID_COLUMN} = ? LIMIT 1`,
     req.user.id,
     id
   );
 
   let userVoted = false;
   if (existed.length > 0) {
-    await prisma.$executeRawUnsafe('DELETE FROM request_votes WHERE userId = ? AND requestId = ?', req.user.id, id);
+    await executeRaw(`DELETE FROM request_votes WHERE ${USER_ID_COLUMN} = ? AND ${REQUEST_ID_COLUMN} = ?`, req.user.id, id);
   } else {
-    await prisma.$executeRawUnsafe(
-      'INSERT INTO request_votes (userId, requestId, createdAt) VALUES (?, ?, CURRENT_TIMESTAMP)',
+    await executeRaw(
+      `INSERT INTO request_votes (${USER_ID_COLUMN}, ${REQUEST_ID_COLUMN}, ${CREATED_AT_COLUMN}) VALUES (?, ?, CURRENT_TIMESTAMP)`,
       req.user.id,
       id
     );

@@ -1,8 +1,12 @@
 import crypto from 'node:crypto';
 import prisma from './prisma.js';
+import { executeRaw, queryRaw } from './dbRaw.js';
+import { isPostgresDatabase } from './signTables.js';
+
+const CREATED_AT_ORDER = isPostgresDatabase() ? 'createdat DESC' : 'datetime(createdAt) DESC';
 
 export async function ensureInviteCodeTable() {
-  await prisma.$executeRawUnsafe(`
+  await executeRaw(`
     CREATE TABLE IF NOT EXISTS invite_codes (
       code TEXT PRIMARY KEY,
       note TEXT,
@@ -22,11 +26,11 @@ function generateCode() {
 
 export async function listInviteCodes(limit = 100) {
   await ensureInviteCodeTable();
-  return prisma.$queryRawUnsafe(
+  return queryRaw(
     `
       SELECT code, note, status, batchId, createdAt, usedAt, usedByUserId, usedByUsername
       FROM invite_codes
-      ORDER BY datetime(createdAt) DESC
+      ORDER BY ${CREATED_AT_ORDER}
       LIMIT ?
     `,
     limit
@@ -42,10 +46,10 @@ export async function createInviteCodeBatch({ count, note = '' }) {
 
   while (codes.length < count) {
     const code = generateCode();
-    const existed = await prisma.$queryRawUnsafe('SELECT code FROM invite_codes WHERE code = ? LIMIT 1', code);
+    const existed = await queryRaw('SELECT code FROM invite_codes WHERE code = ? LIMIT 1', code);
     if (Array.isArray(existed) && existed.length > 0) continue;
 
-    await prisma.$executeRawUnsafe(
+    await executeRaw(
       `
         INSERT INTO invite_codes (code, note, status, batchId, createdAt)
         VALUES (?, ?, 'unused', ?, ?)
@@ -67,14 +71,14 @@ export async function createInviteCodeBatch({ count, note = '' }) {
 export async function consumeInviteCode(code, user) {
   await ensureInviteCodeTable();
 
-  const rows = await prisma.$queryRawUnsafe('SELECT code, status FROM invite_codes WHERE code = ? LIMIT 1', code);
+  const rows = await queryRaw('SELECT code, status FROM invite_codes WHERE code = ? LIMIT 1', code);
   const current = Array.isArray(rows) ? rows[0] : null;
 
   if (!current || current.status !== 'unused') {
     return false;
   }
 
-  await prisma.$executeRawUnsafe(
+  await executeRaw(
     `
       UPDATE invite_codes
       SET status = 'used',

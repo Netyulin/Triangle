@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { Separator } from "@/components/ui/separator"
 
 export function Footer() {
   const { siteSettings, t } = useAppContext()
@@ -28,15 +30,23 @@ export function Footer() {
         <div className="footer-panel">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.35fr)_repeat(2,minmax(0,0.8fr))]">
             <div>
-              <Link href="/" className="mb-5 flex w-fit items-center gap-3 transition-opacity hover:opacity-80">
+              <Link
+                href="/"
+                className="mb-5 flex w-fit items-center gap-3 transition-opacity hover:opacity-80"
+              >
                 <SiteLogo className="h-9 w-auto" tone="auto" />
                 <div>
-                  <div className="font-mono text-lg font-black leading-none text-foreground">{siteSettings?.siteName ?? "Triangle"}</div>
-                  <div className="mt-1 text-[11px] tracking-[0.18em] text-muted-foreground">{t.brandTagline}</div>
+                  <div className="text-lg font-extrabold leading-none text-foreground">
+                    {siteSettings?.siteName ?? "三角软件"}
+                  </div>
+                  <div className="mt-1 text-[11px] tracking-[0.18em] text-muted-foreground">
+                    {t.brandTagline}
+                  </div>
                 </div>
               </Link>
               <p className="max-w-sm text-[15px] leading-7 text-muted-foreground">
-                {siteSettings?.siteDescription ?? "把软件、工具、文章和真实需求放到一个清晰、好找、值得信赖的入口里。"}
+                {siteSettings?.siteDescription ??
+                  "把软件、工具、文章和真实需求放到一个清晰、好找、值得信赖的入口里。"}
               </p>
             </div>
 
@@ -56,9 +66,30 @@ export function Footer() {
             ))}
           </div>
 
-          <div className="mt-8 border-t border-border/70 pt-5">
-            <p className="text-center text-sm text-muted-foreground">
-              © {new Date().getFullYear()} {siteSettings?.siteName ?? "Triangle"}。保留所有权利。
+          <Separator className="my-6" />
+
+          {/* 底部栏：三栏布局 */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* 左：语言切换 */}
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher />
+              <span className="text-xs text-muted-foreground">
+                Powered by{" "}
+                <a
+                  href="https://gitee.com/mail_osc/translate"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground transition-colors"
+                >
+                  translate.js
+                </a>
+              </span>
+            </div>
+
+            {/* 右：版权信息 */}
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()}{" "}
+              {siteSettings?.siteName ?? "三角软件"}。保留所有权利。
             </p>
           </div>
         </div>

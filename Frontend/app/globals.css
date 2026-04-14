@@ -78,17 +78,33 @@
     background: rgb(var(--accent) / 0.24);
     color: rgb(var(--foreground));
   }
+
+  /* 增强表单输入框聚焦状态 - WCAG AA 合规 */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    border-color: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.15);
+  }
+
+  /* 按钮聚焦状态 */
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
   .container-custom {
     @apply mx-auto w-full max-w-[1200px] px-4 md:px-6;
   }
-  .card { @apply rounded-lg border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-hover; }
-  .card-custom { @apply rounded-xl border border-border bg-card p-5 shadow-card transition-all; }
-  .btn { @apply px-4 py-2 rounded-md font-medium transition-colors; }
-  .btn-primary { @apply bg-accent text-white; }
-  .btn-primary:hover { background-color: #0284c7; }
+  .card { @apply rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-md hover:-translate-y-0.5; }
+  .card-custom { @apply rounded-xl border border-border bg-card p-5 shadow-card transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-accent/20; }
+  .btn { @apply px-4 py-2 rounded-xl font-medium transition-all; }
+  .btn-primary { @apply bg-accent text-white shadow-sm; }
+  .btn-primary:hover { background-color: #0284c7; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
   .badge-secondary { @apply bg-secondary text-secondary-foreground; }
   .heading-2 { @apply text-2xl font-bold text-foreground; }

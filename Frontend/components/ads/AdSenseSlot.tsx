@@ -1,181 +1,280 @@
-'use client';
+"use client"
 
-import { cn } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react"
+import { cn } from "@/lib/utils"
 
-// Google AdSense publisher ID — 替换为你的实际 ca-pub-XXXXX
-export const ADSENSE_PUBLISHER_ID = process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-7143421934912272';
-
-interface AdSenseSlotProps {
-  slotId: string;
-  width?: number | 'auto';
-  height?: number;
-  format?: 'auto' | 'fluid' | 'horizontal' | 'vertical' | 'rectangle';
-  layout?: string;
-  className?: string;
-  /** 仅 interstitial（中间页）使用 */
-  isInterstitial?: boolean;
+declare global {
+  interface Window {
+    adsbygoogle?: Array<Record<string, unknown>> & { loaded?: boolean }
+    __triangleAdsenseLoader?: Promise<void>
+  }
 }
 
-type AdState = 'idle' | 'loading' | 'loaded' | 'error';
+export const ADSENSE_PUBLISHER_ID =
+  process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || "ca-pub-7143421934912272"
+
+interface AdSenseSlotProps {
+  slotId: string
+  width?: number | "auto"
+  height?: number
+  format?: "auto" | "fluid" | "horizontal" | "vertical" | "rectangle"
+  layout?: string
+  className?: string
+  isInterstitial?: boolean
+}
+
+type AdState = "idle" | "loading" | "requested" | "error"
+
+const ADSENSE_GLOBAL_HIDE_KEY = "triangle_adsense_global_hide"
+const ADSENSE_SLOT_HIDE_PREFIX = "triangle_adsense_slot_hide:"
+const ADSENSE_RENDER_TIMEOUT_MS = 7000
+
+function getSlotHideKey(slotId: string) {
+  return `${ADSENSE_SLOT_HIDE_PREFIX}${slotId}`
+}
+
+function shouldHideAllAds() {
+  if (typeof window === "undefined") return false
+  return window.sessionStorage.getItem(ADSENSE_GLOBAL_HIDE_KEY) === "1"
+}
+
+function shouldHideSlot(slotId: string) {
+  if (typeof window === "undefined") return false
+  return window.sessionStorage.getItem(getSlotHideKey(slotId)) === "1"
+}
+
+function markAllAdsHidden() {
+  if (typeof window === "undefined") return
+  window.sessionStorage.setItem(ADSENSE_GLOBAL_HIDE_KEY, "1")
+}
+
+function markSlotHidden(slotId: string) {
+  if (typeof window === "undefined") return
+  window.sessionStorage.setItem(getSlotHideKey(slotId), "1")
+}
+
+function loadAdSenseScript() {
+  if (typeof window === "undefined") {
+    return Promise.resolve()
+  }
+
+  if (window.__triangleAdsenseLoader) {
+    return window.__triangleAdsenseLoader
+  }
+
+  window.__triangleAdsenseLoader = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]',
+    )
+
+    if (existing) {
+      resolve()
+      return
+    }
+
+    const script = document.createElement("script")
+    script.async = true
+    script.crossOrigin = "anonymous"
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error("AdSense 脚本加载失败"))
+    document.head.appendChild(script)
+  })
+
+  return window.__triangleAdsenseLoader
+}
 
 export function AdSenseSlot({
   slotId,
-  width = 'auto',
+  width = "auto",
   height = 90,
-  format = 'auto',
+  format = "auto",
   layout,
   className,
   isInterstitial = false,
 }: AdSenseSlotProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<AdState>('idle');
-  const [retryCount, setRetryCount] = useState(0);
-  const scriptInitialized = useRef(false);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const requestedRef = useRef(false)
+  const renderTimerRef = useRef<number | null>(null)
+  const [state, setState] = useState<AdState>("idle")
+  const [hidden, setHidden] = useState(false)
 
-  // 动态加载 AdSense 脚本
+  const minHeight = useMemo(() => {
+    if (height && Number.isFinite(height)) {
+      return `${height}px`
+    }
+    return "90px"
+  }, [height])
+
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!slotId || typeof window === "undefined") {
+      return
+    }
 
-    const initAds = () => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const adsbygoogle = (window as any).adsbygoogle || [];
-        if (adsbygoogle.loaded === true) {
-          // 脚本已加载，触发广告请求
-          if (containerRef.current && !scriptInitialized.current) {
-            scriptInitialized.current = true;
-            adsbygoogle.push({});
-          }
-          setState('loading');
-        }
-      } catch {
-        setState('error');
+    if (shouldHideAllAds() || shouldHideSlot(slotId)) {
+      setHidden(true)
+      return
+    }
+
+    let cancelled = false
+    let slotObserver: MutationObserver | null = null
+
+    const clearRenderTimer = () => {
+      if (renderTimerRef.current !== null) {
+        window.clearTimeout(renderTimerRef.current)
+        renderTimerRef.current = null
       }
-    };
-
-    // 检查脚本是否已存在
-    const existingScript = document.querySelector(
-      `script[src*="googlesyndication.com/pagead/js/adsbygoogle.js"]`
-    );
-
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`;
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      script.onload = () => {
-        // 等待 adsbygoogle 初始化
-        setTimeout(initAds, 100);
-      };
-      script.onerror = () => setState('error');
-      document.head.appendChild(script);
-    } else {
-      initAds();
     }
 
-    // 监听广告加载成功
-    const handleAdLoad = () => setState('loaded');
-    window.addEventListener('adsense:load', handleAdLoad);
-    return () => window.removeEventListener('adsense:load', handleAdLoad);
-  }, []);
+    const hasRenderableContent = () => {
+      const slotElement = containerRef.current?.querySelector("ins.adsbygoogle")
+      if (!slotElement) {
+        return false
+      }
 
-  // 广告失败重试一次
-  useEffect(() => {
-    if (state === 'error' && retryCount === 0) {
-      const timer = setTimeout(() => {
-        scriptInitialized.current = false;
-        setRetryCount(1);
-        setState('idle');
-        // 重新触发
-        if (containerRef.current) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const adsbygoogle = (window as any).adsbygoogle || [];
-          adsbygoogle.push({});
+      return (
+        Boolean(slotElement.querySelector("iframe")) ||
+        slotElement.childElementCount > 0 ||
+        slotElement.innerHTML.trim().length > 0
+      )
+    }
+
+    const hideCurrentSlot = (hideAll = false) => {
+      clearRenderTimer()
+      slotObserver?.disconnect()
+      slotObserver = null
+
+      if (hideAll) {
+        markAllAdsHidden()
+      } else {
+        markSlotHidden(slotId)
+      }
+
+      if (!cancelled) {
+        setState("error")
+        setHidden(true)
+      }
+    }
+
+    const watchSlotRender = () => {
+      const slotElement = containerRef.current?.querySelector("ins.adsbygoogle")
+      if (!slotElement) {
+        hideCurrentSlot()
+        return
+      }
+
+      if (hasRenderableContent()) {
+        if (!cancelled) {
+          setState("requested")
         }
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [state, retryCount]);
+        return
+      }
 
-  // IntersectionObserver：懒加载
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          observer.disconnect();
-          if (state === 'idle' && !scriptInitialized.current) {
-            scriptInitialized.current = true;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const adsbygoogle = (window as any).adsbygoogle || [];
-            adsbygoogle.push({});
-            setState('loading');
+      slotObserver = new MutationObserver(() => {
+        if (hasRenderableContent()) {
+          clearRenderTimer()
+          slotObserver?.disconnect()
+          slotObserver = null
+          if (!cancelled) {
+            setState("requested")
           }
+        }
+      })
+
+      slotObserver.observe(slotElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+      })
+
+      renderTimerRef.current = window.setTimeout(() => {
+        if (!hasRenderableContent()) {
+          hideCurrentSlot()
+        }
+      }, ADSENSE_RENDER_TIMEOUT_MS)
+    }
+
+    const requestAd = async () => {
+      try {
+        setState("loading")
+        await loadAdSenseScript()
+        if (cancelled || !containerRef.current || requestedRef.current) {
+          return
+        }
+
+        requestedRef.current = true
+        ;(window.adsbygoogle = window.adsbygoogle || []).push({})
+        watchSlotRender()
+      } catch {
+        hideCurrentSlot(true)
+      }
+    }
+
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          intersectionObserver.disconnect()
+          void requestAd()
         }
       },
-      { rootMargin: '200px' }
-    );
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, [state]);
+      { rootMargin: "200px" },
+    )
+
+    if (containerRef.current) {
+      intersectionObserver.observe(containerRef.current)
+    }
+
+    return () => {
+      cancelled = true
+      clearRenderTimer()
+      slotObserver?.disconnect()
+      intersectionObserver.disconnect()
+    }
+  }, [slotId])
+
+  if (!slotId || hidden) {
+    return null
+  }
 
   return (
-    <div className={cn('relative', className)}>
-      {/* 广告标签 */}
-      <div className="flex items-center gap-1 mb-1">
-        <span className="text-[10px] text-muted-foreground tracking-wide">广告</span>
+    <div className={cn("relative", className)}>
+      <div className="mb-1 flex items-center gap-1">
+        <span className="text-[10px] tracking-wide text-muted-foreground">广告</span>
         <GoogleIcon />
       </div>
 
-      {/* 广告容器 — 1A 规范：虚线边框 + 最小高度占位 */}
       <div
         ref={containerRef}
-        className={cn(
-          'relative overflow-hidden rounded-xl border border-dashed border-slate-700 bg-slate-900/50',
-          state === 'error' || state === 'idle' ? 'min-h-[90px]' : 'min-h-[90px]',
-          isInterstitial ? 'w-full' : 'w-full'
-        )}
+        className="relative overflow-hidden rounded-xl border border-dashed border-slate-700 bg-slate-900/50"
+        style={{ minHeight }}
       >
-        {/* 真实 AdSense 广告位 */}
         <ins
           className="adsbygoogle"
           style={{
-            display: 'block',
-            width: width === 'auto' ? '100%' : `${width}px`,
-            height: `${height}px`,
+            display: "block",
+            width: width === "auto" ? "100%" : `${width}px`,
+            height: typeof height === "number" ? `${height}px` : minHeight,
           }}
-          data-ad-client={`${ADSENSE_PUBLISHER_ID}`}
+          data-ad-client={ADSENSE_PUBLISHER_ID}
           data-ad-slot={slotId}
           data-ad-format={format}
           data-ad-layout={layout}
-          data-ad-channel={isInterstitial ? 'interstitial' : undefined}
+          data-ad-channel={isInterstitial ? "interstitial" : undefined}
+          data-full-width-responsive={width === "auto" ? "true" : undefined}
+          data-adtest={process.env.NODE_ENV === "production" ? undefined : "on"}
         />
 
-        {/* 加载中骨架屏 */}
-        {(state === 'loading' || state === 'idle') && (
-          <div className="absolute inset-0 flex items-center justify-center">
+        {state === "idle" || state === "loading" ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/20">
             <div className="flex flex-col items-center gap-2">
               <div className="h-4 w-24 animate-pulse rounded bg-slate-800" />
               <div className="h-3 w-16 animate-pulse rounded bg-slate-800" />
             </div>
           </div>
-        )}
-
-        {/* 错误状态 */}
-        {state === 'error' && retryCount > 0 && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-xs text-muted-foreground">广告加载失败</span>
-              <span className="text-[10px] text-muted-foreground/60">
-                {retryCount > 0 ? '已重试' : '将自动重试'}
-              </span>
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
-  );
+  )
 }
 
 function GoogleIcon() {
@@ -191,7 +290,7 @@ function GoogleIcon() {
         fill="currentColor"
       />
     </svg>
-  );
+  )
 }
 
-export default AdSenseSlot;
+export default AdSenseSlot

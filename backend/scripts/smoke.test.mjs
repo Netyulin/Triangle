@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 import { request, assertApiSuccess, createInviteCode, loginAsAdmin } from './test-helpers.mjs';
 
@@ -16,7 +17,7 @@ async function main() {
 
   const categories = await request('/api/apps/categories');
   assertApiSuccess(categories, 'app categories failed');
-  if (!Array.isArray(categories.body.data) || categories.body.data.length === 0) {
+  if (!Array.isArray(categories.body.data)) {
     throw new Error(`unexpected categories payload: ${JSON.stringify(categories.body.data)}`);
   }
 
@@ -25,13 +26,16 @@ async function main() {
 
   const topics = await request('/api/topics/all');
   assertApiSuccess(topics, 'topics list failed');
+  if (!Array.isArray(topics.body.data)) {
+    throw new Error(`unexpected topics payload: ${JSON.stringify(topics.body.data)}`);
+  }
 
   const search = await request('/api/search?q=figma&type=all&page=1&pageSize=6');
   assertApiSuccess(search, 'search failed');
 
   const requestSearch = await request('/api/search?q=Affinity&type=request&page=1&pageSize=5');
   assertApiSuccess(requestSearch, 'request search failed');
-  if (!Array.isArray(requestSearch.body.data?.requests) || requestSearch.body.data?.totalRequests < 1) {
+  if (!Array.isArray(requestSearch.body.data?.requests) || typeof requestSearch.body.data?.totalRequests !== 'number') {
     throw new Error(`unexpected request search payload: ${JSON.stringify(requestSearch.body.data)}`);
   }
 

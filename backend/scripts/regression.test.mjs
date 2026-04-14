@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 import { request, assertApiSuccess, assertApiError, createInviteCode, loginAsAdmin } from './test-helpers.mjs';
 import prisma from '../src/utils/prisma.js';
@@ -10,10 +11,73 @@ const tempReaderUsername = `reader_${tempSuffix}`;
 const tempReaderPassword = 'Pass12345';
 const tempAppCategory = `test-app-${tempSuffix}`;
 const tempPostCategory = `test-post-${tempSuffix}`;
+const INTERSTITIAL_TITLE = '下载前确认';
+const INTERSTITIAL_DESCRIPTION = '基础会员下载前会短暂停留，高等级会员将自动跳过。';
+const INTERSTITIAL_BUTTON_TEXT = '继续下载';
 
 function expect(condition, message) {
   if (!condition) {
     throw new Error(message);
+  }
+}
+
+async function cleanupTempData(readerId) {
+  await prisma.notification.deleteMany({
+    where: {
+      OR: [
+        { title: '自动化站内信' },
+        { templateKey: 'netdisk_report_handled' },
+        { templateKey: 'request_status_updated' },
+      ],
+    },
+  }).catch(() => null);
+
+  await prisma.comment.deleteMany({
+    where: {
+      OR: [{ appSlug: tempAppSlug }, { postSlug: tempPostSlug }],
+    },
+  }).catch(() => null);
+
+  await prisma.netdiskReport.deleteMany({
+    where: { appSlug: tempAppSlug },
+  }).catch(() => null);
+
+  await prisma.topicPost.deleteMany({
+    where: { postSlug: tempPostSlug },
+  }).catch(() => null);
+
+  await prisma.topicApp.deleteMany({
+    where: { appSlug: tempAppSlug },
+  }).catch(() => null);
+
+  await prisma.topic.deleteMany({
+    where: { slug: tempTopicSlug },
+  }).catch(() => null);
+
+  await prisma.softwareRequest.deleteMany({
+    where: {
+      OR: [
+        { title: 'Regression request' },
+        { title: 'Blocked request' },
+      ],
+    },
+  }).catch(() => null);
+
+  await prisma.post.deleteMany({
+    where: { slug: tempPostSlug },
+  }).catch(() => null);
+
+  await prisma.app.deleteMany({
+    where: { slug: tempAppSlug },
+  }).catch(() => null);
+
+  await prisma.$executeRawUnsafe(`DELETE FROM app_categories WHERE name IN ($1, $2)`, tempAppCategory, `${tempAppCategory}-renamed`).catch(() => null);
+  await prisma.$executeRawUnsafe(`DELETE FROM post_categories WHERE name IN ($1, $2)`, tempPostCategory, '????').catch(() => null);
+
+  if (readerId) {
+    await prisma.user.deleteMany({
+      where: { id: readerId },
+    }).catch(() => null);
   }
 }
 

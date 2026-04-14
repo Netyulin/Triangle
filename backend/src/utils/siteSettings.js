@@ -1,4 +1,5 @@
 import prisma from './prisma.js';
+import { executeRaw, queryRaw } from './dbRaw.js';
 import { normalizeBoolean, normalizeInteger, normalizeString } from './serializers.js';
 
 const SETTINGS_KEY = 'site';
@@ -21,7 +22,7 @@ export const DEFAULT_SITE_SETTINGS = {
 };
 
 export async function ensureSiteSettingsTable() {
-  await prisma.$executeRawUnsafe(`
+  await executeRaw(`
     CREATE TABLE IF NOT EXISTS site_settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -85,7 +86,7 @@ export async function writeSiteSettings(settings) {
   const normalized = normalizeSiteSettings(settings);
   const updatedAt = new Date().toISOString();
 
-  await prisma.$executeRawUnsafe(
+  await executeRaw(
     `
       INSERT INTO site_settings (key, value, updatedAt)
       VALUES (?, ?, ?)
@@ -104,7 +105,7 @@ export async function writeSiteSettings(settings) {
 
 export async function readSiteSettings() {
   await ensureSiteSettingsTable();
-  const rows = await prisma.$queryRawUnsafe(`SELECT value, updatedAt FROM site_settings WHERE key = ?`, SETTINGS_KEY);
+  const rows = await queryRaw(`SELECT value, updatedAt FROM site_settings WHERE key = ?`, SETTINGS_KEY);
   const row = Array.isArray(rows) ? rows[0] : null;
 
   if (!row) {

@@ -6,7 +6,7 @@ type SiteLogoProps = {
   tone?: "auto" | "light" | "dark"
 }
 
-export function SiteLogo({ className, alt = "Triangle", tone = "auto" }: SiteLogoProps) {
+export function SiteLogo({ className, alt = "三角软件", tone = "auto" }: SiteLogoProps) {
   return (
     <img
       src="/site-logo.png"

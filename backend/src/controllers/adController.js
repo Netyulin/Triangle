@@ -2,6 +2,8 @@ import { body, param, query } from 'express-validator';
 import prisma from '../utils/prisma.js';
 import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
+import { queryRaw } from '../utils/dbRaw.js';
+import { isPostgresDatabase } from '../utils/signTables.js';
 
 const slotTypes = ['banner', 'insertion', 'native', 'splash'];
 const slotPositions = ['top', 'bottom', 'sidebar', 'infeed'];
@@ -346,13 +348,23 @@ export async function getAdStats(_req, res) {
         },
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.$queryRawUnsafe(`
-        SELECT DATE(clickedAt) AS date, COUNT(*) AS count
-        FROM CpsDownload
-        WHERE clickedAt >= DATETIME('now', '-6 day')
-        GROUP BY DATE(clickedAt)
-        ORDER BY DATE(clickedAt) ASC
-      `)
+      queryRaw(
+        isPostgresDatabase()
+          ? `
+              SELECT DATE("clickedAt") AS date, COUNT(*) AS count
+              FROM cps_downloads
+              WHERE "clickedAt" >= NOW() - INTERVAL '6 day'
+              GROUP BY DATE("clickedAt")
+              ORDER BY DATE("clickedAt") ASC
+            `
+          : `
+              SELECT DATE(clickedAt) AS date, COUNT(*) AS count
+              FROM CpsDownload
+              WHERE clickedAt >= DATETIME('now', '-6 day')
+              GROUP BY DATE(clickedAt)
+              ORDER BY DATE(clickedAt) ASC
+            `
+      )
     ]);
 
   return sendSuccess(res, {

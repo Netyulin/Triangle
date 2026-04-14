@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate.js';
 import { normalizeInteger, normalizeString, serializeUser } from '../utils/serializers.js';
 import { MEMBERSHIP_LEVELS, getAllowedMembershipLevels, getMembershipLevelLabel, normalizeMembershipLevel } from '../utils/membership.js';
 import { getPasswordPolicyText, isStrongPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../utils/passwordPolicy.js';
+import { getUserSignPermissions, updateUserSignPermissions } from '../utils/signPermissions.js';
 
 const userStatuses = ['active', 'disabled', 'banned'];
 
@@ -28,9 +29,20 @@ export const updateValidation = validate([
   body('canComment').optional().isBoolean().withMessage('canComment must be a boolean'),
   body('canReply').optional().isBoolean().withMessage('canReply must be a boolean'),
   body('canSubmitRequest').optional().isBoolean().withMessage('canSubmitRequest must be a boolean'),
+  body('canSign').optional().isBoolean().withMessage('canSign must be a boolean'),
+  body('canSelfSign').optional().isBoolean().withMessage('canSelfSign must be a boolean'),
   body('banDays').optional().isInt({ min: 1, max: 3650 }).withMessage('banDays is invalid'),
   body('banReason').optional().isString().withMessage('banReason must be a string')
 ]);
+
+async function serializeAdminUser(user) {
+  const signPermissions = await getUserSignPermissions(user);
+  return serializeUser({
+    ...user,
+    canSign: signPermissions.canSign,
+    canSelfSign: signPermissions.canSelfSign,
+  });
+}
 
 export const passwordValidation = validate([
   param('id').isInt({ min: 1 }).withMessage('id must be a positive integer'),
@@ -88,7 +100,7 @@ export async function list(req, res) {
   ]);
 
   return sendSuccess(res, {
-    list: items.map(serializeUser),
+    list: await Promise.all(items.map((item) => serializeAdminUser(item))),
     total,
     page,
     pageSize,
@@ -132,7 +144,21 @@ export async function update(req, res) {
     }
   });
 
-  return sendSuccess(res, serializeUser(user), 'updated');
+  if (req.body.canSign !== undefined || req.body.canSelfSign !== undefined) {
+    const signPermissions = await getUserSignPermissions({
+      ...user,
+      membershipLevel: nextMembershipLevel,
+    });
+
+    await updateUserSignPermissions(user.id, {
+      canSign: req.body.canSign !== undefined ? req.body.canSign === true || req.body.canSign === 'true' : signPermissions.canSign,
+      canSelfSign:
+        req.body.canSelfSign !== undefined ? req.body.canSelfSign === true || req.body.canSelfSign === 'true' : signPermissions.canSelfSign,
+    });
+  }
+
+  const latest = await prisma.user.findUnique({ where: { id } });
+  return sendSuccess(res, await serializeAdminUser(latest), 'updated');
 }
 
 export async function updatePassword(req, res) {
@@ -153,7 +179,7 @@ export async function updatePassword(req, res) {
     }
   });
 
-  return sendSuccess(res, serializeUser(user), 'updated');
+  return sendSuccess(res, await serializeAdminUser(user), 'updated');
 }
 
 export async function remove(req, res) {

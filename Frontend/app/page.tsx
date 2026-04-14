@@ -12,7 +12,7 @@ import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
 import { AnnouncementToast } from "@/components/announcement-toast"
 
 function getInitial(text: string) {
-  return text.trim().slice(0, 2).toUpperCase() || "TR"
+  return text.trim().slice(0, 2).toUpperCase() || "??"
 }
 
 function resolveHeroGradientStyle(token: string): CSSProperties | undefined {
@@ -195,18 +195,28 @@ export default function HomePage() {
                   </div>
 
                   {home && home.heroSlides.length > 1 ? (
-                    <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-3">
-                      <button onClick={() => setCurrentSlide((value) => (value - 1 + home.heroSlides.length) % home.heroSlides.length)} className={`rounded-full ${textClasses.controlBg} p-2 transition hover:scale-110`}>
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <div className="flex gap-2">
-                        {home.heroSlides.map((slide, index) => (
-                          <button key={slide.id} onClick={() => setCurrentSlide(index)} className={`h-2 rounded-full transition-all ${index === currentSlide ? `w-8 ${textClasses.dotActive}` : `w-2 ${textClasses.dotInactive}`}`} />
-                        ))}
+                    <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
+                      {/* 进度条 */}
+                      <div className="h-1 w-48 overflow-hidden rounded-full bg-white/20">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${textClasses.dotActive}`}
+                          style={{ width: `${((currentSlide + 1) / home.heroSlides.length) * 100}%` }}
+                        />
                       </div>
-                      <button onClick={() => setCurrentSlide((value) => (value + 1) % home.heroSlides.length)} className={`rounded-full ${textClasses.controlBg} p-2 transition hover:scale-110`}>
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
+                      {/* 控制按钮 */}
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setCurrentSlide((value) => (value - 1 + home.heroSlides.length) % home.heroSlides.length)} className={`rounded-full ${textClasses.controlBg} p-2 transition hover:scale-110`}>
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <div className="flex gap-1.5">
+                          {home.heroSlides.map((slide, index) => (
+                            <button key={slide.id} onClick={() => setCurrentSlide(index)} className={`h-2 rounded-full transition-all ${index === currentSlide ? `w-6 ${textClasses.dotActive}` : `w-2 ${textClasses.dotInactive}`}`} />
+                          ))}
+                        </div>
+                        <button onClick={() => setCurrentSlide((value) => (value + 1) % home.heroSlides.length)} className={`rounded-full ${textClasses.controlBg} p-2 transition hover:scale-110`}>
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -214,8 +224,8 @@ export default function HomePage() {
             })()
           ) : (
             <div className="flex min-h-[300px] flex-col items-center justify-center gap-2 px-6 text-center">
-              <p className="text-base font-semibold text-foreground">首页暂时还没有推荐内容</p>
-              <p className="text-sm text-muted-foreground">发布软件或文章后，这里会自动显示最新推荐。</p>
+              <p className="text-base font-semibold text-foreground">暂无推荐内容</p>
+              <p className="text-sm text-muted-foreground">发布软件或文章后，这里会自动展示最新推荐。</p>
             </div>
           )}
         </section>
@@ -283,7 +293,7 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
-                <p className="text-base font-semibold text-foreground">暂时还没有可展示的文章</p>
+                <p className="text-base font-semibold text-foreground">暂无文章</p>
                 <p className="mt-2 text-sm text-muted-foreground">发布教程、评测或整理内容后，这里会自动更新。</p>
               </div>
             )}

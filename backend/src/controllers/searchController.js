@@ -19,10 +19,11 @@ function searchAppWhere(keyword) {
   return {
     status: 'published',
     OR: [
-      { name: { contains: keyword } },
-      { subtitle: { contains: keyword } },
-      { summary: { contains: keyword } },
-      { category: { contains: keyword } }
+      { slug: { contains: keyword, mode: 'insensitive' } },
+      { name: { contains: keyword, mode: 'insensitive' } },
+      { subtitle: { contains: keyword, mode: 'insensitive' } },
+      { summary: { contains: keyword, mode: 'insensitive' } },
+      { category: { contains: keyword, mode: 'insensitive' } }
     ]
   };
 }
@@ -31,18 +32,23 @@ function searchPostWhere(keyword) {
   return {
     status: 'published',
     OR: [
-      { title: { contains: keyword } },
-      { excerpt: { contains: keyword } },
-      { content: { contains: keyword } },
-      { category: { contains: keyword } },
-      { author: { contains: keyword } }
+      { slug: { contains: keyword, mode: 'insensitive' } },
+      { title: { contains: keyword, mode: 'insensitive' } },
+      { excerpt: { contains: keyword, mode: 'insensitive' } },
+      { content: { contains: keyword, mode: 'insensitive' } },
+      { category: { contains: keyword, mode: 'insensitive' } },
+      { author: { contains: keyword, mode: 'insensitive' } }
     ]
   };
 }
 
 function searchRequestWhere(keyword) {
   return {
-    OR: [{ title: { contains: keyword } }, { description: { contains: keyword } }, { authorName: { contains: keyword } }]
+    OR: [
+      { title: { contains: keyword, mode: 'insensitive' } },
+      { description: { contains: keyword, mode: 'insensitive' } },
+      { authorName: { contains: keyword, mode: 'insensitive' } }
+    ]
   };
 }
 

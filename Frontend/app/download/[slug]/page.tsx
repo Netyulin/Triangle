@@ -30,7 +30,7 @@ export default function DownloadInterstitialPage() {
         setDownloadInfo(info);
       } catch (err) {
         console.error('Failed to load download info:', err);
-        setError('加载失败，请稍后重试');
+        setError('下载信息加载失败，请稍后重试');
       } finally {
         setLoading(false);
       }
@@ -79,7 +79,7 @@ export default function DownloadInterstitialPage() {
             返回软件详情
           </Link>
           <div className="mt-12 text-center">
-            <p className="text-muted-foreground">{error || '软件不存在'}</p>
+            <p className="text-muted-foreground">{error || '该软件不存在或已被下架'}</p>
           </div>
         </main>
         <Footer />
@@ -112,7 +112,7 @@ export default function DownloadInterstitialPage() {
           {/* 品牌标识 — Issue 3: 信任信号（设计文档） */}
           <div className="flex items-center gap-2">
             <TriangleLogo />
-            <span className="text-sm font-semibold text-foreground">Triangle</span>
+            <span className="text-sm font-semibold text-foreground">三角软件</span>
           </div>
 
           {/* App Icon — 80px 居中（设计文档 Section 4.2） */}
@@ -125,7 +125,7 @@ export default function DownloadInterstitialPage() {
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                无图片
+                暂无图片
               </div>
             )}
           </div>
@@ -148,12 +148,12 @@ export default function DownloadInterstitialPage() {
               />
             ) : (
               <div className="flex h-[100px] w-full max-w-sm items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-900/50">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground/60">AdSense 占位</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground/40">
-                    设置 NEXT_PUBLIC_ADSENSE_INTERSTITIAL_SLOT_ID
-                  </p>
-                </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground/60">广告位</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground/40">
+                      暂未配置广告
+                    </p>
+                  </div>
               </div>
             )}
           </div>

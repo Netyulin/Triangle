@@ -25,6 +25,10 @@ import homeRoutes from './routes/home.js';
 import adsRoutes from './routes/ads.js';
 import downloadsRoutes from './routes/downloads.js';
 import feedbackRoutes from './routes/feedback.js';
+import signRoutes from './routes/sign.js';
+import { ensureSignTables } from './utils/signTables.js';
+import { cleanupExpiredSignArtifacts } from './utils/signService.js';
+import { shouldServeLocalUploads } from './utils/signStorage.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -36,6 +40,8 @@ const uploadsDir = path.resolve(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+app.set('trust proxy', 1);
 
 app.use(
   cors({
@@ -58,7 +64,7 @@ app.get('/', (_req, res) => {
 
 app.get('/health', async (_req, res) => {
   try {
-    await prisma.$queryRawUnsafe('SELECT 1');
+    await prisma.$queryRaw`SELECT 1`;
     res.json(success({ status: 'ok', database: 'connected' }, 'service healthy'));
   } catch (err) {
     console.error('[healthcheck failed]', err);
@@ -88,7 +94,10 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/ads', adsRoutes);
 app.use('/api/download', downloadsRoutes);
 app.use('/api/feedback', feedbackRoutes);
-app.use('/uploads', express.static(uploadsDir));
+app.use('/api/sign', signRoutes);
+if (shouldServeLocalUploads()) {
+  app.use('/uploads', express.static(uploadsDir));
+}
 
 app.use((_req, res) => {
   res.status(404).json(error(ErrorCodes.NOT_FOUND, 'resource not found'));
@@ -101,7 +110,20 @@ const server = app.listen(PORT, () => {
   console.log(`API docs: http://localhost:${PORT}/api-docs`);
 });
 
+void ensureSignTables()
+  .then(() => cleanupExpiredSignArtifacts())
+  .catch((error) => {
+    console.error('[sign tables init failed]', error);
+  });
+
+const signCleanupTimer = setInterval(() => {
+  void cleanupExpiredSignArtifacts().catch((error) => {
+    console.error('[sign cleanup failed]', error);
+  });
+}, 60 * 60 * 1000);
+
 function shutdown() {
+  clearInterval(signCleanupTimer);
   server.close(() => {
     console.log('Server stopped');
   });

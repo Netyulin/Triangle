@@ -1,35 +1,84 @@
 import prisma from './prisma.js';
+import { executeRaw, queryRaw } from './dbRaw.js';
 import { normalizeJsonInput, normalizeString } from './serializers.js';
+import { isPostgresDatabase, listTableColumns } from './signTables.js';
 
-const DEFAULT_ORDER = 'sortOrder ASC, name COLLATE NOCASE ASC';
+const DEFAULT_ORDER = isPostgresDatabase() ? '"sortOrder" ASC, LOWER(name) ASC' : 'sortOrder ASC, name COLLATE NOCASE ASC';
+const CATEGORY_SELECT_COLUMNS = isPostgresDatabase()
+  ? 'name, "sortOrder" AS "sortOrder", "createdAt" AS "createdAt", "updatedAt" AS "updatedAt"'
+  : 'name, sortOrder, createdAt, updatedAt';
+const SORT_ORDER_COLUMN = isPostgresDatabase() ? '"sortOrder"' : 'sortOrder';
+const UPDATED_AT_COLUMN = isPostgresDatabase() ? '"updatedAt"' : 'updatedAt';
+
+async function renameLegacyColumn(legacyColumn, nextColumn) {
+  if (!isPostgresDatabase()) {
+    return;
+  }
+
+  const columns = await listTableColumns('app_categories');
+  const names = new Set(columns.map((row) => String(row.column_name || '').trim()));
+  const legacy = String(legacyColumn || '').trim();
+  const next = String(nextColumn || '').trim();
+
+  if (!names.has(legacy) || names.has(next)) {
+    return;
+  }
+
+  await executeRaw(`ALTER TABLE app_categories RENAME COLUMN "${legacyColumn}" TO "${nextColumn}"`);
+}
 
 export async function ensureAppCategoriesTable() {
-  await prisma.$executeRaw`
-    CREATE TABLE IF NOT EXISTS app_categories (
-      name TEXT PRIMARY KEY,
-      sortOrder INTEGER NOT NULL DEFAULT 0,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
-    )
-  `;
+  if (isPostgresDatabase()) {
+    await executeRaw(`
+      CREATE TABLE IF NOT EXISTS app_categories (
+        name TEXT PRIMARY KEY,
+        "sortOrder" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TEXT NOT NULL,
+        "updatedAt" TEXT NOT NULL
+      )
+    `);
+  } else {
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS app_categories (
+        name TEXT PRIMARY KEY,
+        sortOrder INTEGER NOT NULL DEFAULT 0,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    `;
+  }
+  await renameLegacyColumn('sortorder', 'sortOrder');
+  await renameLegacyColumn('createdat', 'createdAt');
+  await renameLegacyColumn('updatedat', 'updatedAt');
   await ensureAppCategorySortOrderColumn();
 }
 
 async function ensureAppCategorySortOrderColumn() {
-  const columns = await prisma.$queryRawUnsafe(`PRAGMA table_info(app_categories)`);
-  const hasSortOrder = Array.isArray(columns) && columns.some((column) => column.name === 'sortOrder');
+  let hasSortOrder = false;
+
+  if (isPostgresDatabase()) {
+    const columns = await listTableColumns('app_categories');
+    hasSortOrder = Array.isArray(columns) && columns.some((column) => String(column.column_name || '').trim().toLowerCase() === 'sortorder');
+  } else {
+    const columns = await prisma.$queryRawUnsafe(`PRAGMA table_info(app_categories)`);
+    hasSortOrder = Array.isArray(columns) && columns.some((column) => column.name === 'sortOrder');
+  }
 
   if (!hasSortOrder) {
-    await prisma.$executeRawUnsafe(`ALTER TABLE app_categories ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0`);
+    if (isPostgresDatabase()) {
+      await executeRaw(`ALTER TABLE app_categories ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0`);
+    } else {
+      await prisma.$executeRawUnsafe(`ALTER TABLE app_categories ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0`);
+    }
     await normalizeAppCategorySortOrder();
   }
 }
 
 async function normalizeAppCategorySortOrder() {
-  const rows = await prisma.$queryRawUnsafe(`
+  const rows = await queryRaw(`
     SELECT name
     FROM app_categories
-    ORDER BY sortOrder ASC, name COLLATE NOCASE ASC
+    ORDER BY ${DEFAULT_ORDER}
   `);
 
   if (!Array.isArray(rows)) {
@@ -38,19 +87,23 @@ async function normalizeAppCategorySortOrder() {
 
   await prisma.$transaction(
     rows.map((row, index) =>
-      prisma.$executeRaw`
-        UPDATE app_categories
-        SET sortOrder = ${index}
-        WHERE name = ${row.name}
-      `
+      executeRaw(
+        `
+          UPDATE app_categories
+          SET ${SORT_ORDER_COLUMN} = ?
+          WHERE name = ?
+        `,
+        index,
+        row.name,
+      )
     )
   );
 }
 
 async function loadCategoryRows() {
   await ensureAppCategoriesTable();
-  return prisma.$queryRawUnsafe(`
-    SELECT name, sortOrder, createdAt, updatedAt
+  return queryRaw(`
+    SELECT ${CATEGORY_SELECT_COLUMNS}
     FROM app_categories
     ORDER BY ${DEFAULT_ORDER}
   `);
@@ -58,14 +111,29 @@ async function loadCategoryRows() {
 
 async function getNextSortOrder() {
   await ensureAppCategoriesTable();
-  const rows = await prisma.$queryRawUnsafe(`
-    SELECT COALESCE(MAX(sortOrder), -1) + 1 AS nextSortOrder
+  const rows = await queryRaw(`
+    SELECT COALESCE(MAX(${SORT_ORDER_COLUMN}), -1) + 1 AS "nextSortOrder"
     FROM app_categories
   `);
   return Array.isArray(rows) && rows[0]?.nextSortOrder !== undefined ? Number(rows[0].nextSortOrder) : 0;
 }
 
 async function insertCategory(name, timestamp, sortOrder) {
+  if (isPostgresDatabase()) {
+    await executeRaw(
+      `
+        INSERT INTO app_categories (name, "sortOrder", "createdAt", "updatedAt")
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT (name) DO NOTHING
+      `,
+      name,
+      sortOrder,
+      timestamp,
+      timestamp,
+    );
+    return;
+  }
+
   await prisma.$executeRaw`
     INSERT OR IGNORE INTO app_categories (name, sortOrder, createdAt, updatedAt)
     VALUES (${name}, ${sortOrder}, ${timestamp}, ${timestamp})
@@ -119,12 +187,15 @@ export async function getAppCategory(name) {
     return null;
   }
 
-  const rows = await prisma.$queryRaw`
-    SELECT name, sortOrder, createdAt, updatedAt
-    FROM app_categories
-    WHERE name = ${nextName}
-    LIMIT 1
-  `;
+  const rows = await queryRaw(
+    `
+      SELECT ${CATEGORY_SELECT_COLUMNS}
+      FROM app_categories
+      WHERE name = ?
+      LIMIT 1
+    `,
+    nextName,
+  );
 
   return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
@@ -141,11 +212,15 @@ export async function upsertAppCategory(name, options = {}) {
   const nextSortOrder = Number.isInteger(options.sortOrder) ? options.sortOrder : null;
 
   if (existing) {
-    await prisma.$executeRaw`
-      UPDATE app_categories
-      SET updatedAt = ${now}
-      WHERE name = ${nextName}
-    `;
+    await executeRaw(
+      `
+        UPDATE app_categories
+        SET ${UPDATED_AT_COLUMN} = ?
+        WHERE name = ?
+      `,
+      now,
+      nextName,
+    );
     if (nextSortOrder !== null) {
       await updateAppCategorySortOrder(nextName, nextSortOrder);
       return { ...existing, updatedAt: now, sortOrder: nextSortOrder };
@@ -209,21 +284,36 @@ export async function renameAppCategory(oldName, newName) {
 
   await prisma.$transaction(async (tx) => {
     if (!targetCategory) {
-      await tx.$executeRaw`
-        UPDATE app_categories
-        SET name = ${nextName}, updatedAt = ${now}
-        WHERE name = ${currentName}
-      `;
+      await executeRaw(
+        `
+          UPDATE app_categories
+          SET name = ?, ${UPDATED_AT_COLUMN} = ?
+          WHERE name = ?
+        `,
+        tx,
+        nextName,
+        now,
+        currentName,
+      );
     } else {
-      await tx.$executeRaw`
-        UPDATE app_categories
-        SET updatedAt = ${now}
-        WHERE name = ${nextName}
-      `;
-      await tx.$executeRaw`
-        DELETE FROM app_categories
-        WHERE name = ${currentName}
-      `;
+      await executeRaw(
+        `
+          UPDATE app_categories
+          SET ${UPDATED_AT_COLUMN} = ?
+          WHERE name = ?
+        `,
+        tx,
+        now,
+        nextName,
+      );
+      await executeRaw(
+        `
+          DELETE FROM app_categories
+          WHERE name = ?
+        `,
+        tx,
+        currentName,
+      );
     }
 
     for (const app of affectedApps) {
@@ -247,10 +337,13 @@ export async function deleteAppCategory(name) {
   }
 
   await ensureAppCategoriesTable();
-  await prisma.$executeRaw`
-    DELETE FROM app_categories
-    WHERE name = ${nextName}
-  `;
+  await executeRaw(
+    `
+      DELETE FROM app_categories
+      WHERE name = ?
+    `,
+    nextName,
+  );
   return true;
 }
 
@@ -262,11 +355,16 @@ export async function updateAppCategorySortOrder(name, sortOrder) {
 
   await ensureAppCategoriesTable();
   const now = new Date().toISOString();
-  await prisma.$executeRaw`
-    UPDATE app_categories
-    SET sortOrder = ${sortOrder}, updatedAt = ${now}
-    WHERE name = ${nextName}
-  `;
+  await executeRaw(
+    `
+      UPDATE app_categories
+      SET ${SORT_ORDER_COLUMN} = ?, ${UPDATED_AT_COLUMN} = ?
+      WHERE name = ?
+    `,
+    sortOrder,
+    now,
+    nextName,
+  );
 
   return getAppCategory(nextName);
 }
@@ -286,11 +384,16 @@ export async function reorderAppCategories(names) {
 
   await prisma.$transaction(
     nextNames.map((name, index) =>
-      prisma.$executeRaw`
-        UPDATE app_categories
-        SET sortOrder = ${index}, updatedAt = ${now}
-        WHERE name = ${name}
-      `
+      executeRaw(
+        `
+          UPDATE app_categories
+          SET ${SORT_ORDER_COLUMN} = ?, ${UPDATED_AT_COLUMN} = ?
+          WHERE name = ?
+        `,
+        index,
+        now,
+        name,
+      )
     )
   );
 

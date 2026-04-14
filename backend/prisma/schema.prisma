@@ -303,3 +303,92 @@ model CpsDownload {
   @@index([softwareSlug])
   @@index([clickedAt])
 }
+
+model SignDevice {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  udid       String
+  product    String?
+  version    String?
+  deviceName String?
+  source     String   @default("profile_service")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, udid], map: "idx_sign_devices_user_udid")
+  @@map("sign_devices")
+}
+
+model SignTask {
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  deviceId               Int?
+  certificateId          Int?
+  profileId              Int?
+  status                 String    @default("queued")
+  progress               Int       @default(0)
+  stage                  String?   @default("waiting")
+  ipaName                String?
+  ipaPath                String?
+  signedIpaPath          String?
+  manifestPath           String?
+  installUrl             String?
+  downloadUrl            String?
+  errorCode              String?
+  errorMessage           String?
+  certificateFingerprint String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  startedAt              DateTime?
+  completedAt            DateTime?
+  expiresAt              DateTime?
+  cleanedAt              DateTime?
+
+  @@index([userId, createdAt], map: "idx_sign_tasks_user_createdAt")
+  @@map("sign_tasks")
+}
+
+model SignCertificate {
+  id          Int      @id @default(autoincrement())
+  ownerUserId Int?
+  scope       String   @default("system")
+  name        String
+  fileName    String
+  filePath    String
+  password    String
+  subjectCn   String?
+  teamId      String?
+  isActive    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sign_certificates")
+}
+
+model SignProfile {
+  id          Int      @id @default(autoincrement())
+  ownerUserId Int?
+  scope       String   @default("system")
+  name        String
+  fileName    String
+  filePath    String
+  note        String?
+  appId       String?
+  teamId      String?
+  profileUuid String?
+  isActive    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sign_profiles")
+}
+
+model SignUserPermission {
+  userId      Int      @id
+  canSign     Int      @default(0)
+  canSelfSign Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sign_user_permissions")
+}

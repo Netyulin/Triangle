@@ -4,6 +4,12 @@ import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
 import { normalizeString, serializeComment } from '../utils/serializers.js';
 import { buildDefaultAvatar, ensureUserFeatureTables, getCommentReactionSummary } from '../utils/userFeatures.js';
+import { executeRaw, queryRaw } from '../utils/dbRaw.js';
+import { isPostgresDatabase } from '../utils/signTables.js';
+
+const USER_ID_COLUMN = isPostgresDatabase() ? '"userId"' : 'userId';
+const COMMENT_ID_COLUMN = isPostgresDatabase() ? '"commentId"' : 'commentId';
+const CREATED_AT_COLUMN = isPostgresDatabase() ? '"createdAt"' : 'createdAt';
 
 const listValidation = validate([
   query('contentId').notEmpty().withMessage('contentId is required'),
@@ -172,14 +178,20 @@ export async function like(req, res) {
   }
 
   const { updated, toggledOn } = await prisma.$transaction(async (tx) => {
-    const existing = await tx.$queryRawUnsafe(
-      'SELECT reaction FROM comment_reactions WHERE userId = ? AND commentId = ? LIMIT 1',
+    const existing = await queryRaw(
+      `SELECT reaction FROM comment_reactions WHERE ${USER_ID_COLUMN} = ? AND ${COMMENT_ID_COLUMN} = ? LIMIT 1`,
+      tx,
       req.user.id,
       req.params.id
     );
 
     if (existing[0]?.reaction === 'like') {
-      await tx.$executeRawUnsafe('DELETE FROM comment_reactions WHERE userId = ? AND commentId = ?', req.user.id, req.params.id);
+      await executeRaw(
+        `DELETE FROM comment_reactions WHERE ${USER_ID_COLUMN} = ? AND ${COMMENT_ID_COLUMN} = ?`,
+        tx,
+        req.user.id,
+        req.params.id,
+      );
       const updatedComment = await tx.comment.update({
         where: { id: req.params.id },
         data: {
@@ -190,8 +202,9 @@ export async function like(req, res) {
     }
 
     if (existing[0]?.reaction === 'dislike') {
-      await tx.$executeRawUnsafe(
-        'UPDATE comment_reactions SET reaction = ? WHERE userId = ? AND commentId = ?',
+      await executeRaw(
+        `UPDATE comment_reactions SET reaction = ? WHERE ${USER_ID_COLUMN} = ? AND ${COMMENT_ID_COLUMN} = ?`,
+        tx,
         'like',
         req.user.id,
         req.params.id
@@ -206,8 +219,9 @@ export async function like(req, res) {
       return { updated: updatedComment, toggledOn: true };
     }
 
-    await tx.$executeRawUnsafe(
-      'INSERT INTO comment_reactions (userId, commentId, reaction, createdAt) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+    await executeRaw(
+      `INSERT INTO comment_reactions (${USER_ID_COLUMN}, ${COMMENT_ID_COLUMN}, reaction, ${CREATED_AT_COLUMN}) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+      tx,
       req.user.id,
       req.params.id,
       'like'
@@ -245,14 +259,20 @@ export async function dislike(req, res) {
   }
 
   const { updated, toggledOn } = await prisma.$transaction(async (tx) => {
-    const existing = await tx.$queryRawUnsafe(
-      'SELECT reaction FROM comment_reactions WHERE userId = ? AND commentId = ? LIMIT 1',
+    const existing = await queryRaw(
+      `SELECT reaction FROM comment_reactions WHERE ${USER_ID_COLUMN} = ? AND ${COMMENT_ID_COLUMN} = ? LIMIT 1`,
+      tx,
       req.user.id,
       req.params.id
     );
 
     if (existing[0]?.reaction === 'dislike') {
-      await tx.$executeRawUnsafe('DELETE FROM comment_reactions WHERE userId = ? AND commentId = ?', req.user.id, req.params.id);
+      await executeRaw(
+        `DELETE FROM comment_reactions WHERE ${USER_ID_COLUMN} = ? AND ${COMMENT_ID_COLUMN} = ?`,
+        tx,
+        req.user.id,
+        req.params.id,
+      );
       const updatedComment = await tx.comment.update({
         where: { id: req.params.id },
         data: {
@@ -263,8 +283,9 @@ export async function dislike(req, res) {
     }
 
     if (existing[0]?.reaction === 'like') {
-      await tx.$executeRawUnsafe(
-        'UPDATE comment_reactions SET reaction = ? WHERE userId = ? AND commentId = ?',
+      await executeRaw(
+        `UPDATE comment_reactions SET reaction = ? WHERE ${USER_ID_COLUMN} = ? AND ${COMMENT_ID_COLUMN} = ?`,
+        tx,
         'dislike',
         req.user.id,
         req.params.id
@@ -279,8 +300,9 @@ export async function dislike(req, res) {
       return { updated: updatedComment, toggledOn: true };
     }
 
-    await tx.$executeRawUnsafe(
-      'INSERT INTO comment_reactions (userId, commentId, reaction, createdAt) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+    await executeRaw(
+      `INSERT INTO comment_reactions (${USER_ID_COLUMN}, ${COMMENT_ID_COLUMN}, reaction, ${CREATED_AT_COLUMN}) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+      tx,
       req.user.id,
       req.params.id,
       'dislike'

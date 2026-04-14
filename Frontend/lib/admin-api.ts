@@ -89,6 +89,19 @@ export type AdminUserItem = User & {
   lastLoginAt?: string | null
   banUntil?: string | null
   canReply?: boolean
+  canSign?: boolean
+  canSelfSign?: boolean
+}
+
+export type AdminUserDevice = {
+  id: number
+  udid: string
+  product: string | null
+  version: string | null
+  deviceName: string | null
+  source: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type AdminInboxTemplate = {
@@ -174,6 +187,37 @@ export type AdminAdsStatsPayload = {
     date: string
     count: number
   }>
+}
+
+export type AdminSignCertificate = {
+  id: number
+  name: string
+  fileName: string
+  filePath: string
+  subjectCn: string | null
+  teamId: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type AdminSignProfile = {
+  id: number
+  name: string
+  fileName: string
+  filePath: string
+  note: string | null
+  appId: string | null
+  teamId: string | null
+  profileUuid: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type AdminSignConfigSummary = {
+  activeCertificate: AdminSignCertificate | null
+  activeProfile: AdminSignProfile | null
 }
 
 type RequestOptions = Omit<RequestInit, "body"> & {
@@ -484,6 +528,32 @@ export async function deleteAdminUser(userId: number) {
   })
 }
 
+export async function fetchAdminUserDevices(userId: number) {
+  return adminRequest<AdminUserDevice[]>(`/api/sign/admin/users/${userId}/devices`)
+}
+
+export async function saveAdminUserDevice(
+  userId: number,
+  payload: {
+    deviceId?: number
+    udid: string
+    product?: string
+    version?: string
+    deviceName?: string
+  },
+) {
+  return adminRequest<AdminUserDevice>(`/api/sign/admin/users/${userId}/devices`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAdminUserDevice(userId: number, deviceId: number) {
+  return adminRequest<AdminUserDevice>(`/api/sign/admin/users/${userId}/devices/${deviceId}`, {
+    method: "DELETE",
+  })
+}
+
 export async function fetchAdminInboxTemplates() {
   return adminRequest<AdminInboxTemplate[]>("/api/admin/notification-templates")
 }
@@ -603,6 +673,72 @@ export async function deleteAdminAdContent(id: string) {
 
 export async function fetchAdminAdsStats() {
   return adminRequest<AdminAdsStatsPayload>("/api/ads/admin/stats")
+}
+
+export async function fetchAdminSignConfig() {
+  return adminRequest<AdminSignConfigSummary>("/api/sign/admin/config")
+}
+
+export async function fetchAdminSignCertificates() {
+  return adminRequest<AdminSignCertificate[]>("/api/sign/admin/certificates")
+}
+
+export async function uploadAdminSignCertificate(formData: FormData) {
+  return adminRequest<AdminSignCertificate>("/api/sign/admin/certificates", {
+    method: "POST",
+    body: formData,
+  })
+}
+
+export async function activateAdminSignCertificate(id: number) {
+  return adminRequest<{ id: number }>(`/api/sign/admin/certificates/${id}/activate`, {
+    method: "PATCH",
+    body: JSON.stringify({}),
+  })
+}
+
+export async function updateAdminSignCertificatePassword(id: number, password: string) {
+  return adminRequest<{ id: number }>(`/api/sign/admin/certificates/${id}/password`, {
+    method: "PATCH",
+    body: JSON.stringify({ password }),
+  })
+}
+
+export async function deleteAdminSignCertificate(id: number) {
+  return adminRequest<null>(`/api/sign/admin/certificates/${id}`, {
+    method: "DELETE",
+  })
+}
+
+export async function fetchAdminSignProfiles() {
+  return adminRequest<AdminSignProfile[]>("/api/sign/admin/profiles")
+}
+
+export async function uploadAdminSignProfile(formData: FormData) {
+  return adminRequest<AdminSignProfile>("/api/sign/admin/profiles", {
+    method: "POST",
+    body: formData,
+  })
+}
+
+export async function activateAdminSignProfile(id: number) {
+  return adminRequest<{ id: number }>(`/api/sign/admin/profiles/${id}/activate`, {
+    method: "PATCH",
+    body: JSON.stringify({}),
+  })
+}
+
+export async function updateAdminSignProfile(id: number, payload: { name: string; note: string }) {
+  return adminRequest<{ id: number }>(`/api/sign/admin/profiles/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAdminSignProfile(id: number) {
+  return adminRequest<null>(`/api/sign/admin/profiles/${id}`, {
+    method: "DELETE",
+  })
 }
 
 export async function fetchUserInbox() {

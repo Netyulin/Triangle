@@ -19,6 +19,14 @@ import { consumeInviteCode } from '../utils/inviteCodes.js';
 import { getPasswordPolicyText, isStrongPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../utils/passwordPolicy.js';
 import { normalizeMembershipLevel } from '../utils/membership.js';
 import { sendTemplateNotificationToUser } from '../utils/notifications.js';
+import { getUserSignPermissions } from '../utils/signPermissions.js';
+import { executeRaw, queryRaw } from '../utils/dbRaw.js';
+import { isPostgresDatabase } from '../utils/signTables.js';
+
+const USER_ID_COLUMN = isPostgresDatabase() ? '"userId"' : 'userId';
+const CONTENT_TYPE_COLUMN = isPostgresDatabase() ? '"contentType"' : 'contentType';
+const CONTENT_ID_COLUMN = isPostgresDatabase() ? '"contentId"' : 'contentId';
+const CREATED_AT_COLUMN = isPostgresDatabase() ? '"createdAt"' : 'createdAt';
 
 export const loginValidation = validate([
   body('username').trim().notEmpty().withMessage('username is required'),
@@ -89,10 +97,17 @@ export const favoriteValidation = validate([
   body('contentId').trim().notEmpty().withMessage('contentId is required')
 ]);
 
-function buildAuthPayload(user) {
+async function buildAuthPayload(user) {
+  const signPermissions = await getUserSignPermissions(user);
+  const resolvedUser = {
+    ...user,
+    canSign: signPermissions.canSign,
+    canSelfSign: signPermissions.canSelfSign
+  };
+
   return {
-    user: serializeUser(user),
-    permissions: serializeUserPermissions(user)
+    user: serializeUser(resolvedUser),
+    permissions: serializeUserPermissions(resolvedUser)
   };
 }
 
@@ -201,7 +216,7 @@ export async function register(req, res) {
     res,
     {
       token,
-      ...buildAuthPayload(nextUser)
+      ...(await buildAuthPayload(nextUser))
     },
     'register success',
     201
@@ -256,7 +271,7 @@ export async function login(req, res) {
     res,
     {
       token,
-      ...buildAuthPayload(nextUser)
+      ...(await buildAuthPayload(nextUser))
     },
     'login success'
   );
@@ -271,7 +286,7 @@ export async function me(req, res) {
     return sendError(res, ErrorCodes.USER_NOT_FOUND, 'user not found');
   }
 
-  return sendSuccess(res, buildAuthPayload(user));
+  return sendSuccess(res, await buildAuthPayload(user));
 }
 
 export async function permissions(req, res) {
@@ -283,7 +298,15 @@ export async function permissions(req, res) {
     return sendError(res, ErrorCodes.USER_NOT_FOUND, 'user not found');
   }
 
-  return sendSuccess(res, serializeUserPermissions(user));
+  const signPermissions = await getUserSignPermissions(user);
+  return sendSuccess(
+    res,
+    serializeUserPermissions({
+      ...user,
+      canSign: signPermissions.canSign,
+      canSelfSign: signPermissions.canSelfSign
+    })
+  );
 }
 
 export async function profile(req, res) {
@@ -311,7 +334,7 @@ export async function profile(req, res) {
   ]);
 
   return sendSuccess(res, {
-    ...buildAuthPayload(user),
+    ...(await buildAuthPayload(user)),
     requests,
     comments,
     favorites,
@@ -374,7 +397,7 @@ export async function updateProfile(req, res) {
     }
   });
 
-  return sendSuccess(res, buildAuthPayload(user), 'profile updated');
+  return sendSuccess(res, await buildAuthPayload(user), 'profile updated');
 }
 
 export async function createRecharge(req, res) {
@@ -389,8 +412,8 @@ export async function createRecharge(req, res) {
   }
 
   const amount = Number(req.body.amount);
-  await prisma.$executeRawUnsafe(
-    'INSERT INTO recharge_records (userId, amount, status, description, createdAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+  await executeRaw(
+    `INSERT INTO recharge_records (${USER_ID_COLUMN}, amount, status, description, ${CREATED_AT_COLUMN}) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
     user.id,
     amount,
     'completed',
@@ -453,8 +476,8 @@ export async function toggleFavorite(req, res) {
     }
   }
 
-  const existed = await prisma.$queryRawUnsafe(
-    'SELECT contentId FROM favorites WHERE userId = ? AND contentType = ? AND contentId = ? LIMIT 1',
+  const existed = await queryRaw(
+    `SELECT ${CONTENT_ID_COLUMN} AS "contentId" FROM favorites WHERE ${USER_ID_COLUMN} = ? AND ${CONTENT_TYPE_COLUMN} = ? AND ${CONTENT_ID_COLUMN} = ? LIMIT 1`,
     user.id,
     contentType,
     contentId
@@ -462,15 +485,15 @@ export async function toggleFavorite(req, res) {
 
   let favorited = false;
   if (existed.length > 0) {
-    await prisma.$executeRawUnsafe(
-      'DELETE FROM favorites WHERE userId = ? AND contentType = ? AND contentId = ?',
+    await executeRaw(
+      `DELETE FROM favorites WHERE ${USER_ID_COLUMN} = ? AND ${CONTENT_TYPE_COLUMN} = ? AND ${CONTENT_ID_COLUMN} = ?`,
       user.id,
       contentType,
       contentId
     );
   } else {
-    await prisma.$executeRawUnsafe(
-      'INSERT INTO favorites (userId, contentType, contentId, createdAt) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+    await executeRaw(
+      `INSERT INTO favorites (${USER_ID_COLUMN}, ${CONTENT_TYPE_COLUMN}, ${CONTENT_ID_COLUMN}, ${CREATED_AT_COLUMN}) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
       user.id,
       contentType,
       contentId

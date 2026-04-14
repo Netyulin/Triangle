@@ -64,12 +64,12 @@ export default function DownloadCountdown({
 
   return (
     <div className="w-full max-w-xs">
-      {/* 上方文案 — Issue 2: 价值导向 */}
-      <p className="text-center text-sm text-muted-foreground mb-3">
+      {/* 上方文案 */}
+      <p className="mb-3 text-center text-sm text-muted-foreground">
         正在准备高速下载通道，请稍候
       </p>
 
-      {/* 倒计时圆环 — 桌面120px / 移动100px（设计文档 Section 4.2） */}
+      {/* 倒计时圆环 + 进度条 */}
       <div className="relative mx-auto mb-4 h-[100px] w-[100px] md:h-[120px] md:w-[120px]">
         <svg className="h-full w-full" viewBox="0 0 100 100">
           <circle
@@ -106,33 +106,63 @@ export default function DownloadCountdown({
         </svg>
       </div>
 
+      {/* 进度条 — 增强视觉反馈 */}
+      <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-accent transition-all duration-1000 ease-linear"
+          style={{ width: `${((safeSeconds - clampedRemaining) / safeSeconds) * 100}%` }}
+        />
+      </div>
+
       {/* 状态文案 */}
-      <p className="text-center text-muted-foreground mb-4 text-sm">
+      <p className="mb-4 text-center text-sm text-muted-foreground">
         {isReady ? '下载已准备就绪，即将跳转...' : `将在 ${clampedRemaining} 秒后开始跳转`}
       </p>
 
-      {/* 立即下载按钮 */}
+      {/* 立即下载按钮 — 增强设计 */}
       <button
         className={cn(
-          'admin-primary-btn w-full justify-center flex transition-all',
+          'w-full flex items-center justify-center gap-2 rounded-2xl bg-accent px-5 py-3.5 text-sm font-bold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/25 disabled:cursor-not-allowed',
           !isReady && 'opacity-60 cursor-not-allowed pointer-events-none'
         )}
         onClick={handleSkip}
         disabled={!isReady}
       >
+        <Download className="h-4 w-4" />
         立即下载 {softwareName}
       </button>
 
-      {/* 下方文案 — Issue 2: 引导会员 */}
-      <p className="text-center text-xs text-muted-foreground/60 mt-3">
-        嫌弃等待？
+      {/* 下方文案 */}
+      <p className="mt-3 text-center text-xs text-muted-foreground/60">
+        不想等待？
         <a
           href={membershipUrl}
-          className="text-accent hover:underline ml-1"
+          className="ml-1 text-accent hover:underline"
         >
           赞助会员即刻直达
         </a>
       </p>
     </div>
+  );
+}
+
+function Download(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" x2="12" y1="15" y2="3" />
+    </svg>
   );
 }

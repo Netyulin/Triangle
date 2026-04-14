@@ -1,5 +1,6 @@
 import { buildDefaultAvatar, normalizeGender } from './userFeatures.js';
 import { getMembershipLevelLabel, normalizeMembershipLevel, getAllowedMembershipLevels } from './membership.js';
+import { getMembershipSignPolicy } from './signPermissions.js';
 
 function parseMaybeJson(value, fallback) {
   if (value === null || value === undefined || value === '') {
@@ -95,6 +96,10 @@ export function serializeUser(user) {
   const bannedUntil = user.bannedUntil ?? null;
   const isBanned = user.status === 'banned' && (!bannedUntil || new Date(bannedUntil) > new Date());
 
+  const signPolicy = getMembershipSignPolicy(normalizedMembershipLevel);
+  const canSign = user.canSign ?? signPolicy.canSign;
+  const canSelfSign = user.canSelfSign ?? signPolicy.canSelfSign;
+
   return {
     id: user.id,
     username: user.username,
@@ -116,6 +121,8 @@ export function serializeUser(user) {
     canComment: user.canComment ?? true,
     canReply: user.canReply ?? true,
     canSubmitRequest: user.canSubmitRequest ?? true,
+    canSign,
+    canSelfSign,
     isBanned,
     lastLoginAt: user.lastLoginAt ?? null,
     createdAt: user.createdAt,
@@ -148,15 +155,21 @@ export function serializeUserPermissions(user) {
   const scope = getUserAccessScope(user);
   const quota = user?.downloadQuotaDaily ?? 0;
   const used = user?.downloadCountDaily ?? 0;
+  const normalizedMembershipLevel = normalizeMembershipLevel(user?.membershipLevel);
+  const signPolicy = getMembershipSignPolicy(normalizedMembershipLevel);
+  const canSign = user?.canSign ?? signPolicy.canSign;
+  const canSelfSign = user?.canSelfSign ?? signPolicy.canSelfSign;
 
   return {
     role: user?.role ?? 'guest',
     status: user?.status ?? 'guest',
-    membershipLevel: normalizeMembershipLevel(user?.membershipLevel),
+    membershipLevel: normalizedMembershipLevel,
     membershipLevelLabel: getMembershipLevelLabel(user?.membershipLevel ?? 'free'),
     canComment: user?.canComment ?? true,
     canReply: user?.canReply ?? true,
     canSubmitRequest: user?.canSubmitRequest ?? true,
+    canSign,
+    canSelfSign,
     allowedDownloadLevels: scope.allowedLevels,
     downloadQuotaDaily: quota,
     downloadCountDaily: used,

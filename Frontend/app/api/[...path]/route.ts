@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:58085'
 
+function buildProxyPath(path: string[]) {
+  return path
+    .map((segment) => {
+      try {
+        return encodeURIComponent(decodeURIComponent(segment))
+      } catch {
+        return encodeURIComponent(segment)
+      }
+    })
+    .join('/')
+}
+
 function buildProxyHeaders(request: NextRequest): Record<string, string> {
   // 显式提取所有认证相关 header
   const headers: Record<string, string> = {}
@@ -17,12 +29,38 @@ function buildProxyHeaders(request: NextRequest): Record<string, string> {
   return headers
 }
 
+async function forwardWithBody(request: NextRequest, method: string, pathStr: string) {
+  const apiUrl = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
+  const headers = buildProxyHeaders(request)
+  const contentType = request.headers.get('content-type')
+  if (contentType) {
+    headers['Content-Type'] = contentType
+  }
+
+  const bodyBuffer = await request.arrayBuffer()
+
+  const response = await fetch(apiUrl, {
+    method,
+    headers,
+    body: bodyBuffer,
+  })
+  const output = await response.arrayBuffer()
+
+  return new NextResponse(output, {
+    status: response.status,
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  })
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params
-  const pathStr = path.join('/')
+  const pathStr = buildProxyPath(path)
   const search = request.nextUrl.search
   const apiUrl = `${API_BASE}/api/${pathStr}${search}`
 
@@ -45,23 +83,8 @@ export async function POST(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params
-  const pathStr = path.join('/')
-  const apiUrl = `${API_BASE}/api/${pathStr}`
-  const body = await request.text()
-
-  const headers = buildProxyHeaders(request)
-  headers['Content-Type'] = 'application/json'
-
-  const response = await fetch(apiUrl, { method: 'POST', headers, body })
-  const text = await response.text()
-
-  return new NextResponse(text, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('Content-Type') || 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
+  const pathStr = buildProxyPath(path)
+  return forwardWithBody(request, 'POST', pathStr)
 }
 
 export async function PUT(
@@ -69,23 +92,8 @@ export async function PUT(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params
-  const pathStr = path.join('/')
-  const apiUrl = `${API_BASE}/api/${pathStr}`
-  const body = await request.text()
-
-  const headers = buildProxyHeaders(request)
-  headers['Content-Type'] = 'application/json'
-
-  const response = await fetch(apiUrl, { method: 'PUT', headers, body })
-  const text = await response.text()
-
-  return new NextResponse(text, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('Content-Type') || 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
+  const pathStr = buildProxyPath(path)
+  return forwardWithBody(request, 'PUT', pathStr)
 }
 
 export async function DELETE(
@@ -93,8 +101,8 @@ export async function DELETE(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params
-  const pathStr = path.join('/')
-  const apiUrl = `${API_BASE}/api/${pathStr}`
+  const pathStr = buildProxyPath(path)
+  const apiUrl = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
 
   const response = await fetch(apiUrl, {
     method: 'DELETE',
@@ -116,21 +124,6 @@ export async function PATCH(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params
-  const pathStr = path.join('/')
-  const apiUrl = `${API_BASE}/api/${pathStr}`
-  const body = await request.text()
-
-  const headers = buildProxyHeaders(request)
-  headers['Content-Type'] = 'application/json'
-
-  const response = await fetch(apiUrl, { method: 'PATCH', headers, body })
-  const text = await response.text()
-
-  return new NextResponse(text, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('Content-Type') || 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
+  const pathStr = buildProxyPath(path)
+  return forwardWithBody(request, 'PATCH', pathStr)
 }

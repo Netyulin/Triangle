@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-export const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
+export const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:58085';
 
 export async function request(path, options = {}) {
   const response = await fetch(new URL(path, BASE_URL), {

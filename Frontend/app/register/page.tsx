@@ -116,15 +116,15 @@ export default function RegisterPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">创建账号</p>
             <h1 className="mt-2 text-4xl font-black text-foreground">注册账号</h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-              注册成功后会自动登录，并直接进入个人中心。你可以先选一个顺眼的头像，也可以稍后再改。
+              注册成功后会自动登录，并直接进入个人中心。你可以先选择一个喜欢的头像，也可以稍后再改。
             </p>
           </div>
 
           {!registrationEnabled ? (
             <div className="px-8 py-12 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-base font-semibold text-foreground">当前暂未开放注册</p>
-              <p className="mt-2 text-sm text-muted-foreground">如果你已经有账号，可以直接前往登录。</p>
+              <p className="mt-4 text-base font-semibold text-foreground">注册暂时未开放</p>
+              <p className="mt-2 text-sm text-muted-foreground">已有账号的话，可以直接前往登录。</p>
               <Link href="/login" className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
                 去登录
               </Link>

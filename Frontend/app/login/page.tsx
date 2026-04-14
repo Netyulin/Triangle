@@ -65,7 +65,7 @@ function LoginContent() {
           <section className="rounded-3xl bg-primary p-8 text-primary-foreground">
             <div className="flex items-center gap-2">
               <SiteLogo className="h-12 w-auto" tone="dark" />
-              <span className="text-sm font-semibold tracking-[0.18em] opacity-75">TRIANGLE ACCOUNT</span>
+              <span className="text-sm font-semibold tracking-[0.18em] opacity-75">三角软件账号</span>
             </div>
 
             <h1 className="mt-8 text-4xl font-black leading-tight">登录后继续管理你的收藏、需求和下载记录</h1>

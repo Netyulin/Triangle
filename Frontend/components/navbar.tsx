@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { ChevronDown, Menu, Moon, Search, Sun, X, Mail, MessageCircle } from "lucide-react"
+import { ChevronDown, ClipboardList, FileText, Heart, LogOut, Menu, Moon, PenTool, Search, Sun, User, X, Mail, MessageCircle } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
@@ -128,10 +128,10 @@ export function Navbar() {
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-background/80 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.55)]">
             <SiteLogo className="h-8 w-auto" tone="auto" />
           </div>
-          <div className="hidden sm:block">
-            <div className="font-mono text-[15px] font-black leading-none tracking-[0.16em] text-foreground">TRIANGLE</div>
-            <div className="mt-1 text-[10px] leading-none tracking-[0.22em] text-muted-foreground">{t.brandTagline}</div>
-          </div>
+            <div className="hidden sm:block">
+              <div className="text-[17px] font-extrabold leading-none tracking-wide text-foreground">三角软件</div>
+              <div className="mt-1 text-[10px] leading-none tracking-[0.22em] text-muted-foreground">{t.brandTagline}</div>
+            </div>
         </Link>
 
         <nav className="ml-2 hidden items-center gap-1 rounded-full border border-border/70 bg-background/70 p-1.5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.45)] md:flex">
@@ -265,10 +265,19 @@ export function Navbar() {
               {userMenuOpen ? (
                 <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card/95 py-1.5 shadow-elevated backdrop-blur-sm">
                   <Link
+                    href="/dashboard"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                  >
+                    <PenTool className="mr-2 h-4 w-4 text-muted-foreground" />
+                    应用签名
+                  </Link>
+                  <Link
                     href="/profile"
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
+                    <User className="mr-2 h-4 w-4 text-muted-foreground" />
                     {t.profile}
                   </Link>
                   <Link
@@ -276,7 +285,7 @@ export function Navbar() {
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
-                    <Mail className="mr-2 h-4 w-4 text-accent" />
+                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
                     消息中心
                   </Link>
                   <Link
@@ -284,6 +293,7 @@ export function Navbar() {
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
+                    <ClipboardList className="mr-2 h-4 w-4 text-muted-foreground" />
                     {t.myRequests}
                   </Link>
                   <Link
@@ -291,6 +301,7 @@ export function Navbar() {
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
+                    <Heart className="mr-2 h-4 w-4 text-muted-foreground" />
                     {t.favorites}
                   </Link>
                   <hr className="my-1 border-border" />
@@ -302,6 +313,7 @@ export function Navbar() {
                     }}
                     className="flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-secondary"
                   >
+                    <LogOut className="mr-2 h-4 w-4" />
                     {t.logout}
                   </button>
                 </div>
@@ -350,7 +362,7 @@ export function Navbar() {
 
           {user ? (
             <Link
-              href="/profile"
+              href="/dashboard"
               onClick={() => setMobileOpen(false)}
               className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3"
             >
@@ -362,6 +374,61 @@ export function Navbar() {
                 <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
                 <p className="truncate text-xs text-muted-foreground">@{user.username}</p>
               </div>
+            </Link>
+          ) : null}
+
+          {user ? (
+            <Link
+              href="/profile"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <User className="h-5 w-5 text-muted-foreground" />
+              个人中心
+            </Link>
+          ) : null}
+
+          {user ? (
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <PenTool className="h-5 w-5 text-muted-foreground" />
+              应用签名
+            </Link>
+          ) : null}
+
+          {user ? (
+            <Link
+              href="/profile?tab=messages"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <Mail className="h-5 w-5 text-accent" />
+              消息中心
+            </Link>
+          ) : null}
+
+          {user ? (
+            <Link
+              href="/profile?tab=requests"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <ClipboardList className="h-5 w-5 text-muted-foreground" />
+              {t.myRequests}
+            </Link>
+          ) : null}
+
+          {user ? (
+            <Link
+              href="/profile?tab=favorites"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <Heart className="h-5 w-5 text-muted-foreground" />
+              {t.favorites}
             </Link>
           ) : null}
 
@@ -469,8 +536,9 @@ export function Navbar() {
                 setMobileOpen(false)
                 router.push("/")
               }}
-              className="flex w-full items-center justify-center rounded-2xl border border-border px-3 py-2.5 text-sm font-medium text-destructive transition hover:bg-secondary"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border px-3 py-2.5 text-sm font-medium text-destructive transition hover:bg-secondary"
             >
+              <LogOut className="h-4 w-4" />
               {t.logout}
             </button>
           ) : null}

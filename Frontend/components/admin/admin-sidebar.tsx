@@ -14,6 +14,8 @@ import {
   Newspaper,
   Settings2,
   Shapes,
+  ShieldCheck,
+  ShieldEllipsis,
   Tags,
   UserCog,
   Users,
@@ -48,6 +50,8 @@ const items: Array<{
   { href: "/admin/ad-slots", label: "广告位管理", icon: Megaphone, tone: "sky" },
   { href: "/admin/ad-contents", label: "广告内容管理", icon: Images, tone: "indigo" },
   { href: "/admin/ads-stats", label: "广告数据", icon: BarChart3, tone: "teal" },
+  { href: "/admin/sign-certificates", label: "签名证书管理", icon: ShieldCheck, tone: "emerald" },
+  { href: "/admin/sign-profiles", label: "描述文件管理", icon: ShieldEllipsis, tone: "violet" },
   { href: "/admin/netdisk-reports", label: "失效报告", icon: AlertTriangle, tone: "rose" },
   { href: "/admin/account", label: "账号设置", icon: UserCog, tone: "slate" },
   { href: "/admin/users", label: "用户管理", icon: Users, tone: "slate" },
@@ -69,7 +73,7 @@ export function AdminSidebar() {
           </div>
           <div>
             <h1 className="text-base font-bold tracking-tight text-foreground">Triangle 后台</h1>
-            <p className="text-xs text-muted-foreground">统一管理软件、文章、专题、广告与站点设置</p>
+            <p className="text-xs text-muted-foreground">统一管理内容、广告、签名分发和站点配置</p>
           </div>
         </div>
       </div>
