@@ -17,7 +17,8 @@
     "seed": "tsx prisma/seed.ts",
     "smoke": "node scripts/smoke.test.mjs",
     "regression": "node scripts/regression.test.mjs",
-    "test": "node scripts/run-tests.mjs"
+    "test": "node scripts/run-tests.mjs",
+    "cleanup:uploads:images": "node scripts/cleanup-unused-upload-images.mjs"
   },
   "keywords": [
     "cms",

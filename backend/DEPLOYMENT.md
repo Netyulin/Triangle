@@ -361,6 +361,41 @@ sudo systemctl status nginx
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+## 14. 上传图片垃圾清理脚本（VPS）
+
+后端已提供“上传目录图片回收”脚本，用于扫描并删除“数据库未引用”的图片文件。
+
+脚本文件：
+
+- [backend/scripts/cleanup-unused-upload-images.mjs](E:/Project/Triangle/backend/scripts/cleanup-unused-upload-images.mjs)
+
+### 先预览（不会删除）
+
+```bash
+cd /opt/triangle/backend
+npm run cleanup:uploads:images
+```
+
+### 确认后执行删除
+
+```bash
+cd /opt/triangle/backend
+npm run cleanup:uploads:images -- --apply
+```
+
+### 可选参数
+
+- `--verbose`：打印“数据库有引用但磁盘缺失”的条目（用于排查历史脏数据）
+- `--prune-empty-dirs`：删除清理后变空的目录
+- `--include-non-image`：默认仅处理图片；加此参数会处理 uploads 下全部文件
+- `--dir=/your/uploads/path`：指定扫描目录（默认 `backend/uploads`）
+
+### 安全建议
+
+- 默认是 dry-run（仅预览），建议先执行一遍确认列表。
+- 建议在低峰期执行，并先备份上传目录（或做快照）。
+- 如果你启用了对象存储（S3/R2），该脚本只清理本地 `uploads` 目录，不会触发对象存储删除。
 ## 2026-04-13 补充说明
 
 - 前端签名页相关文件已经恢复可编译状态：
