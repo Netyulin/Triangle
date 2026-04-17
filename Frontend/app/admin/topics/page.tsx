@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState, type ReactNode } from "react"
 import { CheckCircle, Search, Shapes, Trash2 } from "lucide-react"
 import { createAdminTopic, deleteAdminTopic, fetchAdminApps, fetchAdminPosts, fetchAdminTopics, updateAdminTopic } from "@/lib/admin-api"
+import { PageHeader } from "@/components/admin/page-header"
 
 type TopicStatus = "hidden" | "published" | "archived"
 
@@ -199,20 +200,13 @@ export default function AdminTopicsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero">
-        <div className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-              <Shapes className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">专题管理</h1>
-              <p className="mt-1 text-sm text-muted-foreground">把软件和文章组合成更清晰的专题页。</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="专题管理"
+        description="把软件和文章组合成更清晰的专题页。"
+        icon={<Shapes className="h-5 w-5" />}
+        iconClassName="bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
       {message ? <div className="admin-panel flex items-start gap-2 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle className="mt-[-1px] h-5 w-5 flex-shrink-0" />{message}</div> : null}

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { KeyRound, RefreshCw, ShieldCheck, Trash2 } from "lucide-react"
+import { PageHeader } from "@/components/admin/page-header"
 import {
   activateAdminSignCertificate,
   deleteAdminSignCertificate,
@@ -128,18 +129,13 @@ export default function AdminSignCertificatesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="admin-hero p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">签名证书管理</h1>
-            <p className="mt-1 text-sm text-muted-foreground">上传 `.p12` 证书、维护密码，并指定当前签名任务使用的生效证书。</p>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-5">
+      <PageHeader
+        title="签名证书管理"
+        description="上传 `.p12` 证书、维护密码，并指定当前签名任务使用的生效证书。"
+        icon={<ShieldCheck className="h-5 w-5" />}
+        iconClassName="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
       {message ? <div className="admin-panel px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}

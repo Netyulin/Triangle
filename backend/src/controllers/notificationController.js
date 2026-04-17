@@ -3,9 +3,9 @@ import prisma from '../utils/prisma.js';
 import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
 import { normalizeInteger, normalizeJsonInput, normalizeString, serializeNotification } from '../utils/serializers.js';
+import { normalizeMembershipLevel } from '../utils/membership.js';
 import {
   createNotification,
-  createNotificationForAllUsers,
   createNotificationsForUsers,
   getNotificationTemplate,
   getUnreadNotificationCount,
@@ -13,9 +13,12 @@ import {
   listNotificationsForUser,
   markAllNotificationsRead,
   markNotificationRead,
+  NOTIFICATION_USAGE_CONDITIONS,
   softDeleteNotification,
   upsertNotificationTemplate
 } from '../utils/notifications.js';
+
+const USER_STATUSES = ['active', 'disabled', 'banned'];
 
 export const listValidation = validate([
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
@@ -23,15 +26,14 @@ export const listValidation = validate([
   query('unreadOnly').optional().isBoolean().withMessage('unreadOnly must be a boolean')
 ]);
 
-export const idValidation = validate([
-  param('id').isInt({ min: 1 }).withMessage('id must be a positive integer')
-]);
+export const idValidation = validate([param('id').isInt({ min: 1 }).withMessage('id must be a positive integer')]);
 
 export const templateValidation = validate([
   param('key').trim().notEmpty().withMessage('key is required'),
   body('title').optional().isString().withMessage('title must be a string'),
   body('content').optional().isString().withMessage('content must be a string'),
   body('description').optional().isString().withMessage('description must be a string'),
+  body('usageCondition').optional().isIn(NOTIFICATION_USAGE_CONDITIONS).withMessage('usageCondition is invalid'),
   body('enabled').optional().isBoolean().withMessage('enabled must be a boolean')
 ]);
 
@@ -42,11 +44,57 @@ export const sendValidation = validate([
   body('title').optional().isString().withMessage('title must be a string'),
   body('content').optional().isString().withMessage('content must be a string'),
   body('data').optional(),
-  body('link').optional().isString().withMessage('link must be a string')
+  body('link').optional().isString().withMessage('link must be a string'),
+  body('userStatuses').optional().isArray().withMessage('userStatuses must be an array'),
+  body('membershipLevels').optional().isArray().withMessage('membershipLevels must be an array')
 ]);
 
 function serializeRows(items) {
   return items.map(serializeNotification);
+}
+
+function parseStringArray(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => normalizeString(item).trim()).filter(Boolean);
+}
+
+function parseUserStatuses(rawStatuses) {
+  return [...new Set(parseStringArray(rawStatuses).map((item) => item.toLowerCase()).filter((item) => USER_STATUSES.includes(item)))];
+}
+
+function parseMembershipLevels(rawLevels) {
+  return [...new Set(parseStringArray(rawLevels).map((item) => normalizeMembershipLevel(item)).filter(Boolean))];
+}
+
+async function resolveRecipientIds({ userIds, sendToAll, userStatuses, membershipLevels }) {
+  const normalizedUserIds = [...new Set((Array.isArray(userIds) ? userIds : []).map((item) => normalizeInteger(item, 0)).filter(Boolean))];
+  const hasFilters = userStatuses.length > 0 || membershipLevels.length > 0;
+
+  if (!sendToAll && !hasFilters) {
+    return normalizedUserIds;
+  }
+
+  const where = {};
+  if (userStatuses.length > 0) {
+    where.status = { in: userStatuses };
+  }
+  if (membershipLevels.length > 0) {
+    where.membershipLevel = { in: membershipLevels };
+  }
+  if (!sendToAll && normalizedUserIds.length > 0) {
+    where.id = { in: normalizedUserIds };
+  }
+
+  const recipients = await prisma.user.findMany({
+    where,
+    select: { id: true }
+  });
+  return recipients.map((item) => item.id);
+}
+
+function buildDefaultTitle(templateTitle) {
+  const fallback = normalizeString(templateTitle || '站内通知').trim();
+  return fallback || '站内通知';
 }
 
 export async function list(req, res) {
@@ -110,6 +158,7 @@ export async function updateTemplate(req, res) {
     title: req.body.title,
     content: req.body.content,
     description: req.body.description,
+    usageCondition: req.body.usageCondition,
     enabled: req.body.enabled
   });
 
@@ -121,38 +170,60 @@ export async function updateTemplate(req, res) {
 }
 
 export async function send(req, res) {
-  const userIds = Array.isArray(req.body.userIds) ? req.body.userIds.map((item) => normalizeInteger(item, 0)).filter(Boolean) : [];
   const sendToAll = req.body.sendToAll === true || req.body.sendToAll === 'true';
+  const userStatuses = parseUserStatuses(req.body.userStatuses);
+  const membershipLevels = parseMembershipLevels(req.body.membershipLevels);
   const templateKey = normalizeString(req.body.templateKey).trim();
   const template = templateKey ? await getNotificationTemplate(templateKey) : null;
-  const data = normalizeJsonInput(req.body.data, null);
-  const title = normalizeString(req.body.title || template?.title || '站内通知').trim() || '站内通知';
+
+  if (templateKey && !template) {
+    return sendError(res, ErrorCodes.PARAM_ERROR, 'template not found');
+  }
+  if (template && template.enabled === false) {
+    return sendError(res, ErrorCodes.FORBIDDEN, 'template is disabled');
+  }
+
+  const title = buildDefaultTitle(req.body.title || template?.title);
   const content = normalizeString(req.body.content || template?.content || '').trim();
+  if (!content) {
+    return sendError(res, ErrorCodes.PARAM_ERROR, 'content is required');
+  }
+
+  const recipientIds = await resolveRecipientIds({
+    userIds: req.body.userIds,
+    sendToAll,
+    userStatuses,
+    membershipLevels
+  });
+
+  if (recipientIds.length === 0) {
+    return sendError(res, ErrorCodes.PARAM_ERROR, 'no users matched the conditions');
+  }
+
   const payload = {
     senderId: req.user.id,
     type: templateKey ? 'template' : 'system',
     templateKey: templateKey || null,
     title,
     content,
-    data,
+    data: normalizeJsonInput(req.body.data, null),
     link: req.body.link ? normalizeString(req.body.link).trim() : null
   };
 
-  if (!content && !template) {
-    return sendError(res, ErrorCodes.PARAM_ERROR, 'content is required');
-  }
-
-  if (sendToAll) {
-    const result = await createNotificationForAllUsers(payload);
-    return sendSuccess(res, { count: result.count }, 'created', 201);
-  }
-
-  if (userIds.length === 0) {
-    return sendError(res, ErrorCodes.PARAM_ERROR, 'userIds or sendToAll is required');
-  }
-
-  const result = await createNotificationsForUsers(userIds, payload);
-  return sendSuccess(res, { count: result.count }, 'created', 201);
+  const result = await createNotificationsForUsers(recipientIds, payload);
+  return sendSuccess(
+    res,
+    {
+      count: result.count,
+      filters: {
+        sendToAll,
+        userStatuses,
+        membershipLevels
+      }
+    },
+    'created',
+    201
+  );
 }
 
 export async function createForUser(req, res) {
@@ -168,12 +239,16 @@ export async function createForUser(req, res) {
 
   const templateKey = normalizeString(req.body.templateKey).trim();
   const template = templateKey ? await getNotificationTemplate(templateKey) : null;
+  if (templateKey && !template) {
+    return sendError(res, ErrorCodes.PARAM_ERROR, 'template not found');
+  }
+
   const notification = await createNotification({
     userId,
     senderId: req.user.id,
     type: templateKey ? 'template' : 'system',
     templateKey: templateKey || null,
-    title: normalizeString(req.body.title || template?.title || '站内通知').trim() || '站内通知',
+    title: buildDefaultTitle(req.body.title || template?.title),
     content: normalizeString(req.body.content || template?.content || '').trim(),
     data: normalizeJsonInput(req.body.data, null),
     link: req.body.link ? normalizeString(req.body.link).trim() : null

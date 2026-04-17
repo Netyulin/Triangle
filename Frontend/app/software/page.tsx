@@ -1,13 +1,13 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useState } from "react"
+import Image from "next/image"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Download, Filter, RefreshCw, ShieldCheck, Star } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
-import { Button } from "@/components/ui/button"
 import { request, type AppSummary } from "@/lib/api"
 import { cn, resolveAssetUrl } from "@/lib/utils"
 
@@ -33,7 +33,7 @@ function sortApps(list: AppSummary[], sortKey: SortKey) {
 }
 
 function accessLabel(level: string) {
-  if (level === "supreme") return "致尊会员"
+  if (level === "supreme") return "至尊会员"
   if (level === "lifetime") return "终身会员"
   if (level === "sponsor") return "赞助会员"
   return "免费会员"
@@ -44,18 +44,19 @@ function SoftwareCard({ app }: { app: AppSummary }) {
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg hover:shadow-accent/10">
-      {/* 整卡链接覆盖层（透明） */}
-      <Link
-        href={`/software/${app.slug}`}
-        className="absolute inset-0 z-10"
-        aria-label={`查看 ${app.name} 详情`}
-      />
+      <Link href={`/software/${app.slug}`} className="absolute inset-0 z-10" aria-label={`查看 ${app.name} 详情`} />
 
-      {/* 卡片顶部：图标 + 基础信息 */}
       <div className="flex gap-4">
         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-secondary">
           {useCover ? (
-            <img src={resolveAssetUrl(app.heroImage)} alt={app.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+            <Image
+              src={resolveAssetUrl(app.heroImage)}
+              alt={app.name}
+              width={160}
+              height={160}
+              unoptimized
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
           ) : (
             <AppIcon
               value={app.icon}
@@ -81,9 +82,7 @@ function SoftwareCard({ app }: { app: AppSummary }) {
         </div>
       </div>
 
-      {/* 卡片底部 */}
       <div className="mt-5 flex flex-1 flex-col justify-end">
-        {/* 标签 */}
         {app.tags.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {app.tags.slice(0, 4).map((tag) => (
@@ -94,7 +93,6 @@ function SoftwareCard({ app }: { app: AppSummary }) {
           </div>
         ) : null}
 
-        {/* 平台 + 评分 */}
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {app.platforms.slice(0, 4).map((platform) => (
             <span key={platform} className="rounded-lg border border-border px-2 py-1">
@@ -103,7 +101,6 @@ function SoftwareCard({ app }: { app: AppSummary }) {
           ))}
         </div>
 
-        {/* 底部信息栏 */}
         <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -118,13 +115,7 @@ function SoftwareCard({ app }: { app: AppSummary }) {
               </span>
             ) : null}
           </div>
-          {/* 用 span + router 跳转，避免嵌套 <a> */}
-          <span
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") window.location.href = `/software/${app.slug}` }}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-          >
+          <span className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
             <Download className="h-3.5 w-3.5" />
             查看详情
           </span>
@@ -140,32 +131,30 @@ function SoftwarePageContent() {
 
   const [apps, setApps] = useState<AppSummary[]>([])
   const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([])
-
-  // 从 URL 读取初始分类，找不到则降级为"全部"
   const urlCategory = searchParams.get("category") ?? "全部"
-  const allCategoryNames = ["\u5168\u90e8", ...categories.map((c) => c.name)]
+  const allCategoryNames = useMemo(() => ["全部", ...categories.map((item) => item.name)], [categories])
   const defaultCategory = allCategoryNames.includes(urlCategory) ? urlCategory : "全部"
 
   const [activeCategory, setActiveCategory] = useState(defaultCategory)
-  const [sortKey, setSortKey] = useState<SortKey>("featured")
+  const [sortKey, setSortKey] = useState<SortKey>("updated")
   const [keyword, setKeyword] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  const loadSoftware = async () => {
+  const loadSoftware = useCallback(async () => {
     setLoading(true)
     setError("")
 
     try {
       const [appData, categoryData] = await Promise.all([
-        request<{ list: AppSummary[] }>("/api/apps?page=1&pageSize=100&sort=createdAt&order=desc"),
+        request<{ list: AppSummary[] }>("/api/apps?page=1&pageSize=100&sort=updatedAt&order=desc"),
         request<Array<{ name: string; count: number }>>("/api/apps/categories"),
       ])
       setApps(appData.list)
       setCategories(categoryData)
 
-      // 首次加载后，用 URL 参数确认分类
-      if (!allCategoryNames.includes(urlCategory) && urlCategory !== "全部") {
+      const nextAllCategoryNames = ["全部", ...categoryData.map((item) => item.name)]
+      if (!nextAllCategoryNames.includes(urlCategory) && urlCategory !== "全部") {
         setActiveCategory("全部")
       }
     } catch (nextError) {
@@ -173,13 +162,12 @@ function SoftwarePageContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [urlCategory])
 
   useEffect(() => {
     void loadSoftware()
-  }, [])
+  }, [loadSoftware])
 
-  // URL 参数变化时同步 activeCategory
   useEffect(() => {
     const param = searchParams.get("category") ?? "全部"
     if (allCategoryNames.includes(param)) {
@@ -187,7 +175,7 @@ function SoftwarePageContent() {
     } else if (param === "全部") {
       setActiveCategory("全部")
     }
-  }, [searchParams])
+  }, [allCategoryNames, searchParams])
 
   const filteredApps = useMemo(() => {
     const text = keyword.trim().toLowerCase()
@@ -200,7 +188,6 @@ function SoftwarePageContent() {
   }, [activeCategory, apps, keyword, sortKey])
 
   const categoryTabs = [{ name: "全部", count: apps.length }, ...categories]
-
   const pageTitle = activeCategory === "全部" ? "全部软件" : activeCategory
 
   return (
@@ -214,13 +201,12 @@ function SoftwarePageContent() {
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">软件库</p>
                 <h1 className="mt-2 text-3xl font-black text-foreground">{pageTitle}</h1>
-                <p className="mt-2 text-sm leading-7 text-muted-foreground">按分类、下载量、更新时间和评分快速筛选你需要的软件。</p>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">按分类、下载量、更新时间和评分，快速筛选你需要的软件。</p>
               </div>
               <p className="text-sm text-muted-foreground">当前共 {filteredApps.length} 个结果</p>
             </div>
 
             <div className="flex items-center gap-4">
-              {/* 排序按钮组 */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">排序：</span>
                 {[
@@ -245,10 +231,8 @@ function SoftwarePageContent() {
                 ))}
               </div>
 
-              {/* 分隔线 */}
               <div className="hidden h-8 w-px bg-border lg:block" />
 
-              {/* 分类标签 */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">分类：</span>
                 {categoryTabs.map((category) => (
@@ -256,7 +240,6 @@ function SoftwarePageContent() {
                     key={category.name}
                     onClick={() => {
                       setActiveCategory(category.name)
-                      // 同步更新 URL 参数（可选，方便分享）
                       const params = new URLSearchParams(searchParams.toString())
                       if (category.name === "全部") {
                         params.delete("category")
@@ -272,7 +255,8 @@ function SoftwarePageContent() {
                         : "border-border bg-background text-muted-foreground hover:border-accent/30 hover:text-foreground",
                     )}
                   >
-                    {category.name} ({category.count})
+                    {category.name}
+                    <span className="ml-1 opacity-70">({category.count})</span>
                   </button>
                 ))}
               </div>
@@ -293,7 +277,7 @@ function SoftwarePageContent() {
         ) : filteredApps.length === 0 ? (
           <div className="mt-8 rounded-[28px] border border-dashed border-border bg-card p-10 text-center">
             <p className="text-base font-semibold text-foreground">当前没有符合条件的软件</p>
-            <p className="mt-2 text-sm text-muted-foreground">可以换个关键词，或重新选择分类与排序方式。</p>
+            <p className="mt-2 text-sm text-muted-foreground">可以换个关键词，或者重新选择分类与排序方式。</p>
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -316,9 +300,7 @@ export default function SoftwarePage() {
         <div className="min-h-screen bg-background">
           <Navbar />
           <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-            <div className="rounded-[28px] border border-border bg-card p-8 text-sm text-muted-foreground">
-              软件列表加载中...
-            </div>
+            <div className="rounded-[28px] border border-border bg-card p-8 text-sm text-muted-foreground">软件列表加载中...</div>
           </main>
           <Footer />
         </div>

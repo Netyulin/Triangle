@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { CheckCircle, UserCog } from "lucide-react"
+import { PageHeader } from "@/components/admin/page-header"
 import { AvatarPicker } from "@/components/avatar-picker"
 import { fetchAdminProfile, updateAdminProfile } from "@/lib/admin-api"
 import { type AvatarGender } from "@/lib/avatar-random"
@@ -19,26 +20,26 @@ export default function AdminAccountPage() {
     newPassword: "",
   })
 
-  const loadProfile = async () => {
-    setLoading(true)
-    try {
-      const data = await fetchAdminProfile()
-      setForm({
-        name: data.user.name || "",
-        gender: (data.user.gender as AvatarGender) || "other",
-        avatar: data.user.avatar || "",
-        currentPassword: "",
-        newPassword: "",
-      })
-      setError("")
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "账号资料加载失败。")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const loadProfile = async () => {
+      setLoading(true)
+      try {
+        const data = await fetchAdminProfile()
+        setForm({
+          name: data.user.name || "",
+          gender: (data.user.gender as AvatarGender) || "other",
+          avatar: data.user.avatar || "",
+          currentPassword: "",
+          newPassword: "",
+        })
+        setError("")
+      } catch (nextError) {
+        setError(nextError instanceof Error ? nextError.message : "账号资料加载失败。")
+      } finally {
+        setLoading(false)
+      }
+    }
+
     void loadProfile()
   }, [])
 
@@ -66,20 +67,13 @@ export default function AdminAccountPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero">
-        <div className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-              <UserCog className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">账号设置</h1>
-              <p className="mt-1 text-sm text-muted-foreground">修改头像、显示名称、性别和密码。</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="账号设置"
+        description="修改头像、显示名称、性别和密码。"
+        icon={<UserCog className="h-5 w-5" />}
+        iconClassName="bg-slate-50 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400"
+      />
 
       {error ? (
         <div className="admin-panel flex items-start gap-2 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
@@ -105,14 +99,33 @@ export default function AdminAccountPage() {
         <div className="admin-panel p-5">
           <h2 className="mb-4 text-lg font-semibold text-foreground">头像与资料</h2>
           <div className="space-y-5">
-            <AvatarPicker value={form.avatar} onChange={(avatar) => setForm((current) => ({ ...current, avatar }))} gender={form.gender} />
+            <AvatarPicker
+              value={form.avatar}
+              onChange={(avatar) => setForm((current) => ({ ...current, avatar }))}
+              gender={form.gender}
+            />
 
             <div className="grid gap-5 md:grid-cols-2">
               <Field label="显示名称">
-                <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} className={inputClass} />
+                <input
+                  value={form.name}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, name: event.target.value }))
+                  }
+                  className={inputClass}
+                />
               </Field>
               <Field label="性别">
-                <select value={form.gender} onChange={(event) => setForm((current) => ({ ...current, gender: event.target.value as AvatarGender }))} className={inputClass}>
+                <select
+                  value={form.gender}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      gender: event.target.value as AvatarGender,
+                    }))
+                  }
+                  className={inputClass}
+                >
                   <option value="male">男</option>
                   <option value="female">女</option>
                   <option value="other">其他</option>
@@ -126,10 +139,30 @@ export default function AdminAccountPage() {
           <h2 className="mb-4 text-lg font-semibold text-foreground">修改密码</h2>
           <div className="grid gap-5 md:grid-cols-2">
             <Field label="当前密码">
-              <input type="password" value={form.currentPassword} onChange={(event) => setForm((current) => ({ ...current, currentPassword: event.target.value }))} className={inputClass} />
+              <input
+                type="password"
+                value={form.currentPassword}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    currentPassword: event.target.value,
+                  }))
+                }
+                className={inputClass}
+              />
             </Field>
             <Field label="新密码">
-              <input type="password" value={form.newPassword} onChange={(event) => setForm((current) => ({ ...current, newPassword: event.target.value }))} className={inputClass} />
+              <input
+                type="password"
+                value={form.newPassword}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    newPassword: event.target.value,
+                  }))
+                }
+                className={inputClass}
+              />
             </Field>
           </div>
         </div>
@@ -144,7 +177,13 @@ export default function AdminAccountPage() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-foreground">{label}</label>

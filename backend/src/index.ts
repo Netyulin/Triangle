@@ -24,8 +24,10 @@ import assetRoutes from './routes/assets.js';
 import homeRoutes from './routes/home.js';
 import adsRoutes from './routes/ads.js';
 import downloadsRoutes from './routes/downloads.js';
+import analyticsRoutes from './routes/analytics.js';
 import feedbackRoutes from './routes/feedback.js';
 import signRoutes from './routes/sign.js';
+import paymentRoutes from './routes/payment.js';
 import { ensureSignTables } from './utils/signTables.js';
 import { cleanupExpiredSignArtifacts } from './utils/signService.js';
 import { shouldServeLocalUploads } from './utils/signStorage.js';
@@ -93,11 +95,35 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/ads', adsRoutes);
 app.use('/api/download', downloadsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/sign', signRoutes);
+app.use('/api/payment', paymentRoutes);
 if (shouldServeLocalUploads()) {
   app.use('/uploads', express.static(uploadsDir));
 }
+
+// 记录页面浏览量（所有 GET 请求）
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.path !== '/health') {
+    // 使用 setImmediate 确保不影响响应速度
+    setImmediate(async () => {
+      try {
+        await prisma.pageView.create({
+          data: {
+            path: req.path,
+            ip: req.ip || req.connection?.remoteAddress || 'unknown',
+            userAgent: req.get('User-Agent') || null,
+            referrer: req.get('Referer') || null,
+          }
+        });
+      } catch (err) {
+        // 不影响主流程
+      }
+    });
+  }
+  next();
+});
 
 app.use((_req, res) => {
   res.status(404).json(error(ErrorCodes.NOT_FOUND, 'resource not found'));

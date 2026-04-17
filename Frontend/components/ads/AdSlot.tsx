@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
@@ -34,6 +35,7 @@ interface AdSlotProps {
 export function AdSlot({ slot, fallback, adContent, onAdClick }: AdSlotProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [hasImageError, setHasImageError] = useState(false);
   const slotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,6 +68,10 @@ export function AdSlot({ slot, fallback, adContent, onAdClick }: AdSlotProps) {
     }
   };
 
+  useEffect(() => {
+    setHasImageError(false);
+  }, [adContent?.imageUrl]);
+
   if (!isClient) {
     return <AdSkeleton slot={slot} />;
   }
@@ -75,7 +81,11 @@ export function AdSlot({ slot, fallback, adContent, onAdClick }: AdSlotProps) {
   }
 
   if (!adContent) {
-    return <div className="ad-fallback">{fallback}</div>;
+    return null;
+  }
+
+  if (hasImageError) {
+    return null;
   }
 
   return (
@@ -107,11 +117,14 @@ export function AdSlot({ slot, fallback, adContent, onAdClick }: AdSlotProps) {
         rel="noopener noreferrer"
       >
         <div className="relative w-full h-[60%] overflow-hidden rounded-t-lg">
-          <img
+          <Image
             src={adContent.imageUrl}
             alt={adContent.title}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-            loading="lazy"
+            fill
+            unoptimized
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover transition-transform duration-300 hover:scale-105"
+            onError={() => setHasImageError(true)}
           />
         </div>
 

@@ -7,7 +7,23 @@ import { saveBufferToUploads } from '../utils/assetStorage.js';
 import { normalizeString } from '../utils/serializers.js';
 
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+  'image/heic',
+  'image/heif'
+]);
+const ALLOWED_FILE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.heic', '.heif']);
+
+function buildUnsupportedImageError() {
+  const err = new Error('仅支持 JPG、PNG、WebP、GIF、SVG、HEIC 或 HEIF 图片');
+  err.status = 400;
+  err.code = 'UNSUPPORTED_IMAGE_TYPE';
+  return err;
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -15,8 +31,13 @@ const upload = multer({
     fileSize: MAX_IMAGE_SIZE
   },
   fileFilter: (_req, file, callback) => {
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      callback(new Error('仅支持 JPG、PNG、WebP、GIF 或 SVG 图片'));
+    const mimeType = normalizeString(file?.mimetype).toLowerCase();
+    const extension = path.extname(normalizeString(file?.originalname)).toLowerCase();
+    const mimeAllowed = ALLOWED_MIME_TYPES.has(mimeType);
+    const extensionAllowed = ALLOWED_FILE_EXTENSIONS.has(extension);
+
+    if (!mimeAllowed && !extensionAllowed) {
+      callback(buildUnsupportedImageError());
       return;
     }
 
@@ -24,7 +45,7 @@ const upload = multer({
   }
 });
 
-function extensionFromMime(mimeType) {
+function extensionFromMime(mimeType, originalName = '') {
   switch (mimeType) {
     case 'image/jpeg':
       return '.jpg';
@@ -36,8 +57,12 @@ function extensionFromMime(mimeType) {
       return '.gif';
     case 'image/svg+xml':
       return '.svg';
+    case 'image/heic':
+      return '.heic';
+    case 'image/heif':
+      return '.heif';
     default:
-      return path.extname(mimeType) || '.bin';
+      return path.extname(normalizeString(originalName)).toLowerCase() || '.bin';
   }
 }
 
@@ -45,10 +70,10 @@ function folderFromKind(kind) {
   return kind === 'app-cover' ? 'app-covers' : 'post-covers';
 }
 
-async function storeImageBuffer(buffer, mimeType, kind) {
+async function storeImageBuffer(buffer, mimeType, kind, originalName = '') {
   return saveBufferToUploads(buffer, {
     folder: folderFromKind(kind),
-    extension: extensionFromMime(mimeType)
+    extension: extensionFromMime(mimeType, originalName)
   });
 }
 
@@ -70,13 +95,18 @@ export async function uploadImage(req, res) {
   }
 
   const kind = normalizeString(req.body.kind, 'post-cover').trim() || 'post-cover';
-  const stored = await storeImageBuffer(file.buffer, file.mimetype, kind);
+  const stored = await storeImageBuffer(file.buffer, file.mimetype, kind, file.originalname);
 
-  return sendSuccess(res, {
-    path: stored.relativePath,
-    mimeType: file.mimetype,
-    size: file.size
-  }, 'uploaded', 201);
+  return sendSuccess(
+    res,
+    {
+      path: stored.relativePath,
+      mimeType: file.mimetype,
+      size: file.size
+    },
+    'uploaded',
+    201
+  );
 }
 
 export async function importRemoteImage(req, res) {
@@ -109,14 +139,18 @@ export async function importRemoteImage(req, res) {
     }
 
     const stored = await storeImageBuffer(buffer, mimeType, kind);
-    return sendSuccess(res, {
-      path: stored.relativePath,
-      sourceUrl: url,
-      mimeType,
-      size: buffer.length
-    }, 'imported', 201);
-  } catch (error) {
-    return sendError(res, ErrorCodes.PARAM_ERROR, error instanceof Error ? error.message : '图片抓取失败');
+    return sendSuccess(
+      res,
+      {
+        path: stored.relativePath,
+        sourceUrl: url,
+        mimeType,
+        size: buffer.length
+      },
+      'imported',
+      201
+    );
+  } catch (err) {
+    return sendError(res, ErrorCodes.PARAM_ERROR, err instanceof Error ? err.message : '图片抓取失败');
   }
 }
-

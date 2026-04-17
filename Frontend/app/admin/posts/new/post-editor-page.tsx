@@ -1,0 +1,330 @@
+"use client"
+
+import Image from "next/image"
+import Link from "next/link"
+import dynamic from "next/dynamic"
+import { useSearchParams } from "next/navigation"
+import { ArrowLeft, FileText, ImagePlus, Link2, Upload, WandSparkles } from "lucide-react"
+import { PageHeader } from "@/components/admin/page-header"
+import { resolveAssetUrl } from "@/lib/admin-api"
+import { looksLikeImageUrl } from "@/lib/utils"
+import { extractImageFiles, getInitial } from "./post-editor-shared"
+import { useAdminPostEditor } from "./use-admin-post-editor"
+
+const TiptapEditor = dynamic(
+  () => import("@/components/admin/tiptap-editor").then((mod) => mod.TiptapEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-xl border border-border bg-secondary/30 px-4 py-6 text-sm text-muted-foreground">
+        编辑器加载中，请稍候...
+      </div>
+    ),
+  },
+)
+
+const inputClass = "admin-input"
+
+export default function AdminPostEditorPage() {
+  const searchParams = useSearchParams()
+  const editingSlug = searchParams.get("slug") || ""
+  const {
+    articleCategories,
+    contentTextareaRef,
+    coverFileInputRef,
+    coverPreview,
+    editorContent,
+    editorMode,
+    error,
+    form,
+    handleCoverUpload,
+    handleDelete,
+    handleEditorPaste,
+    handleIconUpload,
+    handleImageUpload,
+    handleImport,
+    handleInsertInlineImages,
+    handlePasteCoverImage,
+    handlePasteIconImage,
+    handleSubmit,
+    iconFileInputRef,
+    importUrl,
+    importing,
+    loading,
+    message,
+    saving,
+    setEditorContent,
+    setEditorMode,
+    setForm,
+    setImportUrl,
+    uploadingCover,
+    uploadingIcon,
+    uploadingInlineImage,
+  } = useAdminPostEditor(editingSlug)
+
+  return (
+    <main className="space-y-5">
+      <PageHeader
+        title={editingSlug ? "编辑文章" : "新建文章"}
+        description="创建新的技术文章、评测或教程。"
+        icon={<FileText className="h-5 w-5" />}
+        iconClassName="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
+        actions={
+          <Link
+            href="/admin/posts"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:border-accent/25 hover:bg-secondary/70"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            返回列表
+          </Link>
+        }
+      />
+
+      {error ? (
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400">
+          {error}
+        </div>
+      ) : null}
+
+      {message ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+          {message}
+        </div>
+      ) : null}
+
+      <section className="admin-panel p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">导入助手</p>
+            <h2 className="mt-2 text-2xl font-black text-foreground">导入网页内容</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">输入链接后，后台会抓取标题、摘要、封面和正文。</p>
+          </div>
+          <WandSparkles className="hidden h-9 w-9 text-slate-400/40 dark:text-slate-500/40 md:block" />
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+          <input value={importUrl} onChange={(event) => setImportUrl(event.target.value)} placeholder="输入要导入的链接地址" className={inputClass} />
+          <button type="button" onClick={handleImport} disabled={importing || !importUrl.trim()} className="admin-primary-btn px-5 py-3">
+            <Link2 className="h-4 w-4" />
+            {importing ? "导入中..." : "抓取并导入"}
+          </button>
+        </div>
+      </section>
+
+      <form onSubmit={handleSubmit} className="admin-panel p-6 md:p-8">
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Field label="标题">
+              <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required className={inputClass} />
+            </Field>
+            <Field label="别名">
+              <input value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))} required className={inputClass} />
+            </Field>
+          </div>
+
+          <Field label="摘要">
+            <textarea value={form.excerpt} onChange={(event) => setForm((current) => ({ ...current, excerpt: event.target.value }))} rows={3} className={inputClass} />
+          </Field>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            <Field label="分类">
+              <select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} className={inputClass}>
+                <option value="">请选择分类</option>
+                {articleCategories.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="作者">
+              <input value={form.author} readOnly className={`${inputClass} bg-secondary`} />
+            </Field>
+            <Field label="阅读时长">
+              <input value={form.readingTime} onChange={(event) => setForm((current) => ({ ...current, readingTime: event.target.value }))} className={inputClass} />
+            </Field>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Field label="关联软件别名">
+              <input value={form.relatedAppSlug} onChange={(event) => setForm((current) => ({ ...current, relatedAppSlug: event.target.value }))} className={inputClass} />
+            </Field>
+            <Field label="状态">
+              <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))} className={inputClass}>
+                <option value="published">已发布</option>
+                <option value="hidden">已隐藏</option>
+                <option value="archived">已归档</option>
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Field label="封面图">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={() => coverFileInputRef.current?.click()} disabled={uploadingCover} className="admin-secondary-btn px-4 py-2 text-sm">
+                    <Upload className="h-4 w-4" />
+                    {uploadingCover ? "上传中..." : "上传本地封面"}
+                  </button>
+                  <button type="button" onClick={() => void handlePasteCoverImage()} disabled={uploadingCover} className="admin-secondary-btn px-4 py-2 text-sm">
+                    <Upload className="h-4 w-4" />
+                    粘贴剪贴板图片
+                  </button>
+                  <input ref={coverFileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleCoverUpload(event.target.files?.[0] || null)} />
+                </div>
+                <input
+                  value={form.coverImage}
+                  onChange={(event) => setForm((current) => ({ ...current, coverImage: event.target.value }))}
+                  onPaste={(event) => {
+                    const imageFile = extractImageFiles(event.clipboardData)[0]
+                    if (!imageFile) return
+                    event.preventDefault()
+                    void handleCoverUpload(imageFile)
+                  }}
+                  placeholder="封面图地址"
+                  className={inputClass}
+                />
+                {coverPreview ? <Image src={coverPreview} alt="封面预览" width={640} height={320} unoptimized className="h-40 w-full rounded-xl object-cover" /> : null}
+              </div>
+            </Field>
+
+            <Field label="文章图标">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" disabled={uploadingIcon} onClick={() => iconFileInputRef.current?.click()} className="admin-secondary-btn px-4 py-2 text-sm">
+                    <Upload className="h-4 w-4" />
+                    {uploadingIcon ? "上传中..." : "上传本地图标"}
+                  </button>
+                  <button type="button" onClick={() => void handlePasteIconImage()} disabled={uploadingIcon} className="admin-secondary-btn px-4 py-2 text-sm">
+                    <Upload className="h-4 w-4" />
+                    粘贴剪贴板图片
+                  </button>
+                  <input ref={iconFileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleIconUpload(event.target.files?.[0] || null)} />
+                </div>
+                <input
+                  value={form.icon}
+                  onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))}
+                  onPaste={(event) => {
+                    const imageFile = extractImageFiles(event.clipboardData)[0]
+                    if (!imageFile) return
+                    event.preventDefault()
+                    void handleIconUpload(imageFile)
+                  }}
+                  className={inputClass}
+                  placeholder="图标字母、文字或图片地址"
+                />
+                <div className="flex items-center gap-4 rounded-xl border border-border bg-background p-4">
+                  <div className="flex h-16 w-16 overflow-hidden rounded-2xl bg-secondary text-lg font-black text-foreground">
+                    <div className="flex h-full w-full items-center justify-center">
+                      {form.icon && looksLikeImageUrl(form.icon) ? (
+                        <Image src={resolveAssetUrl(form.icon) || form.icon} alt="图标预览" width={64} height={64} unoptimized className="h-full w-full object-cover" />
+                      ) : (
+                        <span>{form.icon || getInitial(form.title)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Field>
+          </div>
+
+          <Field label="正文">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <ModeButton active={editorMode === "visual"} onClick={() => setEditorMode("visual")}>
+                    可视化
+                  </ModeButton>
+                  <ModeButton active={editorMode === "html"} onClick={() => setEditorMode("html")}>
+                    HTML
+                  </ModeButton>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    disabled={uploadingInlineImage}
+                    onClick={() => {
+                      const input = document.createElement("input")
+                      input.type = "file"
+                      input.accept = "image/*"
+                      input.multiple = true
+                      input.onchange = () => void handleInsertInlineImages(Array.from(input.files || []))
+                      input.click()
+                    }}
+                    className="admin-secondary-btn px-3 py-1.5 text-xs"
+                  >
+                    <ImagePlus className="h-4 w-4" />
+                    {uploadingInlineImage ? "正文图片上传中..." : "上传正文图片"}
+                  </button>
+                </div>
+              </div>
+
+              {editorMode === "visual" ? (
+                <TiptapEditor
+                  content={editorContent}
+                  onChange={(content) => {
+                    setEditorContent(content)
+                    setForm((current) => ({ ...current, content }))
+                  }}
+                  placeholder="开始输入文章内容..."
+                  uploadImage={handleImageUpload}
+                  minHeight="420px"
+                />
+              ) : (
+                <textarea
+                  ref={contentTextareaRef}
+                  value={form.content}
+                  onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
+                  onPaste={handleEditorPaste}
+                  rows={18}
+                  className={inputClass}
+                  placeholder="支持直接粘贴 HTML 或普通正文内容"
+                />
+              )}
+            </div>
+          </Field>
+
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" checked={form.featured} onChange={(event) => setForm((current) => ({ ...current, featured: event.target.checked }))} />
+            <span>在首页推荐这篇文章</span>
+          </label>
+
+          <div className="flex items-center gap-3 pt-2">
+            <button type="submit" disabled={saving || loading} className="admin-primary-btn px-6 py-3">
+              {saving ? "保存中..." : "保存文章"}
+            </button>
+            {editingSlug ? (
+              <button type="button" onClick={() => void handleDelete()} disabled={saving} className="rounded-2xl border border-destructive/30 px-4 py-3 text-sm font-medium text-destructive">
+                删除文章
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </form>
+    </main>
+  )
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-foreground">{label}</label>
+      {children}
+    </div>
+  )
+}
+
+function ModeButton({ active, children, onClick }: { active: boolean; children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? "rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          : "rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+      }
+    >
+      {children}
+    </button>
+  )
+}

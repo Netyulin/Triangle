@@ -36,6 +36,9 @@ APP_HOME="/home/$APP_USER"
 SECRETS_DIR="$APP_ROOT/secrets"
 LOG_DIR="$APP_ROOT/logs"
 RUNTIME_DIR="$APP_ROOT/runtime"
+UPLOADS_DIR="$BACKEND_DIR/uploads"
+SIGN_UPLOADS_DIR="$UPLOADS_DIR/sign"
+SIGN_ASSETS_UPLOADS_DIR="$UPLOADS_DIR/sign-assets"
 
 run_as_app() {
   local command="$1"
@@ -121,6 +124,10 @@ mkdir -p "$APP_ROOT" "$SECRETS_DIR" "$LOG_DIR" "$RUNTIME_DIR"
 chown -R "$APP_USER:$APP_GROUP" "$APP_ROOT"
 chown -R "$APP_USER:$APP_GROUP" "$REPO_ROOT"
 
+echo "==> 初始化本地上传目录"
+mkdir -p "$UPLOADS_DIR" "$SIGN_UPLOADS_DIR" "$SIGN_ASSETS_UPLOADS_DIR"
+chown -R "$APP_USER:$APP_GROUP" "$UPLOADS_DIR"
+
 if ! run_as_app "command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1"; then
   if [[ -s "$APP_HOME/.nvm/nvm.sh" ]]; then
     echo "==> 检测到 nvm，补装 Node.js $NODE_VERSION"
@@ -179,6 +186,7 @@ echo "==> 写入前端环境变量"
 cat > "$FRONTEND_DIR/.env.local" <<EOF
 NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+API_INTERNAL_BASE_URL=${API_INTERNAL_BASE_URL:-http://127.0.0.1:$BACKEND_PORT}
 EOF
 
 echo "==> 安装后端依赖"
@@ -211,6 +219,15 @@ cat > /etc/nginx/sites-available/triangle.conf <<EOF
 server {
     listen 80;
     server_name $DOMAIN_FRONTEND;
+
+    location ^~ /uploads/ {
+        proxy_pass http://127.0.0.1:$BACKEND_PORT/uploads/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
 
     location / {
         proxy_pass http://127.0.0.1:$FRONTEND_PORT;

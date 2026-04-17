@@ -49,7 +49,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
 
   const strength = useMemo(() => getStrength(form.password), [form.password])
-  const strengthText = ["", "较弱", "偏弱", "中等", "较强", "很强"][strength]
+  const strengthText = ["", "很弱", "偏弱", "中等", "较强", "很强"][strength]
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -123,7 +123,7 @@ export default function RegisterPage() {
           {!registrationEnabled ? (
             <div className="px-8 py-12 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-base font-semibold text-foreground">注册暂时未开放</p>
+              <p className="mt-4 text-base font-semibold text-foreground">注册暂未开放</p>
               <p className="mt-2 text-sm text-muted-foreground">已有账号的话，可以直接前往登录。</p>
               <Link href="/login" className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
                 去登录
@@ -264,7 +264,7 @@ export default function RegisterPage() {
               </button>
 
               <p className="text-center text-sm text-muted-foreground">
-                已经有账号？
+                已经有账号了？
                 <Link href="/login" className="ml-1 font-semibold text-accent hover:underline">
                   去登录
                 </Link>

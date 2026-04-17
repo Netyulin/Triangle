@@ -247,10 +247,11 @@ export async function list(req, res) {
   const page = normalizeInteger(req.query.page, 1);
   const pageSize = normalizeInteger(req.query.pageSize, 12);
   const where = buildWhere(req.query, req.user ?? null);
-  const sortField = ['createdAt', 'updatedAt', 'rating', 'editorialScore'].includes(req.query.sort) ? req.query.sort : 'createdAt';
+  const sortField = ['createdAt', 'updatedAt', 'rating', 'editorialScore'].includes(req.query.sort) ? req.query.sort : 'updatedAt';
   const sortOrder = req.query.order === 'asc' ? 'asc' : 'desc';
+  const orderBy = sortField === 'updatedAt' ? [{ updatedAt: sortOrder }, { createdAt: sortOrder }] : { [sortField]: sortOrder };
   const [items, total] = await Promise.all([
-    prisma.app.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: { [sortField]: sortOrder }, include: includeAppRelations() }),
+    prisma.app.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy, include: includeAppRelations() }),
     prisma.app.count({ where })
   ]);
   return sendSuccess(res, { list: items.map(serializeApp), total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
@@ -261,7 +262,7 @@ export async function featured(req, res) {
   const items = await prisma.app.findMany({
     where: { featured: true, status: 'published' },
     take: limit,
-    orderBy: [{ editorialScore: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ updatedAt: 'desc' }, { editorialScore: 'desc' }],
     include: includeAppRelations()
   });
   return sendSuccess(res, items.map(serializeApp));
@@ -345,6 +346,15 @@ export async function update(req, res) {
 export async function remove(req, res) {
   const current = await prisma.app.findUnique({ where: { slug: req.params.slug } });
   if (!current) return sendError(res, ErrorCodes.APP_NOT_FOUND, 'app not found');
-  await prisma.app.delete({ where: { slug: req.params.slug } });
+  const slug = req.params.slug;
+
+  await prisma.$transaction([
+    prisma.downloadLog.deleteMany({ where: { softwareSlug: slug } }),
+    prisma.cpsDownload.deleteMany({ where: { softwareSlug: slug } }),
+    prisma.topicApp.deleteMany({ where: { appSlug: slug } }),
+    prisma.comment.deleteMany({ where: { appSlug: slug } }),
+    prisma.netdiskReport.deleteMany({ where: { appSlug: slug } }),
+    prisma.app.delete({ where: { slug } })
+  ]);
   return sendSuccess(res, null, 'deleted');
 }

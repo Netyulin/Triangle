@@ -1,6 +1,6 @@
 "use client"
 
-import { Award, BadgeCheck, Crown, Shield, Sparkles } from "lucide-react"
+import { BadgeCheck, Crown, Shield, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type MembershipLevel = "free" | "member" | "premium" | "sponsor" | "lifetime" | "supreme"
@@ -13,27 +13,27 @@ type MembershipBadgeProps = {
 
 const levelMeta: Record<MembershipLevel, { label: string; icon: typeof Shield; className: string }> = {
   free: {
-    label: "注册会员",
+    label: "免费会员",
     icon: Shield,
     className: "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
   },
   member: {
-    label: "黄金会员",
+    label: "赞助会员",
     icon: BadgeCheck,
     className: "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300",
   },
   premium: {
-    label: "白金会员",
-    icon: Award,
+    label: "终身会员",
+    icon: Crown,
     className: "border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300",
   },
   sponsor: {
-    label: "黄金会员",
+    label: "赞助会员",
     icon: BadgeCheck,
     className: "border-sky-200 bg-sky-100 text-sky-700 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-300",
   },
   lifetime: {
-    label: "终生会员",
+    label: "终身会员",
     icon: Crown,
     className: "border-violet-200 bg-violet-100 text-violet-700 dark:border-violet-900 dark:bg-violet-950/50 dark:text-violet-300",
   },
@@ -47,8 +47,8 @@ const levelMeta: Record<MembershipLevel, { label: string; icon: typeof Shield; c
 function normalizeMembershipLevel(level: string): MembershipLevel {
   const value = String(level || "").trim().toLowerCase()
   if (value === "member") return "sponsor"
+  if (value === "premium") return "lifetime"
   if (value === "vip") return "supreme"
-  if (value === "premium") return "premium"
   if (value === "sponsor" || value === "lifetime" || value === "supreme" || value === "free") return value
   return "free"
 }
@@ -70,7 +70,7 @@ export function MembershipBadge({ level, compact = false, className }: Membershi
         className,
       )}
     >
-      <Icon className={cn("h-3.5 w-3.5", compact && "h-3 w-3")} />
+      <Icon className={cn("h-4 w-4", compact && "h-3.5 w-3.5")} />
       {meta.label}
     </span>
   )

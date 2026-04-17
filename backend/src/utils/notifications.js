@@ -1,28 +1,67 @@
 import prisma from './prisma.js';
 import { normalizeInteger, normalizeJsonInput, normalizeString } from './serializers.js';
 
+export const NOTIFICATION_USAGE_CONDITIONS = [
+  'register',
+  'ban',
+  'sign_disabled',
+  'new_feature',
+  'manual',
+  'general'
+];
+
 export const DEFAULT_NOTIFICATION_TEMPLATES = {
   register_welcome: {
     key: 'register_welcome',
     title: '欢迎来到 Triangle',
-    content: '你好，{{name}}，你的账号已经创建成功。欢迎开始使用 Triangle。'
+    content: '你好，{{name}}，你的账号已经创建成功，欢迎开始使用。',
+    usageCondition: 'register'
   },
   invite_code_assigned: {
     key: 'invite_code_assigned',
     title: '邀请码已发放',
-    content: '你好，{{name}}，你的邀请码已准备好：{{codes}}。'
+    content: '你好，{{name}}，你的邀请码已准备好：{{codes}}',
+    usageCondition: 'manual'
   },
   netdisk_report_handled: {
     key: 'netdisk_report_handled',
     title: '网盘失效报告已处理',
-    content: '你好，你提交的失效报告已经处理完成。{{note}}'
+    content: '你好，你提交的失效报告已经处理完成。{{note}}',
+    usageCondition: 'general'
   },
   admin_broadcast: {
     key: 'admin_broadcast',
     title: '站内通知',
-    content: '{{content}}'
+    content: '{{content}}',
+    usageCondition: 'manual'
+  },
+  user_banned: {
+    key: 'user_banned',
+    title: '账号已被禁言',
+    content: '你的账号已被禁言。{{reason}}',
+    usageCondition: 'ban'
+  },
+  sign_disabled: {
+    key: 'sign_disabled',
+    title: '签名权限已关闭',
+    content: '你的签名权限已被关闭，如有疑问请联系管理员。',
+    usageCondition: 'sign_disabled'
+  },
+  new_feature_release: {
+    key: 'new_feature_release',
+    title: '新功能上线',
+    content: '{{feature}} 已上线，欢迎体验。',
+    usageCondition: 'new_feature'
   }
 };
+
+function normalizeUsageCondition(value, fallback = 'general') {
+  const normalized = normalizeString(value).trim().toLowerCase();
+  if (NOTIFICATION_USAGE_CONDITIONS.includes(normalized)) {
+    return normalized;
+  }
+  return fallback;
+}
 
 function renderString(template, values = {}) {
   return String(template || '').replace(/\{\{(\w+)\}\}/g, (_match, key) => {
@@ -42,11 +81,14 @@ function renderString(template, values = {}) {
 
 function normalizeTemplatePayload(template = {}, values = {}) {
   const base = DEFAULT_NOTIFICATION_TEMPLATES[template.key] || {};
+  const title = renderString(template.title || base.title || '站内通知', values).trim() || '站内通知';
+
   return {
     key: normalizeString(template.key || base.key).trim(),
-    title: renderString(template.title || base.title || '站内通知', values).trim() || '站内通知',
+    title,
     content: renderString(template.content || base.content || '', values).trim(),
     description: normalizeString(template.description || base.description || '').trim() || null,
+    usageCondition: normalizeUsageCondition(template.usageCondition || base.usageCondition || 'general'),
     enabled: template.enabled !== undefined ? Boolean(template.enabled) : base.enabled !== undefined ? Boolean(base.enabled) : true
   };
 }
@@ -69,6 +111,8 @@ export async function listNotificationTemplates() {
     key: row.key,
     title: row.title,
     content: row.content,
+    kind: 'notification',
+    usageCondition: normalizeUsageCondition(row.usageCondition, 'general'),
     description: row.description ?? null,
     enabled: row.enabled,
     createdAt: row.createdAt,
@@ -81,6 +125,8 @@ export async function listNotificationTemplates() {
         key: template.key,
         title: template.title,
         content: template.content,
+        kind: 'notification',
+        usageCondition: normalizeUsageCondition(template.usageCondition, 'general'),
         description: null,
         enabled: true,
         createdAt: null,
@@ -104,10 +150,11 @@ export async function upsertNotificationTemplate(key, payload = {}) {
     title: template.title,
     content: template.content,
     description: template.description,
+    usageCondition: template.usageCondition,
     enabled: template.enabled
   };
 
-  return prisma.notificationTemplate.upsert({
+  const row = await prisma.notificationTemplate.upsert({
     where: { key: template.key },
     create: {
       key: template.key,
@@ -115,6 +162,12 @@ export async function upsertNotificationTemplate(key, payload = {}) {
     },
     update: data
   });
+
+  return {
+    ...row,
+    kind: 'notification',
+    usageCondition: normalizeUsageCondition(row.usageCondition, 'general')
+  };
 }
 
 export async function getNotificationTemplate(key) {
@@ -128,7 +181,10 @@ export async function getNotificationTemplate(key) {
   });
 
   if (row) {
-    return row;
+    return {
+      ...row,
+      usageCondition: normalizeUsageCondition(row.usageCondition, 'general')
+    };
   }
 
   const fallback = DEFAULT_NOTIFICATION_TEMPLATES[normalizedKey];
@@ -141,6 +197,7 @@ export async function getNotificationTemplate(key) {
     title: fallback.title,
     content: fallback.content,
     description: null,
+    usageCondition: normalizeUsageCondition(fallback.usageCondition, 'general'),
     enabled: true
   };
 }
@@ -303,4 +360,3 @@ export async function softDeleteNotification(notificationId, userId) {
     }
   });
 }
-

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState, type CSSProperties } from "react"
 import Link from "next/link"
 import { AppIcon } from "@/components/app-icon"
@@ -68,6 +69,14 @@ function getHeroTextClasses(colorToken: string) {
   return { title: "text-white", body: "text-white/70", tagBg: "bg-white/15", controlBg: "bg-white/15", dotActive: "bg-white", dotInactive: "bg-white/45" }
 }
 
+function getOperationDays(baseDate = "2026-04-16") {
+  const start = new Date(`${baseDate}T00:00:00+08:00`)
+  const now = new Date()
+  const diffMs = now.getTime() - start.getTime()
+  const days = Math.floor(diffMs / (24 * 60 * 60 * 1000)) + 1
+  return Math.max(days, 1)
+}
+
 export default function HomePage() {
   const [home, setHome] = useState<HomePayload | null>(null)
   const [loading, setLoading] = useState(true)
@@ -90,7 +99,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    loadHome()
+    void loadHome()
   }, [])
 
   useEffect(() => {
@@ -154,7 +163,9 @@ export default function HomePage() {
                         <span className={textClasses.body}>{activeSlide.subtitle}</span>
                       </div>
                       <h1 className="text-3xl font-black leading-tight text-balance md:text-5xl">{activeSlide.title}</h1>
-                      <p className={`mt-4 max-w-xl text-balance text-sm leading-7 md:text-base ${textClasses.body}`}>{activeSlide.desc}</p>
+                      {activeSlide.type === "post" ? (
+                        <p className={`mt-4 max-w-xl text-balance text-sm leading-7 md:text-base ${textClasses.body}`}>{activeSlide.desc}</p>
+                      ) : null}
                       <div className="mt-6 flex flex-wrap gap-3">
                         <Link href={activeSlide.href} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-transform hover:scale-[1.02]">
                           <BookOpen className="h-4 w-4" />
@@ -173,7 +184,14 @@ export default function HomePage() {
                       {activeSlide.icon ? (
                         <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-[2rem] border border-white/20 bg-white/10 shadow-2xl md:h-36 md:w-36">
                           {looksLikeImageUrl(activeSlide.icon) ? (
-                            <img src={resolveAssetUrl(activeSlide.icon)} alt={activeSlide.title} className="h-full w-full object-cover" />
+                            <Image
+                              src={resolveAssetUrl(activeSlide.icon)}
+                              alt={activeSlide.title}
+                              width={144}
+                              height={144}
+                              unoptimized
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <AppIcon
                               value={activeSlide.icon}
@@ -196,14 +214,12 @@ export default function HomePage() {
 
                   {home && home.heroSlides.length > 1 ? (
                     <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
-                      {/* 进度条 */}
                       <div className="h-1 w-48 overflow-hidden rounded-full bg-white/20">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${textClasses.dotActive}`}
                           style={{ width: `${((currentSlide + 1) / home.heroSlides.length) * 100}%` }}
                         />
                       </div>
-                      {/* 控制按钮 */}
                       <div className="flex items-center gap-2">
                         <button onClick={() => setCurrentSlide((value) => (value - 1 + home.heroSlides.length) % home.heroSlides.length)} className={`rounded-full ${textClasses.controlBg} p-2 transition hover:scale-110`}>
                           <ChevronLeft className="h-4 w-4" />
@@ -230,16 +246,8 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* 首页轮播下方 AdSense 广告位 */}
         {ADSENSE_SLOT_IDS.triangle_home_top && adSwitches.triangle_home_top ? (
-          <section className="overflow-hidden rounded-2xl">
-            <AdSenseSlot
-              slotId={ADSENSE_SLOT_IDS.triangle_home_top}
-              width="auto"
-              height={90}
-              format="horizontal"
-            />
-          </section>
+          <AdSenseSlot slotId={ADSENSE_SLOT_IDS.triangle_home_top} width="auto" height={90} format="horizontal" />
         ) : null}
 
         <AnnouncementToast announcements={announcements} />
@@ -247,7 +255,7 @@ export default function HomePage() {
         <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">软件总数</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{home?.stats.publishedApps ?? 0}</p></div>
           <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">文章总数</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{home?.stats.publishedPosts ?? 0}</p></div>
-          <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">公开需求</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{home?.stats.publicRequests ?? 0}</p></div>
+          <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">运营天数</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{getOperationDays()}</p></div>
           <div className="card-custom p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">已处理需求</p><p className="mt-2 font-mono text-3xl font-black text-foreground">{home?.stats.solvedRequests ?? 0}</p></div>
         </section>
 
@@ -270,7 +278,14 @@ export default function HomePage() {
                   <Link key={post.slug} href={`/news/${post.slug}`} className="group card-custom flex gap-4 p-4 transition-all hover:border-accent/25">
                     <div className={`flex flex-shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl font-black text-foreground ${post.displayMode !== "icon" && post.coverImage ? "h-20 w-32 overflow-hidden p-0" : "h-20 w-20"}`}>
                       {post.displayMode !== "icon" && post.coverImage ? (
-                        <img src={resolveAssetUrl(post.coverImage)} alt={post.title} className="h-full w-full object-cover" />
+                        <Image
+                          src={resolveAssetUrl(post.coverImage)}
+                          alt={post.title}
+                          width={320}
+                          height={200}
+                          unoptimized
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <AppIcon value={post.icon} name={post.title || getInitial(post.title)} className="flex h-full w-full items-center justify-center" imageClassName="h-full w-full object-cover" />
                       )}

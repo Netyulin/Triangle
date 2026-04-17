@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { FileBadge2, RefreshCw, ShieldEllipsis, Trash2 } from "lucide-react"
+import { PageHeader } from "@/components/admin/page-header"
 import {
   activateAdminSignProfile,
   deleteAdminSignProfile,
@@ -142,18 +143,13 @@ export default function AdminSignProfilesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="admin-hero p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-600/20">
-            <ShieldEllipsis className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">描述文件管理</h1>
-            <p className="mt-1 text-sm text-muted-foreground">集中管理多份 `mobileprovision` 文件，并指定当前签名任务所使用的生效版本。</p>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-5">
+      <PageHeader
+        title="描述文件管理"
+        description="集中管理多份 `mobileprovision` 文件，并指定当前签名任务所使用的生效版本。"
+        icon={<ShieldEllipsis className="h-5 w-5" />}
+        iconClassName="bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
       {message ? <div className="admin-panel px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}

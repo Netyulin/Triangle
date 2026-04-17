@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react"
 import { KeyRound, CheckCircle } from "lucide-react"
 import { createAdminInviteCodeBatch, fetchAdminInviteCodes, formatDateTime } from "@/lib/admin-api"
 import { cn } from "@/lib/utils"
+import { PageHeader } from "@/components/admin/page-header"
 
 export default function AdminInviteCodesPage() {
   const [inviteCodes, setInviteCodes] = useState<Array<{ code: string; note: string; status: "used" | "unused"; createdAt: string; usedByUsername?: string | null }>>([])
@@ -61,20 +62,13 @@ export default function AdminInviteCodesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero">
-        <div className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-              <KeyRound className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">邀请码管理</h1>
-              <p className="mt-1 text-sm text-muted-foreground">批量生成邀请码，适合在开启邀请码注册时使用。</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="邀请码管理"
+        description="批量生成邀请码，适合在开启邀请码注册时使用。"
+        icon={<KeyRound className="h-5 w-5" />}
+        iconClassName="bg-teal-50 text-teal-600 dark:bg-teal-950/30 dark:text-teal-400"
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Metric label="总邀请码" value={String(stats.total)} />

@@ -1,10 +1,10 @@
-"use client"
+﻿"use client"
 
 import { ChangeEvent, useEffect, useId, useState } from "react"
 import { ImagePlus, Shuffle, Upload, User } from "lucide-react"
 import { avatarPresets } from "@/lib/avatar-presets"
 import { createRandomAvatar, type AvatarGender } from "@/lib/avatar-random"
-import { cn } from "@/lib/utils"
+import { cn, resolveAssetUrl } from "@/lib/utils"
 
 type AvatarPickerProps = {
   value: string
@@ -24,11 +24,11 @@ async function fileToAvatarDataUrl(file: File) {
       canvas.height = size
 
       const context = canvas.getContext("2d")
-      if (!context) {
-        URL.revokeObjectURL(objectUrl)
+          if (!context) {
+            URL.revokeObjectURL(objectUrl)
         reject(new Error("头像处理失败，请换一张图片再试。"))
-        return
-      }
+            return
+          }
 
       const sourceSize = Math.min(image.width, image.height)
       const offsetX = (image.width - sourceSize) / 2
@@ -115,14 +115,14 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
     <div className="space-y-4">
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-secondary/40 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <div className="overflow-hidden rounded-2xl border border-border bg-background">
+          <div className="h-20 w-20 min-h-20 min-w-20 max-h-20 max-w-20 overflow-hidden rounded-2xl border border-border bg-background">
             {value ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={value} alt="当前头像" className="h-16 w-16 object-cover" />
+                <img src={resolveAssetUrl(value) || value} alt="当前头像" className="block h-full w-full object-cover" />
               </>
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center bg-secondary text-muted-foreground">
+              <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
                 <User className="h-6 w-6" />
               </div>
             )}
@@ -159,7 +159,7 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
       <div className="grid grid-cols-5 gap-3">
         {presetLoading
           ? Array.from({ length: 10 }, (_, index) => (
-              <div key={index} className="h-16 animate-pulse rounded-2xl border border-border bg-secondary/60" />
+              <div key={index} className="h-20 w-20 min-h-20 min-w-20 max-h-20 max-w-20 justify-self-center animate-pulse rounded-2xl border border-border bg-secondary/60" />
             ))
           : presetOptions.map((avatar) => (
           <button
@@ -170,12 +170,12 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
               setMessage(`已经选中默认头像 ${avatar.id}。`)
             }}
             className={cn(
-              "overflow-hidden rounded-2xl border-2 bg-background transition",
+              "h-20 w-20 min-h-20 min-w-20 max-h-20 max-w-20 justify-self-center overflow-hidden rounded-2xl border-2 bg-background p-0 transition",
               value === avatar.src ? "border-primary" : "border-transparent hover:border-border",
             )}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatar.src} alt={`默认头像 ${avatar.id}`} className="h-16 w-full object-cover" />
+            <img src={resolveAssetUrl(avatar.src) || avatar.src} alt={`默认头像 ${avatar.id}`} className="h-full w-full object-cover" />
           </button>
             ))}
       </div>
@@ -187,3 +187,5 @@ export function AvatarPicker({ value, onChange, gender = "other" }: AvatarPicker
     </div>
   )
 }
+
+

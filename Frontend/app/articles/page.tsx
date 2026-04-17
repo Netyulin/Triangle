@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Clock3, RefreshCw } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
@@ -19,7 +21,14 @@ function ArticleCard({ post }: { post: PostSummary }) {
     >
       <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-3xl border border-border bg-secondary">
         {useCover ? (
-          <img src={resolveAssetUrl(post.coverImage)} alt={post.title} className="h-full w-full object-cover" />
+          <Image
+            src={resolveAssetUrl(post.coverImage)}
+            alt={post.title}
+            width={96}
+            height={96}
+            unoptimized
+            className="h-full w-full object-cover"
+          />
         ) : (
           <AppIcon
             value={post.icon}
@@ -49,21 +58,27 @@ function ArticleCard({ post }: { post: PostSummary }) {
   )
 }
 
-export default function ArticlesPage() {
+function ArticlesPageContent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [posts, setPosts] = useState<PostSummary[]>([])
   const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([])
+  const urlCategory = searchParams.get("category") ?? "全部"
+  const allCategoryNames = useMemo(() => ["全部", ...categories.map((item) => item.name)], [categories])
   const [activeCategory, setActiveCategory] = useState("全部")
   const [keyword, setKeyword] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  const loadArticles = async () => {
+  const loadArticles = useCallback(async () => {
     setLoading(true)
     setError("")
 
     try {
       const [postData, categoryData] = await Promise.all([
-        request<{ list: PostSummary[] }>("/api/posts?page=1&pageSize=100"),
+        request<{ list: PostSummary[] }>("/api/posts?page=1&pageSize=100&sort=publishedAt&order=desc"),
         request<Array<{ name: string; count: number }>>("/api/posts/categories"),
       ])
       setPosts(postData.list)
@@ -73,11 +88,19 @@ export default function ArticlesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     void loadArticles()
-  }, [])
+  }, [loadArticles])
+
+  useEffect(() => {
+    if (allCategoryNames.includes(urlCategory)) {
+      setActiveCategory(urlCategory)
+      return
+    }
+    setActiveCategory("全部")
+  }, [allCategoryNames, urlCategory])
 
   const filteredPosts = useMemo(() => {
     const text = keyword.trim().toLowerCase()
@@ -110,7 +133,17 @@ export default function ArticlesPage() {
               {categoryTabs.map((category) => (
                 <button
                   key={category.name}
-                  onClick={() => setActiveCategory(category.name)}
+                  onClick={() => {
+                    setActiveCategory(category.name)
+                    const params = new URLSearchParams(searchParams.toString())
+                    if (category.name === "全部") {
+                      params.delete("category")
+                    } else {
+                      params.set("category", category.name)
+                    }
+                    const nextQuery = params.toString()
+                    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+                  }}
                   className={cn(
                     "rounded-full border px-4 py-2 text-sm transition",
                     activeCategory === category.name
@@ -151,5 +184,23 @@ export default function ArticlesPage() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function ArticlesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+            <div className="rounded-[28px] border border-border bg-card p-8 text-sm text-muted-foreground">文章列表加载中...</div>
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <ArticlesPageContent />
+    </Suspense>
   )
 }

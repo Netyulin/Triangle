@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, Suspense, useEffect, useMemo, useState } from "react"
+import { FormEvent, Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Footer } from "@/components/footer"
@@ -39,16 +39,16 @@ function SearchContent() {
   const [loading, setLoading] = useState(Boolean(initialQuery))
   const [error, setError] = useState("")
 
-  const loadHotSearches = async () => {
+  const loadHotSearches = useCallback(async () => {
     try {
       const items = await request<Array<{ keyword: string }>>("/api/search/hot?limit=8")
       setHotKeywords(items.map((item) => item.keyword))
     } catch {
       setHotKeywords([])
     }
-  }
+  }, [])
 
-  const runSearch = async (q: string, type: TabKey) => {
+  const runSearch = useCallback(async (q: string, type: TabKey) => {
     const trimmed = q.trim()
     if (!trimmed) {
       setResults(null)
@@ -67,40 +67,34 @@ function SearchContent() {
       const data = await request<SearchPayload>(`/api/search?q=${encodeURIComponent(trimmed)}&type=${apiType}&page=1&pageSize=12`)
       setResults(data)
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "搜索失败，请稍后再试。")
+      setError(nextError instanceof Error ? nextError.message : "搜索失败，请稍后重试。")
       setResults(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    loadHotSearches()
-  }, [])
+    void loadHotSearches()
+  }, [loadHotSearches])
 
   useEffect(() => {
     const nextQuery = searchParams.get("q") ?? ""
     setKeyword(nextQuery)
     setSubmittedKeyword(nextQuery)
     if (nextQuery.trim()) {
-      runSearch(nextQuery, activeTab)
+      void runSearch(nextQuery, activeTab)
     } else {
       setResults(null)
       setLoading(false)
     }
-  }, [searchParams])
-
-  useEffect(() => {
-    if (submittedKeyword.trim()) {
-      runSearch(submittedKeyword, activeTab)
-    }
-  }, [activeTab])
+  }, [activeTab, runSearch, searchParams])
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const trimmed = keyword.trim()
     router.push(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : "/search")
-    runSearch(trimmed, activeTab)
+    void runSearch(trimmed, activeTab)
   }
 
   const sections = useMemo(
@@ -173,7 +167,7 @@ function SearchContent() {
                     onClick={() => {
                       setKeyword(item)
                       router.push(`/search?q=${encodeURIComponent(item)}`)
-                      runSearch(item, activeTab)
+                      void runSearch(item, activeTab)
                     }}
                     className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:border-primary/30"
                   >
@@ -187,13 +181,13 @@ function SearchContent() {
           </section>
         ) : loading ? (
           <section className="mt-8 rounded-3xl border border-border bg-card p-8 text-sm text-muted-foreground">
-            正在搜索“{submittedKeyword}”...
+            正在搜索 “{submittedKeyword}”...
           </section>
         ) : error ? (
           <section className="mt-8 rounded-3xl border border-border bg-card p-8 text-center">
             <p className="text-sm text-muted-foreground">{error}</p>
             <button
-              onClick={() => runSearch(submittedKeyword, activeTab)}
+              onClick={() => void runSearch(submittedKeyword, activeTab)}
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
             >
               <RefreshCw className="h-4 w-4" />

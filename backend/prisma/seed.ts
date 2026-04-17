@@ -72,6 +72,75 @@ async function main() {
   })
   console.log('Created admin user:', admin.username)
 
+  // ==================== 等级配置数据 ====================
+  const membershipLevels = [
+    {
+      key: 'free',
+      name: '免费用户',
+      description: '基础访问权限',
+      sortOrder: 0,
+      publicCertLimit: 1,
+      dailyDownloadLimit: 3,
+      blockedSoftwareTypes: '[]',
+      rechargePrice: 0,
+      rechargeBonusPercent: 0,
+      color: '#6B7280',
+      icon: 'star',
+      isActive: true,
+    },
+    {
+      key: 'sponsor',
+      name: '赞助会员',
+      description: '解锁更多下载和签名额度',
+      sortOrder: 1,
+      publicCertLimit: 5,
+      dailyDownloadLimit: 20,
+      blockedSoftwareTypes: '[]',
+      rechargePrice: 9.9,
+      rechargeBonusPercent: 10,
+      color: '#3B82F6',
+      icon: 'crown',
+      isActive: true,
+    },
+    {
+      key: 'lifetime',
+      name: '终身会员',
+      description: '一次购买，永久享受全部权益',
+      sortOrder: 2,
+      publicCertLimit: -1,
+      dailyDownloadLimit: -1,
+      blockedSoftwareTypes: '[]',
+      rechargePrice: 99.0,
+      rechargeBonusPercent: 20,
+      color: '#8B5CF6',
+      icon: 'gem',
+      isActive: true,
+    },
+    {
+      key: 'supreme',
+      name: '至尊会员',
+      description: '顶级权益，专属客服支持',
+      sortOrder: 3,
+      publicCertLimit: -1,
+      dailyDownloadLimit: -1,
+      blockedSoftwareTypes: '[]',
+      rechargePrice: 299.0,
+      rechargeBonusPercent: 50,
+      color: '#F59E0B',
+      icon: 'rocket',
+      isActive: true,
+    },
+  ]
+
+  for (const level of membershipLevels) {
+    await prisma.membershipLevelConfig.upsert({
+      where: { key: level.key },
+      update: level,
+      create: level,
+    })
+  }
+  console.log('Created membership level configs')
+
   // ==================== 软件数据 ====================
   const apps = [
     // === 浏览器 ===

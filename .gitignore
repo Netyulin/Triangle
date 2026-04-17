@@ -2,3 +2,33 @@
 /_handover_*.*
 **/_tmp_*.log
 .gstack/
+
+# Local environment/secrets
+.deploy.env
+.deploy.env.txt
+backend/.deploy.env
+backend/.env1
+Frontend/.env.local
+Frontend/.env.local.del
+
+# Build/runtime artifacts
+Frontend/.next/
+Frontend/node_modules/
+Frontend/tsconfig.tsbuildinfo
+Frontend/test-results/
+Frontend/.tmp/
+graphify-out/
+
+# Logs
+*.log
+*.pid
+
+# Archives
+*.tgz
+
+# Local visual regression/manual check artifacts
+Frontend/*-check.png
+Frontend/*-check-*.png
+Frontend/*-regression-*.png
+Frontend/software-detail*.png
+Frontend/software-list*.png

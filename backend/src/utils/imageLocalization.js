@@ -86,6 +86,19 @@ function shouldSkipUrl(value) {
   return !url || url.startsWith('/uploads/') || url.startsWith('data:');
 }
 
+function resolveMaybeRelativeUrl(value, baseUrl = '') {
+  const src = String(value || '').trim();
+  if (!src) return '';
+  if (/^https?:\/\//i.test(src)) return src;
+  if (src.startsWith('//')) return `https:${src}`;
+  if (!baseUrl) return src;
+  try {
+    return new URL(src, baseUrl).toString();
+  } catch {
+    return src;
+  }
+}
+
 export async function localizeRemoteImage(url, kind = 'post-cover') {
   if (shouldSkipUrl(url)) {
     return String(url || '').trim();
@@ -133,7 +146,7 @@ export async function localizeRemoteImage(url, kind = 'post-cover') {
   }
 }
 
-export async function localizeHtmlImages(html, kind = 'post-cover') {
+export async function localizeHtmlImages(html, kind = 'post-cover', baseUrl = '') {
   const content = String(html || '').trim();
   if (!content || !/<img[\s\S]*?>/i.test(content)) {
     return content;
@@ -146,7 +159,8 @@ export async function localizeHtmlImages(html, kind = 'post-cover') {
   let match;
   while ((match = imgSrcRegex.exec(content)) !== null) {
     const src = (match[1] || '').trim();
-    if (!shouldSkipUrl(src)) {
+    const resolvedSrc = resolveMaybeRelativeUrl(src, baseUrl);
+    if (!shouldSkipUrl(resolvedSrc)) {
       hasExternalImages = true;
       break;
     }
@@ -156,7 +170,8 @@ export async function localizeHtmlImages(html, kind = 'post-cover') {
     const dataSrcRegex = /<img[^>]+data-src\s*=\s*["']([^"']+)["'][^>]*>/gi;
     while ((match = dataSrcRegex.exec(content)) !== null) {
       const src = (match[1] || '').trim();
-      if (!shouldSkipUrl(src)) {
+      const resolvedSrc = resolveMaybeRelativeUrl(src, baseUrl);
+      if (!shouldSkipUrl(resolvedSrc)) {
         hasExternalImages = true;
         break;
       }
@@ -195,18 +210,26 @@ export async function localizeHtmlImages(html, kind = 'post-cover') {
         dataLower.endsWith('.gif'));
 
     const src = dataSrc && dataSrc !== rawSrc && (rawLooksPlaceholder || dataLooksRealAsset) ? dataSrc : rawSrc || dataSrc;
-    if (shouldSkipUrl(src)) {
+    const normalizedSrc = resolveMaybeRelativeUrl(src, baseUrl);
+    if (shouldSkipUrl(normalizedSrc)) {
       continue;
     }
 
     try {
-      const localizedPath = await localizeRemoteImage(src, kind);
+      const localizedPath = await localizeRemoteImage(normalizedSrc, kind);
       $(image).attr('src', localizedPath);
       if (dataSrc) {
         $(image).attr('data-src', localizedPath);
       }
     } catch (error) {
-      console.warn('[localize html image skipped]', src, error instanceof Error ? error.message : error);
+      // Fallback: keep an absolute remote URL to avoid browser resolving to /admin/... relative paths
+      if (/^https?:\/\//i.test(normalizedSrc)) {
+        $(image).attr('src', normalizedSrc);
+        if (dataSrc) {
+          $(image).attr('data-src', normalizedSrc);
+        }
+      }
+      console.warn('[localize html image skipped]', normalizedSrc, error instanceof Error ? error.message : error);
     }
   }
 

@@ -229,7 +229,8 @@ export function useSignDevices() {
 
 export function useSignTasks() {
   return useSWR("sign-tasks", fetchSignTasks, {
-    refreshInterval: 12_000,
+    refreshInterval: 30_000,
+    dedupingInterval: 8_000,
     revalidateOnFocus: false,
   })
 }
@@ -237,9 +238,10 @@ export function useSignTasks() {
 export function useSignTask(taskId: number | null) {
   return useSWR(taskId ? `sign-task-${taskId}` : null, () => fetchSignTask(taskId as number), {
     refreshInterval: (current) => {
-      if (!current) return 3000
-      return current.status === "completed" || current.status === "failed" ? 0 : 3000
+      if (!current) return 8_000
+      return current.status === "completed" || current.status === "failed" ? 0 : 8_000
     },
+    dedupingInterval: 5_000,
     revalidateOnFocus: false,
   })
 }

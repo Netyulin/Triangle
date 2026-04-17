@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
@@ -73,7 +73,7 @@ function extractImageFiles(clipboardData: DataTransfer): File[] {
 export function TiptapEditor({
   content,
   onChange,
-  placeholder = "寮€濮嬭緭鍏ュ唴瀹?..",
+  placeholder = "开始输入内容...",
   uploadImage,
   className = "",
   minHeight = "300px",
@@ -164,7 +164,7 @@ export function TiptapEditor({
   const addLink = useCallback(() => {
     if (!editor) return
 
-    const url = window.prompt("杈撳叆閾炬帴鍦板潃:")
+    const url = window.prompt("请输入链接地址")
     if (!url) return
 
     editor.chain().focus().setLink({ href: url }).run()
@@ -175,29 +175,30 @@ export function TiptapEditor({
   return (
     <div className={`admin-panel overflow-hidden ${className}`}>
       <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-secondary/50 p-3">
-        <ToolbarButton icon={<Bold className="h-4 w-4" />} isActive={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="绮椾綋" />
-        <ToolbarButton icon={<Italic className="h-4 w-4" />} isActive={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="鏂滀綋" />
-        <ToolbarButton icon={<Strikethrough className="h-4 w-4" />} isActive={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="鍒犻櫎绾?" />
-        <ToolbarButton icon={<Code className="h-4 w-4" />} isActive={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} title="琛屽唴浠ｇ爜" />
+        <ToolbarButton icon={<Bold className="h-4 w-4" />} isActive={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="加粗" />
+        <ToolbarButton icon={<Italic className="h-4 w-4" />} isActive={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="斜体" />
+        <ToolbarButton icon={<Strikethrough className="h-4 w-4" />} isActive={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="删除线" />
+        <ToolbarButton icon={<Code className="h-4 w-4" />} isActive={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} title="行内代码" />
         <div className="mx-1 h-6 w-px bg-border" />
-        <ToolbarButton icon={<Heading1 className="h-4 w-4" />} isActive={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="鏍囬1" />
-        <ToolbarButton icon={<Heading2 className="h-4 w-4" />} isActive={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="鏍囬2" />
+        <ToolbarButton icon={<Heading1 className="h-4 w-4" />} isActive={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="一级标题" />
+        <ToolbarButton icon={<Heading2 className="h-4 w-4" />} isActive={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="二级标题" />
         <div className="mx-1 h-6 w-px bg-border" />
-        <ToolbarButton icon={<List className="h-4 w-4" />} isActive={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="鏃犲簭鍒楄〃" />
-        <ToolbarButton icon={<ListOrdered className="h-4 w-4" />} isActive={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="鏈夊簭鍒楄〃" />
-        <ToolbarButton icon={<Quote className="h-4 w-4" />} isActive={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="寮曠敤" />
+        <ToolbarButton icon={<List className="h-4 w-4" />} isActive={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表" />
+        <ToolbarButton icon={<ListOrdered className="h-4 w-4" />} isActive={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表" />
+        <ToolbarButton icon={<Quote className="h-4 w-4" />} isActive={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用" />
         <div className="mx-1 h-6 w-px bg-border" />
-        <ToolbarButton icon={<Link2 className="h-4 w-4" />} isActive={editor.isActive("link")} onClick={addLink} title="鎻掑叆閾炬帴" />
-        <ToolbarButton icon={<ImagePlus className="h-4 w-4" />} onClick={addImage} title="鎻掑叆鍥剧墖" />
+        <ToolbarButton icon={<Link2 className="h-4 w-4" />} isActive={editor.isActive("link")} onClick={addLink} title="插入链接" />
+        <ToolbarButton icon={<ImagePlus className="h-4 w-4" />} onClick={addImage} title="插入图片" />
         <div className="flex-1" />
-        <ToolbarButton icon={<Undo className="h-4 w-4" />} onClick={() => editor.chain().focus().undo().run()} title="鎾ら攢" />
-        <ToolbarButton icon={<Redo className="h-4 w-4" />} onClick={() => editor.chain().focus().redo().run()} title="閲嶅仛" />
+        <ToolbarButton icon={<Undo className="h-4 w-4" />} onClick={() => editor.chain().focus().undo().run()} title="撤销" />
+        <ToolbarButton icon={<Redo className="h-4 w-4" />} onClick={() => editor.chain().focus().redo().run()} title="重做" />
       </div>
 
       <div className="bg-background p-4">
         <EditorContent editor={editor} />
-        {isPasting ? <p className="mt-3 text-xs text-muted-foreground">姝ｅ湪涓婁紶绮樿创鐨勫浘鐗?...</p> : null}
+        {isPasting ? <p className="mt-3 text-xs text-muted-foreground">正在处理粘贴的图片...</p> : null}
       </div>
     </div>
   )
 }
+

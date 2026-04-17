@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
@@ -9,7 +9,7 @@ import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { request } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { cn, resolveAssetUrl } from "@/lib/utils"
 
 type CategoryItem = {
   name: string
@@ -27,7 +27,7 @@ type NavItem = {
 export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { t, user, logout } = useAppContext()
+  const { t, user, logout, unreadCount } = useAppContext()
   const { resolvedTheme, setTheme } = useTheme()
   const userMenuRef = useRef<HTMLDivElement | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -252,10 +252,15 @@ export function Navbar() {
                 onClick={() => setUserMenuOpen((value) => !value)}
                 className="flex items-center gap-3 rounded-full border border-border/70 bg-background/78 px-2.5 py-1.5 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.55)] transition-all hover:border-accent/25 hover:bg-secondary/80"
               >
-                <Avatar className="h-9 w-9 border border-border/60 bg-secondary shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-                  <AvatarImage src={user.avatar ?? undefined} alt={displayName} className="object-contain p-0.5" />
-                  <AvatarFallback className="bg-accent/12 text-xs font-semibold text-accent">{displayInitial}</AvatarFallback>
-                </Avatar>
+                <span className="relative">
+                  <Avatar className="h-9 w-9 overflow-hidden border border-border/60 bg-secondary shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+                    <AvatarImage src={resolveAssetUrl(user.avatar) || undefined} alt={displayName} className="block h-full w-full rounded-full object-cover object-center" />
+                    <AvatarFallback className="bg-accent/12 text-xs font-semibold text-accent">{displayInitial}</AvatarFallback>
+                  </Avatar>
+                  {unreadCount > 0 ? (
+                    <span className="absolute -bottom-0.5 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-red-500" />
+                  ) : null}
+                </span>
                 <div className="hidden min-w-0 text-left sm:block">
                   <p className="max-w-[8rem] truncate text-sm font-semibold text-foreground">{displayName}</p>
                   <p className="max-w-[8rem] truncate text-[11px] text-muted-foreground">@{user.username}</p>
@@ -285,8 +290,18 @@ export function Navbar() {
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
-                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                    消息中心
+                    <span className="relative mr-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      {unreadCount > 0 ? (
+                        <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-card" />
+                      ) : null}
+                    </span>
+                    <span className="flex-1">消息中心</span>
+                    {unreadCount > 0 ? (
+                      <span className="ml-2 inline-flex min-w-5 justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    ) : null}
                   </Link>
                   <Link
                     href="/profile?tab=requests"
@@ -367,7 +382,7 @@ export function Navbar() {
               className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3"
             >
               <Avatar className="h-10 w-10 border border-border/60 bg-secondary">
-                <AvatarImage src={user.avatar ?? undefined} alt={displayName} className="object-contain p-0.5" />
+                <AvatarImage src={resolveAssetUrl(user.avatar) || undefined} alt={displayName} className="h-full w-full object-cover" />
                 <AvatarFallback className="bg-accent/12 text-sm font-semibold text-accent">{displayInitial}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
@@ -547,3 +562,6 @@ export function Navbar() {
     </header>
   )
 }
+
+
+

@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { MessageSquareMore, XCircle } from "lucide-react"
-import { fetchAdminRequests, formatDateTime, updateAdminRequest } from "@/lib/admin-api"
+import { MessageSquareMore, Trash2, XCircle } from "lucide-react"
+import { deleteAdminRequest, fetchAdminRequests, formatDateTime, updateAdminRequest } from "@/lib/admin-api"
 import type { RequestItem } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { PageHeader } from "@/components/admin/page-header"
 
 const statusMap = {
   pending: "待处理",
@@ -74,21 +75,20 @@ export default function AdminSubmissionsPage() {
     await load(activeFilter === "all" ? "" : activeFilter)
   }
 
+  const handleDelete = async (request: RequestItem) => {
+    if (!window.confirm(`确定删除需求“${request.title}”吗？该操作不可恢复。`)) return
+    await deleteAdminRequest(request.id)
+    await load(activeFilter === "all" ? "" : activeFilter)
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="admin-hero">
-        <div className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-              <MessageSquareMore className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">用户需求管理</h1>
-              <p className="mt-1 text-sm text-muted-foreground">处理用户提交的软件需求，修改状态和回复都会直接写回后台。</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="需求管理"
+        description="处理用户提交的软件需求，修改状态和回复都会直接写回后台。"
+        icon={<MessageSquareMore className="h-5 w-5" />}
+        iconClassName="bg-cyan-50 text-cyan-600 dark:bg-cyan-950/30 dark:text-cyan-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
 
@@ -184,8 +184,12 @@ export default function AdminSubmissionsPage() {
                     ) : null}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <select value={item.status} onChange={(event) => void handleStatusChange(item, event.target.value as RequestItem["status"])} className={inputClassSmall}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={item.status}
+                      onChange={(event) => void handleStatusChange(item, event.target.value as RequestItem["status"])}
+                      className={cn(inputClassSmall, "w-auto min-w-[140px]")}
+                    >
                       <option value="pending">待处理</option>
                       <option value="processing">处理中</option>
                       <option value="done">已完成</option>
@@ -199,6 +203,13 @@ export default function AdminSubmissionsPage() {
                       className="admin-primary-btn px-4 py-2"
                     >
                       {item.adminReply ? "编辑回复" : "回复"}
+                    </button>
+                    <button
+                      onClick={() => void handleDelete(item)}
+                      className="admin-secondary-btn px-4 py-2 text-rose-600 hover:text-rose-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      删除
                     </button>
                   </div>
                 </div>

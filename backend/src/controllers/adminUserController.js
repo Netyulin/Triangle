@@ -7,6 +7,7 @@ import { normalizeInteger, normalizeString, serializeUser } from '../utils/seria
 import { MEMBERSHIP_LEVELS, getAllowedMembershipLevels, getMembershipLevelLabel, normalizeMembershipLevel } from '../utils/membership.js';
 import { getPasswordPolicyText, isStrongPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../utils/passwordPolicy.js';
 import { getUserSignPermissions, updateUserSignPermissions } from '../utils/signPermissions.js';
+import { sendTemplateNotificationToUser } from '../utils/notifications.js';
 
 const userStatuses = ['active', 'disabled', 'banned'];
 
@@ -117,6 +118,7 @@ export async function update(req, res) {
   if (!current) {
     return sendError(res, ErrorCodes.USER_NOT_FOUND, 'user not found');
   }
+  const currentSignPermissions = await getUserSignPermissions(current);
 
   const nextStatus = req.body.status ? normalizeString(req.body.status).trim() : current.status;
   const nextMembershipLevel = req.body.membershipLevel ? normalizeMembershipLevel(req.body.membershipLevel) : normalizeMembershipLevel(current.membershipLevel);
@@ -158,6 +160,18 @@ export async function update(req, res) {
   }
 
   const latest = await prisma.user.findUnique({ where: { id } });
+  const latestSignPermissions = await getUserSignPermissions(latest);
+
+  if (current.status !== 'banned' && latest.status === 'banned') {
+    await sendTemplateNotificationToUser(latest.id, 'user_banned', {
+      reason: latest.banReason || '如有疑问请联系管理员。'
+    });
+  }
+
+  if (currentSignPermissions.canSign && !latestSignPermissions.canSign) {
+    await sendTemplateNotificationToUser(latest.id, 'sign_disabled', {});
+  }
+
   return sendSuccess(res, await serializeAdminUser(latest), 'updated');
 }
 

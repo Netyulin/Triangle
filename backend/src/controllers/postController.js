@@ -15,7 +15,9 @@ const listValidation = validate([
   query('category').optional().isString().withMessage('category must be a string'),
   query('status').optional().isIn(postStatuses).withMessage('status is invalid'),
   query('featured').optional().isBoolean().withMessage('featured must be a boolean'),
-  query('search').optional().isString().withMessage('search must be a string')
+  query('search').optional().isString().withMessage('search must be a string'),
+  query('sort').optional().isString().withMessage('sort must be a string'),
+  query('order').optional().isIn(['asc', 'desc']).withMessage('order must be asc or desc')
 ]);
 
 const writeValidationRules = [
@@ -121,7 +123,26 @@ function buildPostData(body) {
   };
 }
 
-async function localizePostAssets(payload) {
+function resolveRequestBaseUrl(req) {
+  const envSiteUrl = normalizeString(process.env.SITE_URL || '').trim();
+  if (envSiteUrl) return envSiteUrl;
+
+  const forwardedProto = normalizeString(req.headers['x-forwarded-proto'] || '').trim();
+  const forwardedHost = normalizeString(req.headers['x-forwarded-host'] || '').trim();
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  const host = normalizeString(req.headers.host || '').trim();
+  if (host) {
+    const protocol = req.secure ? 'https' : 'http';
+    return `${protocol}://${host}`;
+  }
+
+  return '';
+}
+
+async function localizePostAssets(payload, baseUrl = '') {
   const nextPayload = {
     ...payload
   };
@@ -135,7 +156,7 @@ async function localizePostAssets(payload) {
   }
 
   if (nextPayload.content) {
-    nextPayload.content = await localizeHtmlImages(nextPayload.content, 'post-cover');
+    nextPayload.content = await localizeHtmlImages(nextPayload.content, 'post-cover', baseUrl);
   }
 
   return nextPayload;
@@ -189,8 +210,14 @@ export async function list(req, res) {
   const page = normalizeInteger(req.query.page, 1);
   const pageSize = normalizeInteger(req.query.pageSize, 10);
   const where = buildWhere(req.query, req.user ?? null);
+  const sortField = ['createdAt', 'updatedAt', 'publishedAt'].includes(req.query.sort) ? req.query.sort : 'updatedAt';
+  const sortOrder = req.query.order === 'asc' ? 'asc' : 'desc';
+  const orderBy =
+    sortField === 'publishedAt'
+      ? [{ publishedAt: sortOrder }, { updatedAt: sortOrder }]
+      : [{ [sortField]: sortOrder }, { createdAt: sortOrder }];
   const [items, total] = await Promise.all([
-    prisma.post.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }], include: includePostRelations() }),
+    prisma.post.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy, include: includePostRelations() }),
     prisma.post.count({ where })
   ]);
   return sendSuccess(res, { list: items.map(serializePost), total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
@@ -198,7 +225,7 @@ export async function list(req, res) {
 
 export async function featured(req, res) {
   const limit = normalizeInteger(req.query.limit, 5);
-  const items = await prisma.post.findMany({ where: { featured: true, status: 'published' }, take: limit, orderBy: [{ createdAt: 'desc' }], include: includePostRelations() });
+  const items = await prisma.post.findMany({ where: { featured: true, status: 'published' }, take: limit, orderBy: [{ updatedAt: 'desc' }], include: includePostRelations() });
   return sendSuccess(res, items.map(serializePost));
 }
 
@@ -217,7 +244,7 @@ export async function detail(req, res) {
 }
 
 export async function create(req, res) {
-  const payload = await localizePostAssets(buildPostData(req.body));
+  const payload = await localizePostAssets(buildPostData(req.body), resolveRequestBaseUrl(req));
   if (payload.relatedAppSlug) {
     const relatedApp = await ensureRelatedAppExists(payload.relatedAppSlug);
     if (!relatedApp) {
@@ -245,7 +272,7 @@ export async function update(req, res) {
     const existed = await prisma.post.findUnique({ where: { slug: nextSlug } });
     if (existed) return sendError(res, ErrorCodes.SLUG_EXISTS, 'slug already exists');
   }
-  const nextPayload = await localizePostAssets(patchPostData(current, req.body));
+  const nextPayload = await localizePostAssets(patchPostData(current, req.body), resolveRequestBaseUrl(req));
   const post = await prisma.post.update({ where: { slug: current.slug }, data: nextPayload, include: includePostRelations() });
   await upsertPostCategory(nextPayload.category);
   return sendSuccess(res, serializePost(post), 'updated');
@@ -254,7 +281,13 @@ export async function update(req, res) {
 export async function remove(req, res) {
   const current = await prisma.post.findUnique({ where: { slug: req.params.slug } });
   if (!current) return sendError(res, ErrorCodes.POST_NOT_FOUND, 'post not found');
-  await prisma.post.delete({ where: { slug: req.params.slug } });
+  const slug = req.params.slug;
+
+  await prisma.$transaction([
+    prisma.topicPost.deleteMany({ where: { postSlug: slug } }),
+    prisma.comment.deleteMany({ where: { postSlug: slug } }),
+    prisma.post.delete({ where: { slug } })
+  ]);
   return sendSuccess(res, null, 'deleted');
 }
 
@@ -276,7 +309,8 @@ export async function importFromUrl(req, res) {
     }
 
     if (localized.contentHtml) {
-      localized.contentHtml = await localizeHtmlImages(localized.contentHtml, 'post-cover');
+      const importBaseUrl = localized.finalUrl || localized.sourceUrl || req.body.url || '';
+      localized.contentHtml = await localizeHtmlImages(localized.contentHtml, 'post-cover', importBaseUrl);
     }
 
     return sendSuccess(res, localized, 'imported');

@@ -20,8 +20,10 @@ export type User = {
   phone?: string | null
   role: string
   membershipLevel: string
+  membershipExpireAt?: string | null
   status?: string
   banUntil?: string | null
+  balance: number
   canSubmitRequest: boolean
   canReply?: boolean
   canSign?: boolean
@@ -29,6 +31,10 @@ export type User = {
   canComment: boolean
   downloadQuotaDaily: number
   downloadCountDaily: number
+  lastLoginAt?: string | null
+  lastLoginIp?: string | null
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type InboxItem = {
@@ -69,6 +75,15 @@ export type SiteSettings = {
   homeFeaturedPostCount: number
   registrationEnabled: boolean
   registrationRequiresInvite: boolean
+  siteAnnouncementEnabled?: boolean
+  siteAnnouncementTitle?: string
+  siteAnnouncementContent?: string
+  siteAnnouncementLink?: string
+  downloadInterstitialEnabled?: boolean
+  downloadInterstitialTitle?: string
+  downloadInterstitialDescription?: string
+  downloadInterstitialButtonText?: string
+  downloadInterstitialBuyUrl?: string
   updatedAt?: string
 }
 
@@ -124,6 +139,7 @@ export type PostSummary = {
   dateLabel: string
   publishedAt: string
   status: string
+  updatedAt?: string
   seoTitle?: string | null
   seoDescription?: string | null
   relatedApp?: {
@@ -376,6 +392,7 @@ export type DownloadInfo = {
   downloadUrl: string
   /** CPS 联盟跳转链接 */
   affiliateLink: string
+  downloadLinks?: Array<{ name: string; url: string }>
 }
 
 export function getToken() {

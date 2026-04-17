@@ -1,4 +1,4 @@
-import { API_BASE_URL, clearToken, formatDateLabel, getToken, type AppSummary, type InboxItem, type NetdiskReportListPayload, type PostSummary, type ProfilePayload, type RequestItem, type SiteSettings, type User } from "@/lib/api"
+﻿import { API_BASE_URL, clearToken, formatDateLabel, getToken, type AppSummary, type InboxItem, type NetdiskReportListPayload, type PostSummary, type ProfilePayload, type RequestItem, type SiteSettings, type User } from "@/lib/api"
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -62,10 +62,20 @@ export type AdminStats = {
   newAppsThisWeek: number
   newPostsThisWeek: number
   newRequestsThisWeek: number
+  totalDownloads: number
+  todayDownloads: number
+  uniqueIPsToday: number
 }
 
 export type TrendPayload = {
-  trendData: Array<{ date: string; apps: number; posts: number; requests: number }>
+  trendData: Array<{
+    date: string
+    apps: number
+    posts: number
+    requests: number
+    downloads: number
+    uniqueIPs: number
+  }>
 }
 
 export type AdminRequestListPayload = {
@@ -105,13 +115,31 @@ export type AdminUserDevice = {
 }
 
 export type AdminInboxTemplate = {
-  id: number | string
+  key: string
   title: string
   content: string
   kind: "notification" | "message"
+  usageCondition?: "register" | "ban" | "sign_disabled" | "new_feature" | "manual" | "general"
   enabled: boolean
+  description?: string | null
   createdAt?: string
   updatedAt?: string
+}
+
+export type AdminActiveIpItem = {
+  ip: string
+  region: string
+  views: number
+  firstSeenAt: string
+  lastSeenAt: string
+}
+
+export type AdminActiveIpListPayload = {
+  list: AdminActiveIpItem[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 
 export type AdminAdSlot = {
@@ -247,7 +275,7 @@ async function adminRequest<T>(path: string, options: RequestOptions = {}) {
 
   const payload = (await response.json()) as ApiEnvelope<T>
   if (!response.ok || !payload.success) {
-    throw new Error(payload.message || "请求失败")
+    throw new Error(payload.message || "璇锋眰澶辫触")
   }
 
   return payload.data
@@ -256,8 +284,21 @@ async function adminRequest<T>(path: string, options: RequestOptions = {}) {
 export function resolveAssetUrl(value: string | null | undefined) {
   const source = String(value || "").trim()
   if (!source) return ""
-  if (/^https?:\/\//i.test(source) || source.startsWith("data:image/")) return source
-  // /uploads/ is static assets served by front-end (Next.js), not API backend
+  if (/^https?:\/\//i.test(source)) {
+    try {
+      const url = new URL(source)
+      const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname)
+      if (isLocalHost && url.pathname.startsWith("/uploads/")) {
+        return `${url.pathname}${url.search}${url.hash}`
+      }
+    } catch {
+      // 淇濇寔鍘熸牱
+    }
+
+    return source
+  }
+  if (source.startsWith("data:image/")) return source
+  // /uploads/ 由同域名反向代理到后端静态目录，保持同源访问
   if (source.startsWith('/uploads/')) {
     return source
   }
@@ -289,6 +330,15 @@ export async function fetchAdminStats() {
 
 export async function fetchAdminTrends(days = 7) {
   return adminRequest<TrendPayload>(`/api/admin/trends?days=${days}`)
+}
+
+export async function fetchAdminActiveIps(params?: { page?: number; pageSize?: number; keyword?: string }) {
+  const query = new URLSearchParams()
+  if (params?.page) query.set("page", String(params.page))
+  if (params?.pageSize) query.set("pageSize", String(params.pageSize))
+  if (params?.keyword?.trim()) query.set("keyword", params.keyword.trim())
+  const suffix = query.toString() ? `?${query.toString()}` : ""
+  return adminRequest<AdminActiveIpListPayload>(`/api/admin/active-ips${suffix}`)
 }
 
 export async function fetchAdminApps() {
@@ -371,6 +421,12 @@ export async function updateAdminRequest(id: number | string, payload: { status?
   return adminRequest<RequestItem>(`/api/admin/requests/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAdminRequest(id: number | string) {
+  return adminRequest<null>(`/api/admin/requests/${id}`, {
+    method: "DELETE",
   })
 }
 
@@ -558,17 +614,26 @@ export async function fetchAdminInboxTemplates() {
   return adminRequest<AdminInboxTemplate[]>("/api/admin/notification-templates")
 }
 
-export async function saveAdminInboxTemplate(templateId: number | string | null, payload: Record<string, unknown>) {
-  if (!templateId) {
+export async function saveAdminInboxTemplate(templateKey: string | null, payload: Record<string, unknown>) {
+  if (!templateKey) {
     throw new Error("缺少模板标识")
   }
-  return adminRequest<AdminInboxTemplate>(`/api/admin/notification-templates/${templateId}`, {
+  return adminRequest<AdminInboxTemplate>(`/api/admin/notification-templates/${templateKey}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   })
 }
 
-export async function sendAdminInboxMessage(payload: Record<string, unknown>) {
+export async function sendAdminInboxMessage(payload: {
+  templateKey?: string
+  title?: string
+  content?: string
+  link?: string
+  sendToAll?: boolean
+  userIds?: number[]
+  userStatuses?: Array<"active" | "disabled" | "banned">
+  membershipLevels?: string[]
+}) {
   return adminRequest<{ count: number }>("/api/admin/notifications/send", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -773,3 +838,117 @@ export async function deleteUserInbox(messageId: string | number) {
     method: "DELETE",
   })
 }
+
+// ============ 绛夌骇绠＄悊 API ============
+
+export type MembershipLevel = {
+  id: number
+  key: string
+  name: string
+  description: string | null
+  sortOrder: number
+  publicCertLimit: number
+  dailyDownloadLimit: number
+  blockedSoftwareTypes: string
+  rechargePrice: number
+  rechargeBonusPercent: number
+  color: string
+  icon: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export async function fetchLevels() {
+  return adminRequest<{ levels: MembershipLevel[] }>('/api/admin/levels')
+}
+
+export async function createLevel(data: Partial<MembershipLevel>) {
+  return adminRequest<{ level: MembershipLevel }>('/api/admin/levels', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateLevel(key: string, data: Partial<MembershipLevel>) {
+  return adminRequest<{ level: MembershipLevel }>('/api/admin/levels/' + key, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteLevel(key: string) {
+  return adminRequest<null>('/api/admin/levels/' + key, { method: 'DELETE' })
+}
+
+// ============ 鏀粯/鍏呭€?API (Profile椤电敤) ============
+
+export type Order = {
+  id: string
+  orderNo: string
+  amount: number
+  bonusAmount: number
+  totalAmount: number
+  targetLevelKey: string | null
+  paymentMethod: string
+  paymentStatus: string
+  tradeNo: string | null
+  createdAt: string
+  paidAt: string | null
+}
+
+export type UserBalance = {
+  balance: number
+  membershipLevel: string
+}
+
+export async function fetchUserBalance() {
+  return adminRequest<UserBalance>('/api/payment/balance')
+}
+
+export async function fetchUserOrders() {
+  return adminRequest<{ orders: Order[] }>('/api/payment/orders')
+}
+
+export async function createRechargeOrder(data: { amount: number; paymentMethod: string; targetLevelKey?: string }) {
+  return adminRequest<{ order: Order }>('/api/payment/create-order', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export type MembershipLevelConfig = {
+  id: number
+  key: string
+  name: string
+  description: string | null
+  sortOrder: number
+  publicCertLimit: number
+  dailyDownloadLimit: number
+  blockedSoftwareTypes: string
+  rechargePrice: number
+  rechargeBonusPercent: number
+  color: string
+  icon: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export async function fetchMembershipLevels() {
+  return adminRequest<{ levels: MembershipLevelConfig[] }>('/api/payment/membership-levels')
+}
+
+export async function upgradeMembershipLevel(targetLevelKey: string) {
+  return adminRequest<{
+    user: User
+    balance: number
+    membershipLevel: string
+    membershipLevelLabel: string
+    upgradeFee: number
+  }>('/api/payment/upgrade-membership', {
+    method: 'POST',
+    body: JSON.stringify({ targetLevelKey }),
+  })
+}
+

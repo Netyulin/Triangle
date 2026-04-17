@@ -32,6 +32,27 @@ function ensureObject(value) {
   return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
 }
 
+function normalizeLocalUploadUrl(value) {
+  const source = normalizeString(value).trim();
+  if (!source) {
+    return source;
+  }
+
+  if (/^https?:\/\//i.test(source)) {
+    try {
+      const url = new URL(source);
+      const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+      if (isLocalHost && url.pathname.startsWith('/uploads/')) {
+        return `${url.pathname}${url.search}${url.hash}`;
+      }
+    } catch {
+      return source;
+    }
+  }
+
+  return source;
+}
+
 export function stripHtmlTags(value) {
   return String(value ?? '')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -105,7 +126,7 @@ export function serializeUser(user) {
     username: user.username,
     email: user.email ?? null,
     name: user.name ?? null,
-    avatar: user.avatar ?? buildDefaultAvatar(user.name || user.username, user.gender),
+    avatar: normalizeLocalUploadUrl(user.avatar) || buildDefaultAvatar(user.name || user.username, user.gender),
     gender: normalizeGender(user.gender),
     phone: user.phone ?? null,
     role: user.role,
@@ -113,6 +134,7 @@ export function serializeUser(user) {
     membershipLevel: normalizedMembershipLevel,
     membershipLevelLabel: getMembershipLevelLabel(normalizedMembershipLevel),
     membershipExpireAt: user.membershipExpireAt ?? null,
+    balance: Number(user.balance ?? 0),
     bannedUntil,
     banUntil: bannedUntil,
     banReason: user.banReason ?? null,
@@ -125,6 +147,7 @@ export function serializeUser(user) {
     canSelfSign,
     isBanned,
     lastLoginAt: user.lastLoginAt ?? null,
+    lastLoginIp: user.lastLoginIp ?? null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };

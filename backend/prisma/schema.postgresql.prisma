@@ -22,6 +22,7 @@ model User {
   status             String            @default("active")
   membershipLevel    String            @default("free")
   membershipExpireAt DateTime?
+  balance            Decimal           @default(0) @db.Decimal(10, 2)
   bannedUntil        DateTime?
   banReason          String?
   downloadQuotaDaily Int               @default(3)
@@ -30,6 +31,7 @@ model User {
   canReply           Boolean           @default(true)
   canSubmitRequest   Boolean           @default(true)
   lastLoginAt        DateTime?
+  lastLoginIp        String?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   apps               App[]
@@ -41,6 +43,8 @@ model User {
   netdiskReports     NetdiskReport[]   @relation("NetdiskReportReporter")
   handledReports     NetdiskReport[]   @relation("NetdiskReportHandler")
   feedbacks          Feedback[]
+  orders             Order[]
+  transactions       Transaction[]
 }
 
 model App {
@@ -111,6 +115,7 @@ model Post {
   seoTitle       String?
   seoDescription String?
   createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @default(now()) @updatedAt
   comments       Comment[]
   topics         TopicPost[]
 }
@@ -246,6 +251,7 @@ model NotificationTemplate {
   title       String
   content     String
   enabled     Boolean  @default(true)
+  usageCondition String?
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -289,6 +295,71 @@ model DownloadLog {
   userAgent    String?
   adClicked    Boolean  @default(false)
   createdAt    DateTime @default(now())
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  ip        String
+  userAgent String?
+  referrer  String?
+  createdAt DateTime @default(now())
+}
+
+// These tables are managed by raw SQL helpers at runtime.
+// Keep mapped+ignored models to prevent Prisma db push from dropping them.
+model AppCategory {
+  name      String @id
+  sortOrder Int    @default(0) @map("sortOrder")
+  createdAt String @map("createdAt")
+  updatedAt String @map("updatedAt")
+
+  @@map("app_categories")
+  @@ignore
+}
+
+model PostCategory {
+  name      String @id
+  sortOrder Int    @default(0) @map("sortOrder")
+  createdAt String @map("createdAt")
+  updatedAt String @map("updatedAt")
+
+  @@map("post_categories")
+  @@ignore
+}
+
+model InviteCode {
+  code           String  @id
+  note           String?
+  status         String
+  batchId        String?
+  createdAt      String
+  usedAt         String?
+  usedByUserId   Int?
+  usedByUsername String?
+
+  @@map("invite_codes")
+  @@ignore
+}
+
+model SiteSetting {
+  key       String @id
+  value     String
+  updatedAt String @map("updatedAt")
+
+  @@map("site_settings")
+  @@ignore
+}
+
+model CommentReaction {
+  userId    Int      @map("userId")
+  commentId String   @map("commentId")
+  reaction  String
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  @@id([userId, commentId])
+  @@map("comment_reactions")
+  @@ignore
 }
 
 model CpsDownload {
@@ -392,4 +463,73 @@ model SignUserPermission {
   updatedAt   DateTime @updatedAt
 
   @@map("sign_user_permissions")
+}
+
+// ==================== 等级管理 ====================
+
+model MembershipLevelConfig {
+  id                   Int      @id @default(autoincrement())
+  key                  String   @unique // free/sponsor/lifetime/supreme
+  name                 String   // 显示名称
+  description          String?  // 描述
+  sortOrder            Int      @default(0)
+
+  // 限制配置
+  publicCertLimit      Int      @default(-1)  // -1=无限
+  dailyDownloadLimit   Int      @default(-1)  // -1=无限
+  blockedSoftwareTypes String   @default("[]")  // JSON array
+
+  // 充值相关
+  rechargePrice        Decimal  @default(0) @db.Decimal(10, 2)  // 升级到此等级价格
+  rechargeBonusPercent Int      @default(0)  // 赠送比例
+
+  // 显示
+  color                String   @default("#6B7280")
+  icon                 String   @default("star")
+  isActive             Boolean  @default(true)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+// ==================== 订单系统 ====================
+
+model Order {
+  id              String   @id @default(cuid())
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
+
+  orderNo         String   @unique  // 订单号
+  amount          Decimal  @db.Decimal(10, 2)
+  bonusAmount     Decimal  @default(0) @db.Decimal(10, 2)  // 赠送金额
+  totalAmount     Decimal  @db.Decimal(10, 2)  // 总计
+
+  targetLevelKey  String?  // 目标等级 key
+
+  paymentMethod   String   // wechat/alipay
+  paymentStatus   String   @default("pending")  // pending/paid/failed/refunded
+  tradeNo         String?  // 第三方支付流水号
+
+  createdAt       DateTime @default(now())
+  paidAt          DateTime?
+
+  @@index([userId])
+  @@index([orderNo])
+}
+
+// ==================== 交易记录 ====================
+
+model Transaction {
+  id           String   @id @default(cuid())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+
+  type         String   // recharge/consume/refund/bonus
+  amount       Decimal  @db.Decimal(10, 2)
+  balanceAfter Decimal  @db.Decimal(10, 2)  // 变动后余额
+  description  String?
+  relatedId    String?  // 关联的订单ID等
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
 }

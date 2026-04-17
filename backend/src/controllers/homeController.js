@@ -61,31 +61,33 @@ function buildHeroSlideFromPost(post, index) {
 }
 
 export async function summary(req, res) {
-  const heroLimit = normalizeInteger(req.query.heroLimit, 4);
+  const heroLimit = Math.max(normalizeInteger(req.query.heroLimit, 4), 4);
   const rankingLimit = normalizeInteger(req.query.rankingLimit, 6);
+  const heroAppsCount = 2;
+  const heroPostsCount = 2;
   const settings = await readSiteSettings();
 
   const [featuredApps, featuredPosts, recentPosts, rankedApps, hotSearches, appCount, postCount, requestCount, solvedCount] =
     await Promise.all([
       prisma.app.findMany({
         where: { featured: true, status: 'published' },
-        take: heroLimit,
-        orderBy: [{ editorialScore: 'desc' }, { createdAt: 'desc' }]
+        take: heroAppsCount,
+        orderBy: [{ updatedAt: 'desc' }, { editorialScore: 'desc' }]
       }),
       prisma.post.findMany({
         where: { featured: true, status: 'published' },
-        take: Math.max(settings.homeFeaturedPostCount, heroLimit),
-        orderBy: [{ createdAt: 'desc' }]
+        take: Math.max(settings.homeFeaturedPostCount, heroPostsCount),
+        orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }]
       }),
       prisma.post.findMany({
         where: { status: 'published' },
         take: Math.max(settings.homeFeaturedPostCount, rankingLimit),
-        orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }]
+        orderBy: [{ featured: 'desc' }, { updatedAt: 'desc' }]
       }),
       prisma.app.findMany({
         where: { status: 'published' },
         take: rankingLimit,
-        orderBy: [{ editorialScore: 'desc' }, { createdAt: 'desc' }]
+        orderBy: [{ updatedAt: 'desc' }, { editorialScore: 'desc' }]
       }),
       prisma.hotSearch.findMany({
         orderBy: [{ count: 'desc' }, { keyword: 'asc' }],
@@ -98,8 +100,8 @@ export async function summary(req, res) {
     ]);
 
   const heroSlides = [
-    ...featuredApps.slice(0, Math.ceil(heroLimit / 2)).map(buildHeroSlideFromApp),
-    ...featuredPosts.slice(0, Math.floor(heroLimit / 2)).map(buildHeroSlideFromPost)
+    ...featuredApps.slice(0, heroAppsCount).map(buildHeroSlideFromApp),
+    ...featuredPosts.slice(0, heroPostsCount).map(buildHeroSlideFromPost)
   ].slice(0, heroLimit);
 
   const softwareRankings = [...rankedApps]

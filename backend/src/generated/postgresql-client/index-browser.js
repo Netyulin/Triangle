@@ -134,6 +134,7 @@ exports.Prisma.UserScalarFieldEnum = {
   status: 'status',
   membershipLevel: 'membershipLevel',
   membershipExpireAt: 'membershipExpireAt',
+  balance: 'balance',
   bannedUntil: 'bannedUntil',
   banReason: 'banReason',
   downloadQuotaDaily: 'downloadQuotaDaily',
@@ -142,6 +143,7 @@ exports.Prisma.UserScalarFieldEnum = {
   canReply: 'canReply',
   canSubmitRequest: 'canSubmitRequest',
   lastLoginAt: 'lastLoginAt',
+  lastLoginIp: 'lastLoginIp',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -204,7 +206,8 @@ exports.Prisma.PostScalarFieldEnum = {
   status: 'status',
   seoTitle: 'seoTitle',
   seoDescription: 'seoDescription',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.TopicScalarFieldEnum = {
@@ -313,6 +316,7 @@ exports.Prisma.NotificationTemplateScalarFieldEnum = {
   title: 'title',
   content: 'content',
   enabled: 'enabled',
+  usageCondition: 'usageCondition',
   description: 'description',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -352,6 +356,15 @@ exports.Prisma.DownloadLogScalarFieldEnum = {
   ip: 'ip',
   userAgent: 'userAgent',
   adClicked: 'adClicked',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PageViewScalarFieldEnum = {
+  id: 'id',
+  path: 'path',
+  ip: 'ip',
+  userAgent: 'userAgent',
+  referrer: 'referrer',
   createdAt: 'createdAt'
 };
 
@@ -442,6 +455,50 @@ exports.Prisma.SignUserPermissionScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.MembershipLevelConfigScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  name: 'name',
+  description: 'description',
+  sortOrder: 'sortOrder',
+  publicCertLimit: 'publicCertLimit',
+  dailyDownloadLimit: 'dailyDownloadLimit',
+  blockedSoftwareTypes: 'blockedSoftwareTypes',
+  rechargePrice: 'rechargePrice',
+  rechargeBonusPercent: 'rechargeBonusPercent',
+  color: 'color',
+  icon: 'icon',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.OrderScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  orderNo: 'orderNo',
+  amount: 'amount',
+  bonusAmount: 'bonusAmount',
+  totalAmount: 'totalAmount',
+  targetLevelKey: 'targetLevelKey',
+  paymentMethod: 'paymentMethod',
+  paymentStatus: 'paymentStatus',
+  tradeNo: 'tradeNo',
+  createdAt: 'createdAt',
+  paidAt: 'paidAt'
+};
+
+exports.Prisma.TransactionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  amount: 'amount',
+  balanceAfter: 'balanceAfter',
+  description: 'description',
+  relatedId: 'relatedId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -490,12 +547,16 @@ exports.Prisma.ModelName = {
   AdSlot: 'AdSlot',
   AdContent: 'AdContent',
   DownloadLog: 'DownloadLog',
+  PageView: 'PageView',
   CpsDownload: 'CpsDownload',
   SignDevice: 'SignDevice',
   SignTask: 'SignTask',
   SignCertificate: 'SignCertificate',
   SignProfile: 'SignProfile',
-  SignUserPermission: 'SignUserPermission'
+  SignUserPermission: 'SignUserPermission',
+  MembershipLevelConfig: 'MembershipLevelConfig',
+  Order: 'Order',
+  Transaction: 'Transaction'
 };
 
 /**

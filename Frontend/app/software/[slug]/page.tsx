@@ -1,15 +1,16 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Bookmark, CheckCircle2, ChevronLeft, ChevronRight, Download, Loader2, RefreshCw, ShieldCheck, Star } from "lucide-react"
+import { AlertTriangle, Bookmark, CheckCircle2, ChevronLeft, ChevronRight, Download, Loader2, RefreshCw, ShieldCheck, Star } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import DownloadCountdown from "@/components/download/DownloadCountdown"
 import { useAppContext } from "@/components/app-provider"
 import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
 import { resolveAssetUrl } from "@/lib/utils"
@@ -23,20 +24,25 @@ function accessMessage(reason: string) {
   return "可以正常下载。"
 }
 
-function accessLabel(level: string) {
-  if (level === "premium") return "高级"
-  if (level === "member") return "会员"
-  return "免费"
-}
-
 const reportReasonOptions = ["链接已失效", "提取信息有误", "压缩密码不对"] as const
 
-import DownloadCountdown from "@/components/download/DownloadCountdown"
+type AppDetailCompat = AppSummary & {
+  shortDescription?: string
+  averageRating?: number
+  reviewCount?: number
+  category?: string | { name?: string | null } | null
+  screenshots?: string[]
+  description?: string
+  features?: string[]
+  systemRequirements?: Record<string, string | number | boolean>
+  changelog?: string
+  vendor?: string
+}
 
 export default function SoftwareDetailPage() {
   const pathname = usePathname()
   const router = useRouter()
-  const { token, permissions } = useAppContext()
+  const { token } = useAppContext()
 
   const [app, setApp] = useState<AppSummary | null>(null)
   const [access, setAccess] = useState<AppAccessPayload | null>(null)
@@ -45,6 +51,7 @@ export default function SoftwareDetailPage() {
   const [error, setError] = useState("")
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [downloadOpen, setDownloadOpen] = useState(false)
+  const [countdownReady, setCountdownReady] = useState(false)
   const [reportExpanded, setReportExpanded] = useState(false)
   const [reportNetdisk, setReportNetdisk] = useState("")
   const [reportReason, setReportReason] = useState<string>(reportReasonOptions[0])
@@ -55,14 +62,17 @@ export default function SoftwareDetailPage() {
 
   const slug = decodeURIComponent(pathname.split("/").filter(Boolean).pop() || "")
   const downloadPermission = access?.downloadPermission ?? { allowed: false, reason: "", requiresLogin: true }
-  const downloadLinks = access?.downloadLinks ?? []
-  const shouldShowIntermediary = (permissions?.membershipLevel ?? "free") === "free"
+  const downloadLinks = useMemo(() => access?.downloadLinks ?? [], [access?.downloadLinks])
   const primaryDownload = downloadLinks[0]?.url || access?.downloadUrl || app?.downloadUrl || ""
-  const countdownRedirectUrl = shouldShowIntermediary
-    ? `/download/${encodeURIComponent(slug)}?target=${encodeURIComponent(primaryDownload)}&name=${encodeURIComponent(app?.name || slug)}`
-    : primaryDownload
+  const resolvedDownloadLinks = downloadPermission.allowed
+    ? downloadLinks.length > 0
+      ? downloadLinks
+      : primaryDownload
+        ? [{ name: "默认下载地址", url: primaryDownload }]
+        : []
+    : []
 
-  const loadDetail = async () => {
+  const loadDetail = useCallback(async () => {
     if (!slug) return
 
     setLoading(true)
@@ -88,11 +98,11 @@ export default function SoftwareDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [slug, token])
 
   useEffect(() => {
     void loadDetail()
-  }, [slug, token])
+  }, [loadDetail])
 
   useEffect(() => {
     if (!downloadOpen) return
@@ -129,6 +139,34 @@ export default function SoftwareDetailPage() {
     setCurrentScreenshotIndex(0)
   }, [app])
 
+  const detailApp = app as AppDetailCompat | null
+  const subtitleText = detailApp?.shortDescription || detailApp?.subtitle || detailApp?.summaryText || ""
+  const ratingValue = Number(detailApp?.averageRating ?? detailApp?.rating ?? 0)
+  const reviewCount = Number(detailApp?.reviewCount ?? 0)
+  const rawCategory = detailApp?.category
+  const categoryName = typeof rawCategory === "string"
+    ? rawCategory
+    : rawCategory && typeof rawCategory === "object" && "name" in rawCategory
+      ? (rawCategory.name || "")
+      : ""
+  const screenshotList = Array.isArray(detailApp?.screenshots)
+    ? detailApp.screenshots
+    : Array.isArray(detailApp?.gallery)
+      ? detailApp.gallery
+      : []
+  const descriptionText = detailApp?.description || ""
+  const summaryHtml = detailApp?.summary || ""
+  const featureList = Array.isArray(detailApp?.features)
+    ? detailApp.features
+    : Array.isArray(detailApp?.highlights)
+      ? detailApp.highlights
+      : []
+  const systemRequirementEntries = detailApp?.systemRequirements && typeof detailApp.systemRequirements === "object"
+    ? Object.entries(detailApp.systemRequirements).map(([key, value]) => [key, String(value)] as const)
+    : Array.isArray(detailApp?.requirements)
+      ? detailApp.requirements.map((item, index) => [`要求 ${index + 1}`, String(item)] as const)
+      : []
+
   const handleFavorite = async () => {
     if (!slug) return
     if (!token) {
@@ -157,6 +195,7 @@ export default function SoftwareDetailPage() {
   const openDownloadFlow = () => {
     if (!primaryDownload) return
     setDownloadOpen(true)
+    setCountdownReady(false)
     setReportExpanded(false)
     setReportNetdisk(downloadLinks[0]?.name ?? "")
     setReportReason(reportReasonOptions[0])
@@ -165,15 +204,11 @@ export default function SoftwareDetailPage() {
   }
 
   const handleDownloadLink = (url: string) => {
-    if (!url) return
-
-    if (shouldShowIntermediary) {
-      router.push(`/download/${encodeURIComponent(slug)}?target=${encodeURIComponent(url)}&name=${encodeURIComponent(app?.name || slug)}`)
-      return
-    }
+    if (!url || !countdownReady) return
 
     window.open(url, "_blank", "noopener,noreferrer")
   }
+
 
   const handleReportSubmit = async () => {
     if (!slug || !access) return
@@ -239,8 +274,9 @@ return (
 
           <button
             onClick={() => setReportOpen(true)}
-            className="text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-2 rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm transition hover:border-amber-400 hover:bg-amber-100 dark:border-amber-700/70 dark:bg-amber-900/30 dark:text-amber-200"
           >
+            <AlertTriangle className="h-3.5 w-3.5" />
             报告问题
           </button>
         </div>
@@ -284,17 +320,17 @@ return (
                         {app.accessLevel === "supreme" ? "至尊会员" : app.accessLevel === "lifetime" ? "终身会员" : app.accessLevel === "sponsor" ? "赞助会员" : "免费"}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{app.shortDescription}</p>
+                    <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{subtitleText}</p>
 
-                    {app.averageRating > 0 && (
+                    {ratingValue > 0 && (
                       <div className="mt-2 flex items-center gap-2">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <Star key={star} className={`h-3.5 w-3.5 ${star <= Math.round(app.averageRating) ? "fill-amber-400 text-amber-400" : "text-muted"}`} />
+                            <Star key={star} className={`h-3.5 w-3.5 ${star <= Math.round(ratingValue) ? "fill-amber-400 text-amber-400" : "text-muted"}`} />
                           ))}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {app.averageRating.toFixed(1)} · {app.reviewCount ?? 0} 条评价
+                          {ratingValue.toFixed(1)} · {reviewCount} 条评价
                         </span>
                       </div>
                     )}
@@ -302,14 +338,14 @@ return (
                     <div className="mt-2.5 flex flex-wrap gap-3 text-xs text-muted-foreground">
                       {app.version && <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> v{app.version}</span>}
                       {app.size && <span>{app.size}</span>}
-                      {app.category?.name && <span>{app.category.name}</span>}
+                      {categoryName && <span>{categoryName}</span>}
                     </div>
                   </div>
                 </div>
               </section>
 
               {/* 截图 */}
-              {app.screenshots && app.screenshots.length > 0 && (
+              {screenshotList.length > 0 && (
                 <section className="space-y-3">
                   <h2 className="text-base font-semibold">截图预览</h2>
                   <div className="relative overflow-hidden rounded-2xl border border-border">
@@ -322,9 +358,9 @@ return (
                       </button>
                     )}
                     <div className="relative aspect-video w-full overflow-hidden bg-secondary">
-                      <Image src={app.screenshots[currentScreenshotIndex]} alt={`截图 ${currentScreenshotIndex + 1}`} fill className="object-contain" sizes="(max-width: 1024px) 100vw, 680px" />
+                      <Image src={screenshotList[currentScreenshotIndex]} alt={`截图 ${currentScreenshotIndex + 1}`} fill className="object-contain" sizes="(max-width: 1024px) 100vw, 680px" />
                     </div>
-                    {currentScreenshotIndex < app.screenshots.length - 1 && (
+                    {currentScreenshotIndex < screenshotList.length - 1 && (
                       <button
                         onClick={() => setCurrentScreenshotIndex((i) => i + 1)}
                         className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur-sm transition hover:bg-background"
@@ -333,9 +369,9 @@ return (
                       </button>
                     )}
                   </div>
-                  {app.screenshots.length > 1 && (
+                  {screenshotList.length > 1 && (
                     <div className="flex justify-center gap-1.5">
-                      {app.screenshots.map((_, i) => (
+                      {screenshotList.map((_, i) => (
                         <button
                           key={i}
                           onClick={() => setCurrentScreenshotIndex(i)}
@@ -348,21 +384,28 @@ return (
               )}
 
               {/* 详细介绍 */}
-              {app.description && (
+              {(summaryHtml || descriptionText) && (
                 <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <h2 className="mb-4 text-base font-semibold">详细介绍</h2>
-                  <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                    {app.description}
-                  </div>
+                  {summaryHtml ? (
+                    <div
+                      className="prose prose-sm max-w-none dark:prose-invert text-sm leading-relaxed text-muted-foreground"
+                      dangerouslySetInnerHTML={{ __html: summaryHtml }}
+                    />
+                  ) : (
+                    <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                      {descriptionText}
+                    </div>
+                  )}
                 </section>
               )}
 
               {/* 特性 */}
-              {app.features && app.features.length > 0 && (
+              {featureList.length > 0 && (
                 <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <h2 className="mb-4 text-base font-semibold">主要特性</h2>
                   <ul className="grid gap-2.5 sm:grid-cols-2">
-                    {app.features.map((feature, i) => (
+                    {featureList.map((feature, i) => (
                       <li key={i} className="flex items-start gap-2.5 text-sm">
                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                         <span className="text-muted-foreground">{feature}</span>
@@ -373,11 +416,11 @@ return (
               )}
 
               {/* 系统要求 */}
-              {app.systemRequirements && (
+              {systemRequirementEntries.length > 0 && (
                 <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <h2 className="mb-4 text-base font-semibold">系统要求</h2>
                   <div className="space-y-2">
-                    {Object.entries(app.systemRequirements).map(([key, value]) => (
+                    {systemRequirementEntries.map(([key, value]) => (
                       <div key={key} className="flex items-start gap-2 text-sm">
                         <span className="w-24 shrink-0 font-medium text-muted-foreground">{key}</span>
                         <span className="text-muted-foreground">{value}</span>
@@ -388,11 +431,11 @@ return (
               )}
 
               {/* 更新日志 */}
-              {app.changelog && (
+              {detailApp?.changelog && (
                 <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <h2 className="mb-4 text-base font-semibold">更新日志</h2>
                   <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                    {app.changelog}
+                    {detailApp.changelog}
                   </div>
                 </section>
               )}
@@ -422,25 +465,25 @@ return (
                 {app.version && <p className="mt-2.5 text-center text-xs text-muted-foreground">版本 {app.version}</p>}
               </div>
 
-              {app.vendor && (
+              {detailApp?.vendor && (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <h3 className="text-base font-bold">开发商</h3>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-sm font-bold">
-                      {app.vendor[0]}
+                      {detailApp.vendor[0]}
                     </div>
-                    <span className="text-sm font-medium">{app.vendor}</span>
+                    <span className="text-sm font-medium">{detailApp.vendor}</span>
                   </div>
                 </div>
               )}
 
-              {app.category?.name && (
+              {categoryName && (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <h3 className="text-base font-bold">分类</h3>
                   <div className="mt-3">
-                    <Link href={`/software?category=${encodeURIComponent(app.category.name)}`}>
+                    <Link href={`/software?category=${encodeURIComponent(categoryName)}`}>
                       <span className="inline-block cursor-pointer rounded-xl bg-secondary px-3 py-1 text-xs text-muted-foreground transition hover:bg-accent hover:text-accent-foreground">
-                        {app.category.name}
+                        {categoryName}
                       </span>
                     </Link>
                   </div>
@@ -469,24 +512,60 @@ return (
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">下载 {app?.name}</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">{app?.shortDescription}</DialogDescription>
+            <DialogDescription className="text-sm text-muted-foreground">{subtitleText}</DialogDescription>
           </DialogHeader>
-          {primaryDownload ? (
+          {downloadPermission.reason === "daily quota exhausted" ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-center text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-center justify-center gap-2 font-semibold">
+                <ShieldCheck className="h-4 w-4" />
+                今日下载数已达限制
+              </div>
+              <p className="mt-2">
+                今日已下载 {access?.userPermissions.downloadCountDaily ?? 0} 次，剩余 {access?.userPermissions.remainingDownloads ?? 0} 次。
+              </p>
+            </div>
+          ) : downloadPermission.allowed && resolvedDownloadLinks.length > 0 ? (
             <div className="space-y-4">
-              <DownloadCountdown
-                seconds={5}
-                redirectUrl={countdownRedirectUrl}
-                softwareName={app?.name ?? slug}
-              />
-              {app.changelog && (
+              <div className="space-y-3">
+                <DownloadCountdown
+                  seconds={5}
+                  softwareName={app?.name ?? slug}
+                  onComplete={() => setCountdownReady(true)}
+                />
+              </div>
+              <div className="space-y-3">
+                <p className="text-center text-sm text-muted-foreground">
+                  倒计时结束后，下面的下载地址才可以点击。
+                </p>
+                <div className="grid gap-3">
+                  {resolvedDownloadLinks.map((item) => (
+                    <button
+                      key={item.url}
+                      type="button"
+                      onClick={() => handleDownloadLink(item.url)}
+                      disabled={!countdownReady}
+                      className="inline-flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span>{item.name}</span>
+                      <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                        <Download className="h-3.5 w-3.5" />
+                        {countdownReady ? "点击下载" : "倒计时中"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {detailApp?.changelog && (
                 <details className="rounded-xl border border-border p-3 text-xs">
-                  <summary className="cursor-pointer font-medium">查看更新日志</summary>
-                  <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{app.changelog}</p>
+              <summary className="cursor-pointer font-medium">查看更新日志</summary>
+                  <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{detailApp.changelog}</p>
                 </details>
               )}
             </div>
           ) : (
-            <div className="py-6 text-center text-sm text-muted-foreground">暂无下载链接</div>
+            <div className="rounded-2xl border border-border bg-background px-4 py-5 text-center text-sm text-muted-foreground">
+              {accessMessage(downloadPermission.reason)}
+            </div>
           )}
         </DialogContent>
       </Dialog>

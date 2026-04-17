@@ -97,6 +97,13 @@
 }
 
 @layer components {
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
   .container-custom {
     @apply mx-auto w-full max-w-[1200px] px-4 md:px-6;
   }
@@ -230,6 +237,122 @@
   }
   .feedback-btn {
     @apply inline-flex items-center rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:border-accent/30 hover:text-accent;
+  }
+
+  /* ====== Admin V2 — 新布局系统样式 ====== */
+
+  /* 顶栏搜索框 focus */
+  .admin-search-focus:focus-within {
+    @apply border-accent/40 ring-2 ring-ring/20;
+  }
+
+  /* 用户菜单动画 */
+  .admin-dropdown-enter {
+    animation: dropdownIn 0.15s ease-out;
+  }
+
+  @keyframes dropdownIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* 面包屑链接 hover */
+  .admin-breadcrumb-link {
+    @apply transition-colors duration-150 hover:text-foreground;
+  }
+
+  /* PageHeader 图标默认色（各页面可覆盖）*/
+  .page-header-icon-default {
+    @apply bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-400;
+  }
+
+  /* 侧边栏滚动条隐藏 (webkit) */
+  .admin-sidebar-scroll::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+
+  /* 通知 badge 动画 */
+  .admin-badge-pulse {
+    animation: pulse-badge 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-badge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  /* 移动端 FAB 按钮阴影 */
+  .admin-mobile-fab {
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.25);
+  }
+
+  /* ====== Phase 4 打磨样式 ====== */
+
+  /* 表格行 hover 效果 */
+  .admin-table-row {
+    @apply transition-colors duration-150;
+  }
+  .admin-table-row:hover {
+    @apply bg-slate-50/80 dark:bg-slate-800/50;
+  }
+
+  /* 按钮点击反馈 */
+  .admin-btn-press:active {
+    @apply scale-[0.98];
+  }
+
+  /* 卡片悬浮提升 */
+  .admin-card-lift {
+    @apply transition-all duration-200;
+  }
+  .admin-card-lift:hover {
+    @apply -translate-y-0.5 shadow-lg;
+  }
+
+  /* 链接下划线动画 */
+  .admin-link-underline {
+    @apply relative;
+  }
+  .admin-link-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 h-px w-0 bg-current transition-all duration-200;
+  }
+  .admin-link-underline:hover::after {
+    @apply w-full;
+  }
+
+  /* 加载骨架屏 shimmer 效果 */
+  .skeleton-shimmer {
+    @apply relative overflow-hidden;
+  }
+  .skeleton-shimmer::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+
+  /* 表单字段聚焦时的标签高亮 */
+  .admin-field:focus-within label {
+    @apply text-accent;
+  }
+
+  /* 状态标签 */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .status-badge-published {
+    @apply bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400;
+  }
+  .status-badge-hidden {
+    @apply bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400;
+  }
+  .status-badge-draft {
+    @apply bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400;
   }
 }
 

@@ -19,8 +19,21 @@ export function stripHtmlTags(value: string | null | undefined) {
 export function resolveAssetUrl(value: string | null | undefined) {
   const source = String(value ?? '').trim()
   if (!source) return ''
-  if (/^https?:\/\//i.test(source) || source.startsWith('data:image/')) return source
-  // /uploads/ is static assets served by front-end (Next.js), not API backend
+  if (/^https?:\/\//i.test(source)) {
+    try {
+      const url = new URL(source)
+      const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(url.hostname)
+      if (isLocalHost && url.pathname.startsWith('/uploads/')) {
+        return `${url.pathname}${url.search}${url.hash}`
+      }
+    } catch {
+      // 保持原样
+    }
+
+    return source
+  }
+  if (source.startsWith('data:image/')) return source
+  // /uploads/ 由同域名反向代理到后端静态目录，保持同源访问
   if (source.startsWith('/uploads/')) {
     return source
   }

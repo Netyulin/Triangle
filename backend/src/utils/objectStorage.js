@@ -90,6 +90,10 @@ function buildLocalPublicUrl(relativePath) {
     .trim()
     .replace(/\/$/, '');
 
+  if (process.env.NODE_ENV === 'production' && /^http:\/\/(localhost|127(?:\.\d{1,3}){3}|::1)(:\d+)?$/i.test(baseUrl)) {
+    return relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  }
+
   return `${baseUrl}${relativePath.startsWith('/') ? relativePath : `/${relativePath}`}`;
 }
 

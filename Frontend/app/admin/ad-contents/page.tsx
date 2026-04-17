@@ -11,6 +11,7 @@ import {
   type AdminAdContent,
   type AdminAdSlot,
 } from "@/lib/admin-api"
+import { PageHeader } from "@/components/admin/page-header"
 
 type ContentForm = {
   slotId: string
@@ -82,7 +83,33 @@ export default function AdminAdContentsPage() {
   }
 
   useEffect(() => {
-    void loadAll()
+    let active = true
+    const initialize = async () => {
+      setLoading(true)
+      setError("")
+      try {
+        const [slotData, contentData] = await Promise.all([
+          fetchAdminAdSlots({ page: 1, pageSize: 100 }),
+          fetchAdminAdContents({ page: 1, pageSize: 100 }),
+        ])
+        if (!active) return
+        setSlots(slotData.list)
+        setItems(contentData.list)
+        if (slotData.list[0]?.id) {
+          setCreateForm((prev) => ({ ...prev, slotId: prev.slotId || slotData.list[0].id }))
+          setEditForm((prev) => ({ ...prev, slotId: prev.slotId || slotData.list[0].id }))
+        }
+      } catch (err) {
+        if (!active) return
+        setError(err instanceof Error ? err.message : "广告内容初始化失败")
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    void initialize()
+    return () => {
+      active = false
+    }
   }, [])
 
   const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
@@ -162,7 +189,7 @@ export default function AdminAdContentsPage() {
   }
 
   const handleDelete = async (item: AdminAdContent) => {
-    if (!window.confirm(`确定删除广告内容「${item.title}」吗？`)) return
+    if (!window.confirm(`确定删除广告内容“${item.title}”吗？`)) return
     setSaving(true)
     setError("")
     setMessage("")
@@ -178,25 +205,25 @@ export default function AdminAdContentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-            <Images className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">广告内容管理</h1>
-            <p className="mt-1 text-sm text-muted-foreground">管理广告素材、投放链接、优先级与启用状态</p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="广告内容管理"
+        description="管理广告素材、投放链接、优先级与启用状态。"
+        icon={<Images className="h-5 w-5" />}
+        iconClassName="bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
       {message ? <div className="admin-panel px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
 
       <section className="admin-panel p-4">
         <form onSubmit={handleSearch} className="grid gap-3 md:grid-cols-4">
-          <input className="admin-input" placeholder="搜索标题 / 广告主" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <input
+            className="admin-input"
+            placeholder="搜索标题 / 广告主"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
           <select className="admin-input" value={slotFilter} onChange={(event) => setSlotFilter(event.target.value)}>
             <option value="">全部广告位</option>
             {slots.map((slot) => (

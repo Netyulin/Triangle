@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import Image from "next/image"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Bookmark, Clock3, RefreshCw } from "lucide-react"
@@ -25,7 +26,7 @@ export default function ArticleDetailPage() {
 
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug
 
-  const loadDetail = async () => {
+  const loadDetail = useCallback(async () => {
     if (!slug) return
 
     setLoading(true)
@@ -46,11 +47,11 @@ export default function ArticleDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [slug, token])
 
   useEffect(() => {
     void loadDetail()
-  }, [slug, token])
+  }, [loadDetail])
 
   const handleFavorite = async () => {
     if (!slug) return
@@ -71,7 +72,7 @@ export default function ArticleDetailPage() {
       })
       setFavorited(result.favorited)
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "操作失败，请稍后再试")
+      setError(nextError instanceof Error ? nextError.message : "操作失败，请稍后重试")
     } finally {
       setFavoriteLoading(false)
     }
@@ -96,7 +97,14 @@ export default function ArticleDetailPage() {
           <article className="mt-6 space-y-6">
             {post.coverImage ? (
               <div className="overflow-hidden rounded-[30px] border border-border bg-card">
-                <img src={resolveAssetUrl(post.coverImage)} alt={post.title} className="h-[280px] w-full object-cover md:h-[360px]" />
+                <Image
+                  src={resolveAssetUrl(post.coverImage)}
+                  alt={post.title}
+                  width={1440}
+                  height={720}
+                  unoptimized
+                  className="h-[280px] w-full object-cover md:h-[360px]"
+                />
               </div>
             ) : null}
 

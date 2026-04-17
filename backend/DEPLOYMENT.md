@@ -375,3 +375,19 @@ sudo systemctl reload nginx
   - `cd Frontend && npm run build`
   - `cd backend && node scripts/smoke.test.mjs`
   - `cd backend && node scripts/regression.test.mjs`
+## 2026-04-15 本地对象存储补充
+
+- 生产环境未启用 S3/R2 时，使用：
+  - `OBJECT_STORAGE_DRIVER=local`
+  - `OBJECT_STORAGE_ENDPOINT=`
+  - `OBJECT_STORAGE_BUCKET=`
+  - `OBJECT_STORAGE_ACCESS_KEY_ID=`
+  - `OBJECT_STORAGE_SECRET_ACCESS_KEY=`
+  - `OBJECT_STORAGE_PUBLIC_BASE_URL=`
+- 本地落盘目录：
+  - `backend/uploads`
+  - `backend/uploads/sign`
+  - `backend/uploads/sign-assets`
+- `deploy-ubuntu.sh` 已增加目录初始化与权限设置（部署用户拥有）。
+- Nginx 已增加前端域名下 `/uploads/` 转发到后端，确保页面可直接访问上传资源：
+  - `https://www.sanjiaosoft.com/uploads/* -> http://127.0.0.1:58085/uploads/*`

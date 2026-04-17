@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:58085'
+const API_BASE = (
+  process.env.API_INTERNAL_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  'http://localhost:58085'
+).replace(/\/$/, '')
+
+function toProxyErrorResponse(error: unknown) {
+  const message = error instanceof Error ? error.message : 'unknown proxy error'
+  return NextResponse.json(
+    {
+      success: false,
+      code: 500,
+      message: `server error: ${message}`,
+      data: null,
+      timestamp: Date.now(),
+    },
+    { status: 500 },
+  )
+}
 
 function buildProxyPath(path: string[]) {
   return path
@@ -30,52 +48,60 @@ function buildProxyHeaders(request: NextRequest): Record<string, string> {
 }
 
 async function forwardWithBody(request: NextRequest, method: string, pathStr: string) {
-  const apiUrl = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
-  const headers = buildProxyHeaders(request)
-  const contentType = request.headers.get('content-type')
-  if (contentType) {
-    headers['Content-Type'] = contentType
+  try {
+    const apiUrl = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
+    const headers = buildProxyHeaders(request)
+    const contentType = request.headers.get('content-type')
+    if (contentType) {
+      headers['Content-Type'] = contentType
+    }
+
+    const bodyBuffer = await request.arrayBuffer()
+
+    const response = await fetch(apiUrl, {
+      method,
+      headers,
+      body: bodyBuffer,
+    })
+    const output = await response.arrayBuffer()
+
+    return new NextResponse(output, {
+      status: response.status,
+      headers: {
+        'Content-Type': response.headers.get('Content-Type') || 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    })
+  } catch (error) {
+    return toProxyErrorResponse(error)
   }
-
-  const bodyBuffer = await request.arrayBuffer()
-
-  const response = await fetch(apiUrl, {
-    method,
-    headers,
-    body: bodyBuffer,
-  })
-  const output = await response.arrayBuffer()
-
-  return new NextResponse(output, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('Content-Type') || 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
 }
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await params
-  const pathStr = buildProxyPath(path)
-  const search = request.nextUrl.search
-  const apiUrl = `${API_BASE}/api/${pathStr}${search}`
+  try {
+    const { path } = await params
+    const pathStr = buildProxyPath(path)
+    const search = request.nextUrl.search
+    const apiUrl = `${API_BASE}/api/${pathStr}${search}`
 
-  const response = await fetch(apiUrl, {
-    headers: buildProxyHeaders(request),
-  })
-  const text = await response.text()
+    const response = await fetch(apiUrl, {
+      headers: buildProxyHeaders(request),
+    })
+    const text = await response.text()
 
-  return new NextResponse(text, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('Content-Type') || 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
+    return new NextResponse(text, {
+      status: response.status,
+      headers: {
+        'Content-Type': response.headers.get('Content-Type') || 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    })
+  } catch (error) {
+    return toProxyErrorResponse(error)
+  }
 }
 
 export async function POST(
@@ -100,23 +126,27 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await params
-  const pathStr = buildProxyPath(path)
-  const apiUrl = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
+  try {
+    const { path } = await params
+    const pathStr = buildProxyPath(path)
+    const apiUrl = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
 
-  const response = await fetch(apiUrl, {
-    method: 'DELETE',
-    headers: buildProxyHeaders(request),
-  })
-  const text = await response.text()
+    const response = await fetch(apiUrl, {
+      method: 'DELETE',
+      headers: buildProxyHeaders(request),
+    })
+    const text = await response.text()
 
-  return new NextResponse(text, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('Content-Type') || 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
+    return new NextResponse(text, {
+      status: response.status,
+      headers: {
+        'Content-Type': response.headers.get('Content-Type') || 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    })
+  } catch (error) {
+    return toProxyErrorResponse(error)
+  }
 }
 
 export async function PATCH(

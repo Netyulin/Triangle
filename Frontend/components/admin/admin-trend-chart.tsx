@@ -4,9 +4,8 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 
 type TrendPoint = {
   date: string
-  apps: number
-  posts: number
-  requests: number
+  downloads: number
+  uniqueIPs: number
 }
 
 type TooltipProps = {
@@ -45,9 +44,8 @@ export function AdminTrendChart({ data }: { data: TrendPoint[] }) {
           <XAxis dataKey="date" stroke="rgb(var(--muted-foreground))" tickLine={false} axisLine={false} />
           <YAxis allowDecimals={false} stroke="rgb(var(--muted-foreground))" tickLine={false} axisLine={false} />
           <Tooltip content={<ChartTooltip />} />
-          <Line type="monotone" dataKey="apps" stroke="rgb(var(--chart-1))" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} name="软件" />
-          <Line type="monotone" dataKey="posts" stroke="rgb(var(--chart-2))" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} name="文章" />
-          <Line type="monotone" dataKey="requests" stroke="rgb(var(--chart-3))" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} name="需求" />
+          <Line type="monotone" dataKey="downloads" stroke="rgb(var(--chart-1))" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} name="下载数" />
+          <Line type="monotone" dataKey="uniqueIPs" stroke="rgb(var(--chart-2))" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} name="IP数" />
         </LineChart>
       </ResponsiveContainer>
     </div>

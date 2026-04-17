@@ -23,8 +23,8 @@ const messages: Messages = {
   brandTagline: "软件 / 文章 / 需求",
   navHome: "首页",
   navSoftware: "软件库",
-  navArticles: "文章",
-  navRequests: "需求墙",
+  navArticles: "资讯",
+  navRequests: "需求广场",
   navSearch: "搜索",
   login: "登录",
   register: "注册",
@@ -35,8 +35,8 @@ const messages: Messages = {
   searchPlaceholder: "搜索软件、文章或需求",
   footerLinks: "网站入口",
   footerAccount: "账号功能",
-  themeToLight: "切换为浅色模式",
-  themeToDark: "切换为深色模式",
+  themeToLight: "切换到浅色模式",
+  themeToDark: "切换到深色模式",
   mobileMenu: "打开菜单",
 }
 

@@ -1,4 +1,6 @@
 "use client"
+export { default } from "./users-page-content"
+/*
 
 import { useEffect, useMemo, useState } from "react"
 import { Award, KeyRound, ShieldBan, ShieldCheck, ShieldOff, Smartphone, Sparkles, Trash2, Users } from "lucide-react"
@@ -15,6 +17,7 @@ import {
   type AdminUserItem,
 } from "@/lib/admin-api"
 import { cn } from "@/lib/utils"
+import { PageHeader } from "@/components/admin/page-header"
 
 type UserFilter = "all" | "active" | "disabled" | "banned"
 
@@ -256,20 +259,13 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero">
-        <div className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">用户管理</h1>
-              <p className="mt-1 text-sm text-muted-foreground">集中管理用户状态、会员等级、签名权限与 UDID 设备信息。</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="用户管理"
+        description="集中管理用户状态、会员等级、签名权限与 UDID 设备信息。"
+        icon={<Users className="h-5 w-5" />}
+        iconClassName="bg-slate-50 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
       {message ? <div className="admin-panel px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
@@ -477,3 +473,4 @@ function StatCard({ label, value }: { label: string; value: number }) {
     </div>
   )
 }
+*/

@@ -1,4 +1,6 @@
 "use client"
+export { default } from "./app-categories-page-content"
+/*
 
 import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react"
 import { CheckCircle2, Edit3, FileText, GripVertical, Package, Plus, Tags, Trash2, X } from "lucide-react"
@@ -16,37 +18,48 @@ import {
   updateAdminAppCategory,
   updateAdminPostCategory,
 } from "@/lib/admin-api"
+import { PageHeader } from "@/components/admin/page-header"
 
 type CategoryForm = { name: string }
 type DragState = { type: "app" | "post"; name: string } | null
 
 const initialForm: CategoryForm = { name: "" }
+const inputClass = "admin-input"
 
 export default function AdminCategoriesPage() {
   const [appCategories, setAppCategories] = useState<AppCategoryItem[]>([])
   const [postCategories, setPostCategories] = useState<PostCategoryItem[]>([])
-
   const [appForm, setAppForm] = useState<CategoryForm>(initialForm)
   const [postForm, setPostForm] = useState<CategoryForm>(initialForm)
-
   const [appLoading, setAppLoading] = useState(true)
   const [postLoading, setPostLoading] = useState(true)
   const [appSaving, setAppSaving] = useState(false)
   const [postSaving, setPostSaving] = useState(false)
-
   const [appEditingName, setAppEditingName] = useState<string | null>(null)
   const [postEditingName, setPostEditingName] = useState<string | null>(null)
-
   const [appError, setAppError] = useState("")
   const [postError, setPostError] = useState("")
   const [appMessage, setAppMessage] = useState("")
   const [postMessage, setPostMessage] = useState("")
-
   const [dragState, setDragState] = useState<DragState>(null)
   const [dragOverName, setDragOverName] = useState<string | null>(null)
   const dragSourceRef = useRef<DragState>(null)
   const appEditInputRef = useRef<HTMLInputElement>(null)
   const postEditInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (appEditingName && appEditInputRef.current) {
+      appEditInputRef.current.focus()
+      appEditInputRef.current.select()
+    }
+  }, [appEditingName])
+
+  useEffect(() => {
+    if (postEditingName && postEditInputRef.current) {
+      postEditInputRef.current.focus()
+      postEditInputRef.current.select()
+    }
+  }, [postEditingName])
 
   const loadAppCategories = async () => {
     setAppLoading(true)
@@ -79,20 +92,6 @@ export default function AdminCategoriesPage() {
     void loadPostCategories()
   }, [])
 
-  useEffect(() => {
-    if (appEditingName && appEditInputRef.current) {
-      appEditInputRef.current.focus()
-      appEditInputRef.current.select()
-    }
-  }, [appEditingName])
-
-  useEffect(() => {
-    if (postEditingName && postEditInputRef.current) {
-      postEditInputRef.current.focus()
-      postEditInputRef.current.select()
-    }
-  }, [postEditingName])
-
   const resetAppEditor = () => {
     setAppForm(initialForm)
     setAppEditingName(null)
@@ -116,7 +115,6 @@ export default function AdminCategoriesPage() {
     setAppSaving(true)
     setAppError("")
     setAppMessage("")
-
     try {
       await createAdminAppCategory({ name: nextName })
       setAppMessage("软件分类已创建。")
@@ -140,7 +138,6 @@ export default function AdminCategoriesPage() {
     setPostSaving(true)
     setPostError("")
     setPostMessage("")
-
     try {
       await createAdminPostCategory({ name: nextName })
       setPostMessage("文章分类已创建。")
@@ -167,7 +164,6 @@ export default function AdminCategoriesPage() {
     setAppSaving(true)
     setAppError("")
     setAppMessage("")
-
     try {
       await updateAdminAppCategory(originalName, { name: nextName })
       setAppMessage("软件分类已更新。")
@@ -194,7 +190,6 @@ export default function AdminCategoriesPage() {
     setPostSaving(true)
     setPostError("")
     setPostMessage("")
-
     try {
       await updateAdminPostCategory(originalName, { name: nextName })
       setPostMessage("文章分类已更新。")
@@ -217,7 +212,6 @@ export default function AdminCategoriesPage() {
     setAppSaving(true)
     setAppError("")
     setAppMessage("")
-
     try {
       await deleteAdminAppCategory(item.name)
       setAppMessage("软件分类已删除。")
@@ -239,7 +233,6 @@ export default function AdminCategoriesPage() {
     setPostSaving(true)
     setPostError("")
     setPostMessage("")
-
     try {
       await deleteAdminPostCategory(item.name)
       setPostMessage("文章分类已删除。")
@@ -302,6 +295,7 @@ export default function AdminCategoriesPage() {
 
   const handleDrop = async (event: React.DragEvent<HTMLElement>, type: "app" | "post", name: string) => {
     event.preventDefault()
+
     const rawPayload = event.dataTransfer.getData("text/plain")
     let parsedPayload: DragState = null
     try {
@@ -309,7 +303,10 @@ export default function AdminCategoriesPage() {
     } catch {
       parsedPayload = null
     }
-    const source = (parsedPayload && parsedPayload.type === type ? parsedPayload : dragSourceRef.current) ?? dragState
+
+    const source =
+      (parsedPayload && parsedPayload.type === type ? parsedPayload : dragSourceRef.current) ??
+      dragState
 
     if (!source || source.type !== type || source.name === name) return
 
@@ -319,52 +316,161 @@ export default function AdminCategoriesPage() {
     dragSourceRef.current = null
   }
 
-  const renderCategoryColumn = ({
-    title,
-    subtitle,
-    icon,
-    categories,
-    loading,
-    saving,
-    form,
-    editingName,
-    error,
-    message,
-    inputRef,
-    onFormChange,
-    onCreate,
-    onStartEdit,
-    onCancelEdit,
-    onSaveEdit,
-    onDelete,
-    onKeyDown,
-    type,
-  }: {
-    title: string
-    subtitle: string
-    icon: React.ReactNode
-    categories: Array<AppCategoryItem | PostCategoryItem>
-    loading: boolean
-    saving: boolean
-    form: CategoryForm
-    editingName: string | null
-    error: string
-    message: string
-    inputRef: React.RefObject<HTMLInputElement | null>
-    onFormChange: (value: string) => void
-    onCreate: (event: FormEvent<HTMLFormElement>) => void
-    onStartEdit: (item: AppCategoryItem | PostCategoryItem) => void
-    onCancelEdit: () => void
-    onSaveEdit: (originalName: string) => void
-    onDelete: (item: AppCategoryItem | PostCategoryItem) => void
-    onKeyDown: (event: React.KeyboardEvent, originalName: string) => void
-    type: "app" | "post"
-  }) => (
+  return (
+    <div className="space-y-5">
+      <PageHeader
+        title="分类管理"
+        description="管理软件和文章的分类，支持拖拽排序。"
+        icon={<Tags className="h-5 w-5" />}
+        iconClassName="bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400"
+      />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <CategoryColumn
+          title="软件分类"
+          subtitle="拖拽顺序会直接影响前台的软件分类展示。"
+          icon={<Package className="h-5 w-5" />}
+          categories={appCategories}
+          loading={appLoading}
+          saving={appSaving}
+          form={appForm}
+          editingName={appEditingName}
+          error={appError}
+          message={appMessage}
+          inputRef={appEditInputRef}
+          onFormChange={(value) => setAppForm({ name: value })}
+          onCreate={handleAppCreate}
+          onStartEdit={(item) => {
+            setAppForm({ name: item.name })
+            setAppEditingName(item.name)
+            setAppError("")
+            setAppMessage("")
+          }}
+          onCancelEdit={resetAppEditor}
+          onSaveEdit={(originalName) => void handleAppUpdate(originalName)}
+          onDelete={(item) => void handleAppDelete(item as AppCategoryItem)}
+          onKeyDown={(event, originalName) => {
+            if (event.key === "Enter") void handleAppUpdate(originalName)
+            if (event.key === "Escape") resetAppEditor()
+          }}
+          type="app"
+          dragState={dragState}
+          dragOverName={dragOverName}
+          onDragStart={handleDragStart}
+          onDrop={handleDrop}
+          onDragStateReset={() => {
+            setDragState(null)
+            setDragOverName(null)
+            dragSourceRef.current = null
+          }}
+          onDragOverNameChange={setDragOverName}
+        />
+
+        <CategoryColumn
+          title="文章分类"
+          subtitle="文章列表和首页分类入口也会跟着这里的顺序变化。"
+          icon={<FileText className="h-5 w-5" />}
+          categories={postCategories}
+          loading={postLoading}
+          saving={postSaving}
+          form={postForm}
+          editingName={postEditingName}
+          error={postError}
+          message={postMessage}
+          inputRef={postEditInputRef}
+          onFormChange={(value) => setPostForm({ name: value })}
+          onCreate={handlePostCreate}
+          onStartEdit={(item) => {
+            setPostForm({ name: item.name })
+            setPostEditingName(item.name)
+            setPostError("")
+            setPostMessage("")
+          }}
+          onCancelEdit={resetPostEditor}
+          onSaveEdit={(originalName) => void handlePostUpdate(originalName)}
+          onDelete={(item) => void handlePostDelete(item as PostCategoryItem)}
+          onKeyDown={(event, originalName) => {
+            if (event.key === "Enter") void handlePostUpdate(originalName)
+            if (event.key === "Escape") resetPostEditor()
+          }}
+          type="post"
+          dragState={dragState}
+          dragOverName={dragOverName}
+          onDragStart={handleDragStart}
+          onDrop={handleDrop}
+          onDragStateReset={() => {
+            setDragState(null)
+            setDragOverName(null)
+            dragSourceRef.current = null
+          }}
+          onDragOverNameChange={setDragOverName}
+        />
+      </div>
+    </div>
+  )
+}
+
+function CategoryColumn({
+  title,
+  subtitle,
+  icon,
+  categories,
+  loading,
+  saving,
+  form,
+  editingName,
+  error,
+  message,
+  inputRef,
+  onFormChange,
+  onCreate,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onDelete,
+  onKeyDown,
+  type,
+  dragState,
+  dragOverName,
+  onDragStart,
+  onDrop,
+  onDragStateReset,
+  onDragOverNameChange,
+}: {
+  title: string
+  subtitle: string
+  icon: ReactNode
+  categories: Array<AppCategoryItem | PostCategoryItem>
+  loading: boolean
+  saving: boolean
+  form: CategoryForm
+  editingName: string | null
+  error: string
+  message: string
+  inputRef: React.RefObject<HTMLInputElement | null>
+  onFormChange: (value: string) => void
+  onCreate: (event: FormEvent<HTMLFormElement>) => void
+  onStartEdit: (item: AppCategoryItem | PostCategoryItem) => void
+  onCancelEdit: () => void
+  onSaveEdit: (originalName: string) => void
+  onDelete: (item: AppCategoryItem | PostCategoryItem) => void
+  onKeyDown: (event: React.KeyboardEvent, originalName: string) => void
+  type: "app" | "post"
+  dragState: DragState
+  dragOverName: string | null
+  onDragStart: (event: React.DragEvent<HTMLElement>, type: "app" | "post", name: string) => void
+  onDrop: (event: React.DragEvent<HTMLElement>, type: "app" | "post", name: string) => Promise<void>
+  onDragStateReset: () => void
+  onDragOverNameChange: (value: string | null) => void
+}) {
+  return (
     <div className="space-y-5">
       <div className="admin-panel p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">{icon}</div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
+              {icon}
+            </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight text-foreground">{title}</h2>
               <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
@@ -406,36 +512,43 @@ export default function AdminCategoriesPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">分类列表加载中...</div>
+          <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+            分类列表加载中...
+          </div>
         ) : categories.length ? (
           <div className="grid gap-2">
             {categories.map((item, index) => {
               const isEditing = editingName === item.name
               const isDragged = dragState?.type === type && dragState.name === item.name
-              const isDragOver = dragOverName === item.name && dragState?.type === type && dragState.name !== item.name
+              const isDragOver =
+                dragOverName === item.name &&
+                dragState?.type === type &&
+                dragState.name !== item.name
 
               return (
                 <div
                   key={item.name}
                   draggable={!isEditing}
-                  onDragStart={(event) => handleDragStart(event, type, item.name)}
+                  onDragStart={(event) => onDragStart(event, type, item.name)}
                   onDragOver={(event) => {
                     if (dragState?.type !== type) return
                     event.preventDefault()
                     event.dataTransfer.dropEffect = "move"
-                    setDragOverName(item.name)
+                    onDragOverNameChange(item.name)
                   }}
                   onDragLeave={() => {
-                    if (dragOverName === item.name) setDragOverName(null)
+                    if (dragOverName === item.name) onDragOverNameChange(null)
                   }}
-                  onDrop={(event) => void handleDrop(event, type, item.name)}
-                  onDragEnd={() => {
-                    setDragState(null)
-                    setDragOverName(null)
-                    dragSourceRef.current = null
-                  }}
+                  onDrop={(event) => void onDrop(event, type, item.name)}
+                  onDragEnd={onDragStateReset}
                   className={`rounded-xl border bg-background transition ${
-                    isEditing ? "border-sky-300 bg-sky-50/60 dark:border-sky-700 dark:bg-sky-950/20" : isDragged ? "border-border opacity-50" : isDragOver ? "border-sky-300 ring-2 ring-sky-200" : "border-border hover:border-sky-300"
+                    isEditing
+                      ? "border-sky-300 bg-sky-50/60 dark:border-sky-700 dark:bg-sky-950/20"
+                      : isDragged
+                        ? "border-border opacity-50"
+                        : isDragOver
+                          ? "border-sky-300 ring-2 ring-sky-200"
+                          : "border-border hover:border-sky-300"
                   }`}
                 >
                   <div className="p-3">
@@ -462,11 +575,7 @@ export default function AdminCategoriesPage() {
                     ) : (
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-start gap-3">
-                          <button
-                            type="button"
-                            className="mt-0.5 inline-flex h-8 w-8 flex-shrink-0 cursor-grab items-center justify-center rounded-lg bg-secondary text-muted-foreground active:cursor-grabbing"
-                            aria-label="拖拽排序"
-                          >
+                          <button type="button" className="mt-0.5 inline-flex h-8 w-8 flex-shrink-0 cursor-grab items-center justify-center rounded-lg bg-secondary text-muted-foreground active:cursor-grabbing" aria-label="拖拽排序">
                             <GripVertical className="h-4 w-4" />
                           </button>
                           <div className="min-w-0">
@@ -485,13 +594,7 @@ export default function AdminCategoriesPage() {
                           <button type="button" onClick={() => onStartEdit(item)} className="admin-secondary-btn inline-flex h-8 w-8 items-center justify-center p-0" title="修改名称">
                             <Edit3 className="h-3.5 w-3.5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => onDelete(item)}
-                            disabled={saving || item.count > 0}
-                            className="admin-secondary-btn inline-flex h-8 w-8 items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-40"
-                            title="删除分类"
-                          >
+                          <button type="button" onClick={() => onDelete(item)} disabled={saving || item.count > 0} className="admin-secondary-btn inline-flex h-8 w-8 items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-40" title="删除分类">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -503,73 +606,11 @@ export default function AdminCategoriesPage() {
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">还没有分类。</div>
+          <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+            还没有分类。
+          </div>
         )}
       </div>
-    </div>
-  )
-
-  return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {renderCategoryColumn({
-        title: "软件分类",
-        subtitle: "拖拽顺序会直接影响前台的分类展示。",
-        icon: <Package className="h-5 w-5" />,
-        categories: appCategories,
-        loading: appLoading,
-        saving: appSaving,
-        form: appForm,
-        editingName: appEditingName,
-        error: appError,
-        message: appMessage,
-        inputRef: appEditInputRef,
-        onFormChange: (value) => setAppForm({ name: value }),
-        onCreate: handleAppCreate,
-        onStartEdit: (item) => {
-          setAppForm({ name: item.name })
-          setAppEditingName(item.name)
-          setAppError("")
-          setAppMessage("")
-        },
-        onCancelEdit: resetAppEditor,
-        onSaveEdit: (originalName) => void handleAppUpdate(originalName),
-        onDelete: (item) => void handleAppDelete(item as AppCategoryItem),
-        onKeyDown: (event, originalName) => {
-          if (event.key === "Enter") void handleAppUpdate(originalName)
-          if (event.key === "Escape") resetAppEditor()
-        },
-        type: "app",
-      })}
-
-      {renderCategoryColumn({
-        title: "文章分类",
-        subtitle: "文章列表和首页分类入口也会跟着这里的顺序走。",
-        icon: <FileText className="h-5 w-5" />,
-        categories: postCategories,
-        loading: postLoading,
-        saving: postSaving,
-        form: postForm,
-        editingName: postEditingName,
-        error: postError,
-        message: postMessage,
-        inputRef: postEditInputRef,
-        onFormChange: (value) => setPostForm({ name: value }),
-        onCreate: handlePostCreate,
-        onStartEdit: (item) => {
-          setPostForm({ name: item.name })
-          setPostEditingName(item.name)
-          setPostError("")
-          setPostMessage("")
-        },
-        onCancelEdit: resetPostEditor,
-        onSaveEdit: (originalName) => void handlePostUpdate(originalName),
-        onDelete: (item) => void handlePostDelete(item as PostCategoryItem),
-        onKeyDown: (event, originalName) => {
-          if (event.key === "Enter") void handlePostUpdate(originalName)
-          if (event.key === "Escape") resetPostEditor()
-        },
-        type: "post",
-      })}
     </div>
   )
 }
@@ -581,5 +622,4 @@ function Notice({ tone, children }: { tone: "success" | "error"; children: React
     </div>
   )
 }
-
-const inputClass = "admin-input"
+*/

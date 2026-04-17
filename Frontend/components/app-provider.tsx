@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import { clearToken, request, setToken, type AuthPayload, type SiteSettings, type User, type UserPermissions } from "@/lib/api"
 import { getMessages } from "@/lib/i18n"
 import { Toaster } from "@/components/ui/toaster"
@@ -11,7 +12,9 @@ type AppContextValue = {
   permissions: UserPermissions | null
   token: string
   siteSettings: SiteSettings | null
+  unreadCount: number
   refreshSession: () => Promise<void>
+  refreshUnreadCount: () => Promise<void>
   saveSession: (payload: AuthPayload) => void
   logout: () => void
 }
@@ -20,10 +23,12 @@ const AppContext = createContext<AppContextValue | null>(null)
 const SITE_SETTINGS_UPDATED_EVENT = "triangle-site-settings-updated"
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const [token, setTokenState] = useState("")
   const [user, setUser] = useState<User | null>(null)
   const [permissions, setPermissions] = useState<UserPermissions | null>(null)
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     document.documentElement.lang = "zh-CN"
@@ -54,12 +59,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const refreshUnreadCount = async () => {
+    const storedToken = window.localStorage.getItem("triangle-token") ?? ""
+    if (!storedToken) {
+      setUnreadCount(0)
+      return
+    }
+
+    try {
+      const data = await request<{ unreadCount: number }>("/api/notifications/unread-count", { token: storedToken })
+      setUnreadCount(data.unreadCount ?? 0)
+    } catch {
+      setUnreadCount(0)
+    }
+  }
+
   const refreshSession = async () => {
     const storedToken = window.localStorage.getItem("triangle-token") ?? ""
     if (!storedToken) {
       setUser(null)
       setPermissions(null)
       setTokenState("")
+      setUnreadCount(0)
       return
     }
 
@@ -68,6 +89,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTokenState(storedToken)
       setUser(data.user)
       setPermissions(data.permissions)
+      await refreshUnreadCount()
     } catch {
       // 网络异常时保留 token，下次访问会自动重试
     }
@@ -80,14 +102,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else if (!token) {
       setUser(null)
       setPermissions(null)
+      setUnreadCount(0)
     }
   }, [token])
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const payload = JSON.stringify({
+      path: pathname || window.location.pathname,
+      referrer: document.referrer || null,
+    })
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/api/analytics/page-view", new Blob([payload], { type: "application/json" }))
+    } else {
+      void fetch("/api/analytics/page-view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {})
+    }
+
+    void refreshUnreadCount()
+  }, [pathname])
 
   const saveSession = (payload: AuthPayload) => {
     setToken(payload.token)
     setTokenState(payload.token)
     setUser(payload.user)
     setPermissions(payload.permissions)
+    void refreshUnreadCount()
   }
 
   const logout = () => {
@@ -95,21 +143,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTokenState("")
     setUser(null)
     setPermissions(null)
+    setUnreadCount(0)
   }
 
-  const value = useMemo<AppContextValue>(
-    () => ({
-      t: getMessages(),
-      user,
-      permissions,
-      token,
-      siteSettings,
-      refreshSession,
-      saveSession,
-      logout,
-    }),
-    [user, permissions, token, siteSettings],
-  )
+  const value: AppContextValue = {
+    t: getMessages(),
+    user,
+    permissions,
+    token,
+    siteSettings,
+    unreadCount,
+    refreshSession,
+    refreshUnreadCount,
+    saveSession,
+    logout,
+  }
 
   return (
     <AppContext.Provider value={value}>

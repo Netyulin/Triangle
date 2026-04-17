@@ -255,9 +255,18 @@ export async function login(req, res) {
     return sendError(res, ErrorCodes.PASSWORD_ERROR, 'invalid username or password');
   }
 
+  const loginIp =
+    req.ip ||
+    normalizeString(req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+    req.connection?.remoteAddress ||
+    null;
+
   const nextUser = await prisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: new Date() }
+    data: {
+      lastLoginAt: new Date(),
+      lastLoginIp: loginIp
+    }
   });
 
   const token = generateToken({

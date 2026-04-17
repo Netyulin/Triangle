@@ -1,5 +1,13 @@
 import express from 'express';
-import { stats, trends, recent, trendsValidation, recentValidation } from '../controllers/adminController.js';
+import {
+  stats,
+  trends,
+  recent,
+  activeIps,
+  trendsValidation,
+  recentValidation,
+  activeIpsValidation
+} from '../controllers/adminController.js';
 import {
   adminList,
   update,
@@ -17,6 +25,7 @@ import * as inviteCodeController from '../controllers/inviteCodeController.js';
 import * as adminUserController from '../controllers/adminUserController.js';
 import * as notificationController from '../controllers/notificationController.js';
 import * as contentPickerController from '../controllers/contentPickerController.js';
+import * as levelController from '../controllers/adminLevelController.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -24,12 +33,19 @@ const router = express.Router();
 router.get('/stats', authenticate, requireAdmin, stats);
 router.get('/trends', authenticate, requireAdmin, trendsValidation, trends);
 router.get('/recent', authenticate, requireAdmin, recentValidation, recent);
+router.get('/active-ips', authenticate, requireAdmin, activeIpsValidation, activeIps);
 router.get('/settings', authenticate, requireAdmin, settingsController.getAdminSettings);
 router.put('/settings', authenticate, requireAdmin, settingsController.updateValidation, settingsController.updateSettings);
 router.get('/invite-codes', authenticate, requireAdmin, inviteCodeController.listValidation, inviteCodeController.list);
 router.post('/invite-codes/batch', authenticate, requireAdmin, inviteCodeController.createBatchValidation, inviteCodeController.createBatch);
 router.get('/users', authenticate, requireAdmin, adminUserController.listValidation, adminUserController.list);
 router.get('/users/levels', authenticate, requireAdmin, adminUserController.levels);
+
+// ============ 等级管理 CRUD ============
+router.get('/levels', authenticate, requireAdmin, levelController.list);
+router.post('/levels', authenticate, requireAdmin, levelController.createValidation, levelController.create);
+router.put('/levels/:key', authenticate, requireAdmin, levelController.updateValidation, levelController.update);
+router.delete('/levels/:key', authenticate, requireAdmin, levelController.remove);
 router.patch('/users/:id', authenticate, requireAdmin, adminUserController.updateValidation, adminUserController.update);
 router.patch(
   '/users/:id/password',

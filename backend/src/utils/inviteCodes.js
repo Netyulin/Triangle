@@ -3,7 +3,15 @@ import prisma from './prisma.js';
 import { executeRaw, queryRaw } from './dbRaw.js';
 import { isPostgresDatabase } from './signTables.js';
 
-const CREATED_AT_ORDER = isPostgresDatabase() ? 'createdat DESC' : 'datetime(createdAt) DESC';
+const CODE_COLUMN = 'code';
+const NOTE_COLUMN = 'note';
+const STATUS_COLUMN = 'status';
+const BATCH_ID_COLUMN = isPostgresDatabase() ? '"batchId"' : 'batchId';
+const CREATED_AT_COLUMN = isPostgresDatabase() ? '"createdAt"' : 'createdAt';
+const USED_AT_COLUMN = isPostgresDatabase() ? '"usedAt"' : 'usedAt';
+const USED_BY_USER_ID_COLUMN = isPostgresDatabase() ? '"usedByUserId"' : 'usedByUserId';
+const USED_BY_USERNAME_COLUMN = isPostgresDatabase() ? '"usedByUsername"' : 'usedByUsername';
+const CREATED_AT_ORDER = isPostgresDatabase() ? `${CREATED_AT_COLUMN} DESC` : 'datetime(createdAt) DESC';
 
 export async function ensureInviteCodeTable() {
   await executeRaw(`
@@ -11,13 +19,35 @@ export async function ensureInviteCodeTable() {
       code TEXT PRIMARY KEY,
       note TEXT,
       status TEXT NOT NULL DEFAULT 'unused',
-      batchId TEXT,
-      createdAt TEXT NOT NULL,
-      usedAt TEXT,
-      usedByUserId INTEGER,
-      usedByUsername TEXT
+      ${BATCH_ID_COLUMN} TEXT,
+      ${CREATED_AT_COLUMN} TEXT NOT NULL,
+      ${USED_AT_COLUMN} TEXT,
+      ${USED_BY_USER_ID_COLUMN} INTEGER,
+      ${USED_BY_USERNAME_COLUMN} TEXT
     )
   `);
+
+  if (isPostgresDatabase()) {
+    const columns = await queryRaw(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'invite_codes'
+    `);
+
+    const renameLegacyColumn = async (legacyName, nextName) => {
+      const hasNext = Array.isArray(columns) && columns.some((item) => item.column_name === nextName);
+      const hasLegacy = Array.isArray(columns) && columns.some((item) => item.column_name === legacyName);
+      if (!hasNext && hasLegacy) {
+        await executeRaw(`ALTER TABLE invite_codes RENAME COLUMN ${legacyName} TO "${nextName}"`);
+      }
+    };
+
+    await renameLegacyColumn('batchid', 'batchId');
+    await renameLegacyColumn('createdat', 'createdAt');
+    await renameLegacyColumn('usedat', 'usedAt');
+    await renameLegacyColumn('usedbyuserid', 'usedByUserId');
+    await renameLegacyColumn('usedbyusername', 'usedByUsername');
+  }
 }
 
 function generateCode() {
@@ -28,7 +58,15 @@ export async function listInviteCodes(limit = 100) {
   await ensureInviteCodeTable();
   return queryRaw(
     `
-      SELECT code, note, status, batchId, createdAt, usedAt, usedByUserId, usedByUsername
+      SELECT
+        ${CODE_COLUMN} AS "code",
+        ${NOTE_COLUMN} AS "note",
+        ${STATUS_COLUMN} AS "status",
+        ${BATCH_ID_COLUMN} AS "batchId",
+        ${CREATED_AT_COLUMN} AS "createdAt",
+        ${USED_AT_COLUMN} AS "usedAt",
+        ${USED_BY_USER_ID_COLUMN} AS "usedByUserId",
+        ${USED_BY_USERNAME_COLUMN} AS "usedByUsername"
       FROM invite_codes
       ORDER BY ${CREATED_AT_ORDER}
       LIMIT ?
@@ -51,7 +89,7 @@ export async function createInviteCodeBatch({ count, note = '' }) {
 
     await executeRaw(
       `
-        INSERT INTO invite_codes (code, note, status, batchId, createdAt)
+        INSERT INTO invite_codes (${CODE_COLUMN}, ${NOTE_COLUMN}, ${STATUS_COLUMN}, ${BATCH_ID_COLUMN}, ${CREATED_AT_COLUMN})
         VALUES (?, ?, 'unused', ?, ?)
       `,
       code,
@@ -81,11 +119,11 @@ export async function consumeInviteCode(code, user) {
   await executeRaw(
     `
       UPDATE invite_codes
-      SET status = 'used',
-          usedAt = ?,
-          usedByUserId = ?,
-          usedByUsername = ?
-      WHERE code = ? AND status = 'unused'
+      SET ${STATUS_COLUMN} = 'used',
+          ${USED_AT_COLUMN} = ?,
+          ${USED_BY_USER_ID_COLUMN} = ?,
+          ${USED_BY_USERNAME_COLUMN} = ?
+      WHERE ${CODE_COLUMN} = ? AND ${STATUS_COLUMN} = 'unused'
     `,
     new Date().toISOString(),
     user.id,

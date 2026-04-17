@@ -1,16 +1,19 @@
-"use client"
+﻿"use client"
 
-import { Suspense, useEffect, useMemo, useState } from "react"
+import Image from "next/image"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Bookmark, CreditCard, LogOut, Mail, MessageSquare, RefreshCw, Trash2, User as UserIcon } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { AppIcon } from "@/components/app-icon"
-import { MembershipBadge } from "@/components/membership-badge"
+import { MembershipBadge, getMembershipMeta } from "@/components/membership-badge"
 import { AvatarPicker } from "@/components/avatar-picker"
 import { useAppContext } from "@/components/app-provider"
-import { deleteUserInbox, fetchUserInbox, markUserInboxRead } from "@/lib/admin-api"
+import { createRechargeOrder, deleteUserInbox, fetchMembershipLevels, fetchUserBalance, fetchUserInbox, fetchUserOrders, markUserInboxRead, upgradeMembershipLevel } from "@/lib/admin-api"
 import {
   request,
   type InboxItem,
@@ -34,7 +37,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "messages", label: "消息中心" },
 ]
 
-const rechargeOptions = [18, 68, 168]
+const rechargeOptions = [10, 30, 50, 100]
 
 function statusLabel(status: RequestItem["status"]) {
   if (status === "done") return "已完成"
@@ -169,17 +172,43 @@ function FavoritePosts({ items }: { items: PostSummary[] }) {
 }
 
 function rechargeStatusLabel(status: string) {
-  if (status === "success") return "已完成"
+  if (status === "success" || status === "paid") return "已完成"
   if (status === "pending") return "处理中"
-  if (status === "failed") return "失败"
+  if (status === "failed" || status === "cancelled") return "失败"
+  if (status === "refunded") return "已退款"
   return status
+}
+
+function PaymentOption({ icon, label, active, onClick, color }: {
+  icon: string; label: string; active: boolean; onClick: () => void; color: "green" | "blue";
+}) {
+  const borderClass = active
+    ? color === "green"
+      ? "border-emerald-500 bg-emerald-50/60 ring-1 ring-emerald-500/30 dark:bg-emerald-950/20 dark:border-emerald-400"
+      : "border-sky-500 bg-sky-50/60 ring-1 ring-sky-500/30 dark:bg-sky-950/20 dark:border-sky-400"
+    : "border-border bg-background hover:border-primary/30"
+
+  return (
+    <button type="button" onClick={onClick} className={cn("flex items-center gap-3 rounded-xl border px-4 py-3 transition-all", borderClass)}>
+      <span className={cn(
+        "text-base font-bold",
+        active ? color === "green" ? "text-emerald-600 dark:text-emerald-300" : "text-sky-600 dark:text-sky-300" : "text-muted-foreground"
+      )}>{icon}</span>
+      <span className={cn(
+        "text-sm font-medium",
+        active ? "text-foreground" : "text-muted-foreground"
+      )}>{label}</span>
+      {active && <span className={cn("ml-auto h-2 w-2 rounded-full", color === "green" ? "bg-emerald-500" : "bg-sky-500")} />}
+    </button>
+  )
 }
 
 function ProfileContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialTab = (searchParams.get("tab") as TabKey | null) ?? "profile"
-  const { token, logout, refreshSession } = useAppContext()
+  const shouldAutoOpenUpgrade = searchParams.get("upgrade") === "1"
+  const { token, logout, refreshSession, unreadCount, refreshUnreadCount } = useAppContext()
 
   const [activeTab, setActiveTab] = useState<TabKey>(tabs.some((item) => item.key === initialTab) ? initialTab : "profile")
   const [profile, setProfile] = useState<ProfilePayload | null>(null)
@@ -191,6 +220,19 @@ function ProfileContent() {
   const [saveMessage, setSaveMessage] = useState("")
   const [selectedRecharge, setSelectedRecharge] = useState(0)
   const [recharging, setRecharging] = useState(false)
+  const [customAmount, setCustomAmount] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState<"wechat" | "alipay">("wechat")
+  const [balanceData, setBalanceData] = useState<{ balance: number; membershipLevel: string } | null>(null)
+  const [ordersData, setOrdersData] = useState<Array<{ id: string; orderNo: string; amount: number; bonusAmount: number; totalAmount: number; paymentMethod: string; paymentStatus: string; createdAt: string }>>([])
+  const [rechargeLoading, setRechargeLoading] = useState(false)
+  const [showPaymentDialog, setShowPaymentDialog] = useState<{ orderNo: string; amount: number; bonusAmount: number; paymentMethod: string } | null>(null)
+  const [membershipLevels, setMembershipLevels] = useState<Array<{ key: string; name: string; description: string | null; sortOrder: number; rechargePrice: number; color: string; isActive: boolean }>>([])
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false)
+  const [upgradeLoading, setUpgradeLoading] = useState(false)
+  const [selectedUpgradeLevelKey, setSelectedUpgradeLevelKey] = useState("")
+
+  const currentAmount = customAmount ? Number(customAmount) : (rechargeOptions[selectedRecharge] ?? 0)
+
   const [form, setForm] = useState({
     name: "",
     gender: "other" as AvatarGender,
@@ -205,7 +247,7 @@ function ProfileContent() {
     }
   }, [initialTab])
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!token) {
       setLoading(false)
       return
@@ -229,31 +271,82 @@ function ProfileContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
 
-  const loadInbox = async () => {
+  const loadInbox = useCallback(async () => {
     if (!token) return
 
     setInboxLoading(true)
     try {
       const data = await fetchUserInbox()
       setInbox(data.list)
+      await refreshUnreadCount()
     } catch {
       setInbox([])
     } finally {
       setInboxLoading(false)
     }
-  }
+  }, [token, refreshUnreadCount])
 
   useEffect(() => {
     loadProfile()
-  }, [token])
+  }, [loadProfile])
 
   useEffect(() => {
     if (activeTab === "messages") {
       void loadInbox()
     }
-  }, [activeTab, token])
+  }, [activeTab, loadInbox])
+
+  const loadRechargeData = useCallback(async () => {
+    if (!token) return
+    setRechargeLoading(true)
+    try {
+      const [balance, orders] = await Promise.all([fetchUserBalance(), fetchUserOrders()])
+      setBalanceData(balance)
+      setOrdersData(orders.orders)
+    } catch {
+      // Silently fail - use profile fallback
+    } finally {
+      setRechargeLoading(false)
+    }
+  }, [token])
+
+  const loadMembershipLevels = useCallback(async () => {
+    if (!token) return
+
+    try {
+      const data = await fetchMembershipLevels()
+      const nextLevels = data.levels.filter((item) => item.isActive).sort((a, b) => a.sortOrder - b.sortOrder)
+      setMembershipLevels(nextLevels)
+
+      const currentLevel = profile?.user.membershipLevel
+      const currentLevelConfig = nextLevels.find((item) => item.key === currentLevel)
+      const currentSortOrder = currentLevelConfig?.sortOrder ?? Number.NEGATIVE_INFINITY
+      const upgradeCandidates = nextLevels.filter((item) => item.key !== currentLevel && item.sortOrder > currentSortOrder)
+      setSelectedUpgradeLevelKey((prev) => {
+        if (prev && upgradeCandidates.some((item) => item.key === prev)) return prev
+        return upgradeCandidates[0]?.key ?? ""
+      })
+    } catch {
+      setMembershipLevels([])
+      setSelectedUpgradeLevelKey("")
+    }
+  }, [profile?.user.membershipLevel, token])
+
+  const upgradeCandidates = useMemo(() => {
+    if (!profile) return []
+    const currentLevel = profile.user.membershipLevel
+    const currentLevelConfig = membershipLevels.find((item) => item.key === currentLevel)
+    const currentSortOrder = currentLevelConfig?.sortOrder ?? Number.NEGATIVE_INFINITY
+    return membershipLevels.filter((item) => item.key !== currentLevel && item.sortOrder > currentSortOrder)
+  }, [membershipLevels, profile])
+
+  useEffect(() => {
+    if (activeTab === "recharge") {
+      void loadRechargeData()
+    }
+  }, [activeTab, loadRechargeData])
 
   const stats = useMemo(
     () => ({
@@ -302,6 +395,7 @@ function ProfileContent() {
     try {
       await markUserInboxRead(item.id)
       setInbox((current) => current.map((entry) => (entry.id === item.id ? { ...entry, read: true } : entry)))
+      await refreshUnreadCount()
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "标记已读失败。")
     }
@@ -313,32 +407,84 @@ function ProfileContent() {
     try {
       await deleteUserInbox(item.id)
       setInbox((current) => current.filter((entry) => entry.id !== item.id))
+      await refreshUnreadCount()
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "删除消息失败。")
     }
   }
 
   const handleRecharge = async () => {
-    if (!token) return
+    if (!token || !currentAmount) return
 
     setRecharging(true)
     setError("")
     setSaveMessage("")
 
     try {
-      const records = await request<RechargeRecord[]>("/api/auth/recharge", {
-        method: "POST",
-        token,
-        body: JSON.stringify({ amount: rechargeOptions[selectedRecharge] }),
+      const order = await createRechargeOrder({
+        amount: currentAmount,
+        paymentMethod: paymentMethod,
       })
 
-      setProfile((current) => (current ? { ...current, rechargeRecords: records } : current))
-      setSaveMessage("充值记录已经更新。")
+      setShowPaymentDialog({
+        orderNo: order.order.orderNo,
+        amount: order.order.amount,
+        bonusAmount: order.order.bonusAmount,
+        paymentMethod: order.order.paymentMethod,
+      })
+      await loadRechargeData()
       await refreshSession()
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "充值失败，请稍后再试。")
     } finally {
       setRecharging(false)
+    }
+  }
+
+  const openUpgradeDialog = useCallback(async () => {
+    setActiveTab("recharge")
+    setUpgradeDialogOpen(true)
+    setError("")
+    setSaveMessage("")
+    await loadMembershipLevels()
+  }, [loadMembershipLevels])
+
+  useEffect(() => {
+    if (activeTab !== "recharge" || !shouldAutoOpenUpgrade || upgradeDialogOpen) {
+      return
+    }
+
+    void openUpgradeDialog()
+  }, [activeTab, openUpgradeDialog, shouldAutoOpenUpgrade, upgradeDialogOpen])
+
+  const handleUpgradeMembership = async () => {
+    if (!selectedUpgradeLevelKey) {
+      setError("请选择要升级的会员等级。")
+      return
+    }
+
+    setUpgradeLoading(true)
+    setError("")
+    setSaveMessage("")
+
+    try {
+      const result = await upgradeMembershipLevel(selectedUpgradeLevelKey)
+      setBalanceData((current) => (current ? { ...current, balance: result.balance, membershipLevel: result.membershipLevel } : current))
+      setUpgradeDialogOpen(false)
+      setSelectedUpgradeLevelKey("")
+      setSaveMessage("会员已经升级完成。")
+      await refreshSession()
+      await loadProfile()
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : "升级失败，请稍后再试。"
+      if (message.includes("余额不足")) {
+        setUpgradeDialogOpen(false)
+        router.replace("/profile?tab=recharge")
+        setActiveTab("recharge")
+      }
+      setError(message)
+    } finally {
+      setUpgradeLoading(false)
     }
   }
 
@@ -383,13 +529,37 @@ function ProfileContent() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside className="space-y-4">
               <section className="rounded-3xl border border-border bg-card p-6 text-center">
-                <img src={form.avatar} alt={profile.user.name || profile.user.username} className="mx-auto h-20 w-20 rounded-3xl object-cover" />
-                <h1 className="mt-4 text-xl font-black text-foreground">{profile.user.name || profile.user.username}</h1>
-                <p className="mt-1 text-sm text-muted-foreground">@{profile.user.username}</p>
-                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                <Image
+                  src={form.avatar}
+                  alt={profile.user.name || profile.user.username}
+                  width={80}
+                  height={80}
+                  unoptimized
+                  className="mx-auto h-20 w-20 rounded-3xl object-cover"
+                />
+                <h1 className="mx-auto mt-4 w-full max-w-full truncate text-xl font-black text-foreground">{profile.user.name || profile.user.username}</h1>
+                <p className="mx-auto mt-1 w-full max-w-full truncate text-sm text-muted-foreground">@{profile.user.username}</p>
+                <button
+                  type="button"
+                  onClick={() => void openUpgradeDialog()}
+                  className="mt-3 inline-flex items-center gap-2 rounded-full transition hover:scale-[1.01]"
+                  aria-label="升级会员等级"
+                >
+                  <span
+                    className={cn(
+                      "inline-flex h-7 w-7 items-center justify-center rounded-full border",
+                      getMembershipMeta(profile.user.membershipLevel).className,
+                    )}
+                  >
+                    {(() => {
+                      const Icon = getMembershipMeta(profile.user.membershipLevel).icon
+                      return <Icon className="h-4 w-4" />
+                    })()}
+                  </span>
                   <MembershipBadge level={profile.user.membershipLevel} />
-                </div>
+                </button>
                 <p className="mt-2 text-xs text-muted-foreground">今日剩余下载 {profile.permissions.remainingDownloads}</p>
+                <p className="mt-1 text-xs text-muted-foreground">当前余额 {typeof balanceData?.balance === "number" ? balanceData.balance.toFixed(2) : Number(profile.user.balance ?? 0).toFixed(2)} 元</p>
               </section>
 
               <section className="grid grid-cols-2 gap-3">
@@ -425,7 +595,14 @@ function ProfileContent() {
                         activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                       )}
                     >
-                      {tab.label}
+                      <span className="flex items-center justify-between gap-2">
+                        <span>{tab.label}</span>
+                        {tab.key === "messages" && unreadCount > 0 ? (
+                          <span className="inline-flex min-w-5 justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        ) : null}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -540,7 +717,14 @@ function ProfileContent() {
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                      <h2 className="text-2xl font-black text-foreground">消息中心</h2>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-black text-foreground">消息中心</h2>
+                        {unreadCount > 0 ? (
+                          <span className="inline-flex min-w-6 justify-center rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-semibold text-white">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="mt-2 text-sm text-muted-foreground">这里会显示站内通知和站内信，你可以标记已读或者直接删除。</p>
                     </div>
                     <button
@@ -596,55 +780,300 @@ function ProfileContent() {
                 </div>
               ) : null}
 
-              {activeTab === "recharge" ? (
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-accent" />
-                    <h2 className="text-2xl font-black text-foreground">充值与记录</h2>
+                            {activeTab === "recharge" ? (
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/[0.02] to-transparent p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <CreditCard className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">账户余额</p>
+                        <p className="mt-0.5 text-3xl font-black tabular-nums text-foreground">
+                          {typeof balanceData?.balance === "number"
+                            ? balanceData.balance.toFixed(2)
+                            : typeof profile.user.balance !== "undefined"
+                            ? Number(profile.user.balance).toFixed(2)
+                            : "0.00"}
+                          <span className="ml-1.5 text-base font-medium text-muted-foreground">元</span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">选择金额后提交，页面会同步更新你的充值记录。</p>
-                  <div className="flex flex-wrap gap-3">
-                    {rechargeOptions.map((amount, index) => (
-                      <button
-                        key={amount}
-                        onClick={() => setSelectedRecharge(index)}
-                        className={cn(
-                          "rounded-2xl border px-5 py-3 text-sm transition",
-                          selectedRecharge === index ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {amount} 元
-                      </button>
-                    ))}
+
+                  <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-accent" />
+                      <h2 className="text-lg font-bold text-foreground">余额充值</h2>
+                    </div>
+
+                    <div>
+                      <label className="mb-3 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">选择充值金额</label>
+                      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+                        {rechargeOptions.map((amount, idx) => {
+                          const isSelected = selectedRecharge === idx && !customAmount
+                          return (
+                            <button
+                              key={amount}
+                              type="button"
+                              onClick={() => {
+                                setSelectedRecharge(idx)
+                                setCustomAmount("")
+                              }}
+                              className={cn(
+                                "rounded-xl border py-3 text-sm font-semibold transition-all",
+                                isSelected
+                                  ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                                  : "border-border bg-background hover:border-primary/30 hover:bg-secondary/40",
+                              )}
+                            >
+                              {amount} 元
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-medium text-muted-foreground">自定义金额</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={customAmount}
+                        onChange={(event) => {
+                          setCustomAmount(event.target.value)
+                          setSelectedRecharge(-1)
+                        }}
+                        placeholder="输入金额..."
+                        className="w-full max-w-[240px] rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">选择支付方式</label>
+                      <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+                        <PaymentOption
+                          icon="微"
+                          label="微信支付"
+                          active={paymentMethod === "wechat"}
+                          onClick={() => setPaymentMethod("wechat")}
+                          color="green"
+                        />
+                        <PaymentOption
+                          icon="支"
+                          label="支付宝"
+                          active={paymentMethod === "alipay"}
+                          onClick={() => setPaymentMethod("alipay")}
+                          color="blue"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleRecharge}
+                      disabled={recharging || !currentAmount}
+                      className="w-full rounded-2xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition hover:shadow-lg hover:shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {recharging ? "处理中..." : `立即充值 ${currentAmount || 0} 元`}
+                    </button>
                   </div>
-                  <button
-                    onClick={handleRecharge}
-                    disabled={recharging}
-                    className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-70"
-                  >
-                    {recharging ? "处理中..." : `提交 ${rechargeOptions[selectedRecharge]} 元充值`}
-                  </button>
 
                   <div className="space-y-3">
-                    {profile.rechargeRecords.length ? (
-                      profile.rechargeRecords.map((record) => (
-                        <div key={record.id} className="rounded-2xl border border-border bg-background p-4">
-                          <div className="flex items-center justify-between gap-4">
-                            <div>
-                              <p className="text-base font-bold text-foreground">{record.amount} 元</p>
-                              <p className="mt-1 text-sm text-muted-foreground">{record.description}</p>
-                            </div>
-                            <div className="text-right text-sm text-muted-foreground">
-                              <p>{rechargeStatusLabel(record.status)}</p>
-                              <p className="mt-1">{record.createdAt}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
+                    <h3 className="text-sm font-semibold text-foreground">充值记录</h3>
+                    {rechargeLoading ? (
+                      <div className="rounded-2xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">加载中...</div>
+                    ) : ordersData.length > 0 ? (
+                      <div className="overflow-hidden rounded-2xl border border-border">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border bg-secondary/40">
+                              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">金额</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">赠送</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">方式</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">状态</th>
+                              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">时间</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ordersData.map((order) => (
+                              <tr key={order.id} className="border-b border-border/60 last:border-b-0">
+                                <td className="px-4 py-3 font-semibold tabular-nums text-foreground">{order.totalAmount.toFixed(2)} 元</td>
+                                <td className="px-4 py-3 font-medium text-emerald-600 dark:text-emerald-300">
+                                  {order.bonusAmount > 0 ? <span>+{order.bonusAmount.toFixed(2)}</span> : <span className="text-muted-foreground">-</span>}
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">{order.paymentMethod === "wechat" ? "微信支付" : order.paymentMethod === "alipay" ? "支付宝" : order.paymentMethod}</td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className={cn(
+                                      "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+                                      order.paymentStatus === "success" || order.paymentStatus === "paid"
+                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                        : order.paymentStatus === "pending"
+                                        ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                                        : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+                                    )}
+                                  >
+                                    {rechargeStatusLabel(order.paymentStatus)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{order.createdAt}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : profile.rechargeRecords.length > 0 ? (
+                      <div className="overflow-hidden rounded-2xl border border-border">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border bg-secondary/40">
+                              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">金额</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">方式</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">状态</th>
+                              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">时间</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {profile.rechargeRecords.map((record) => (
+                              <tr key={record.id} className="border-b border-border/60 last:border-b-0">
+                                <td className="px-4 py-3 font-semibold tabular-nums text-foreground">{record.amount} 元</td>
+                                <td className="px-4 py-3 text-muted-foreground">{record.description || "-"}</td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className={cn(
+                                      "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+                                      record.status === "success" || record.status === "paid"
+                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                        : record.status === "pending"
+                                        ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                                        : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+                                    )}
+                                  >
+                                    {rechargeStatusLabel(record.status)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{record.createdAt}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">还没有充值记录。</p>
+                      <div className="rounded-2xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">还没有充值记录</div>
                     )}
                   </div>
+
+                  <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
+                    <DialogContent className="max-w-xl rounded-3xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-lg font-bold">升级会员等级</DialogTitle>
+                        <DialogDescription className="text-sm text-muted-foreground">
+                          选择你要升级到的会员等级，系统会自动读取对应费用并优先扣除余额。
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="space-y-3">
+                        {upgradeCandidates.length > 0 ? (
+                          upgradeCandidates
+                            .map((item) => {
+                              const selected = selectedUpgradeLevelKey === item.key
+                              const levelMeta = getMembershipMeta(item.key)
+                              const LevelIcon = levelMeta.icon
+                              return (
+                                <button
+                                  key={item.key}
+                                  type="button"
+                                  onClick={() => setSelectedUpgradeLevelKey(item.key)}
+                                  className={cn(
+                                    "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition",
+                                    selected ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/30",
+                                  )}
+                                  >
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    <span className={cn("inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border", levelMeta.className)}>
+                                      <LevelIcon className="h-4 w-4" />
+                                    </span>
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-foreground">{item.name}</p>
+                                      <p className="mt-1 text-xs text-muted-foreground">
+                                        {item.description || "暂无说明"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-semibold text-foreground">{item.rechargePrice.toFixed(2)} 元</p>
+                                    <p className="mt-1 text-xs text-muted-foreground">余额优先扣除</p>
+                                  </div>
+                                </button>
+                              )
+                            })
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                            当前已是最高等级，暂无可升级选项。
+                          </div>
+                        )}
+                      </div>
+
+                      <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setUpgradeDialogOpen(false)}
+                          className="rounded-2xl"
+                        >
+                          取消
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => void handleUpgradeMembership()}
+                          disabled={upgradeLoading || !selectedUpgradeLevelKey}
+                          className="rounded-2xl"
+                        >
+                          {upgradeLoading ? "升级中..." : "确认升级"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  {showPaymentDialog ? (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                      <div className="w-full max-w-sm rounded-3xl border border-border bg-background p-6 shadow-2xl">
+                        <h3 className="text-lg font-bold text-foreground">请扫码支付</h3>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          支付方式：{showPaymentDialog.paymentMethod === "wechat" ? "微信支付" : "支付宝"}
+                        </p>
+                        <div className="mt-4 rounded-2xl border border-dashed border-border bg-secondary/40 p-6 text-center">
+                          <div className="mx-auto mb-3 flex h-32 w-32 items-center justify-center rounded-xl bg-white text-4xl font-black text-slate-300">
+                            {showPaymentDialog.paymentMethod === "wechat" ? "微" : "支"}
+                          </div>
+                          <p className="text-xs text-muted-foreground">扫码支付</p>
+                        </div>
+                        <div className="mt-4 space-y-2 rounded-2xl border border-border bg-card p-4 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">订单号</span>
+                            <span className="font-mono text-foreground">{showPaymentDialog.orderNo}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">金额</span>
+                            <span className="font-bold text-foreground">{showPaymentDialog.amount.toFixed(2)} 元</span>
+                          </div>
+                          {showPaymentDialog.bonusAmount > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">赠送</span>
+                              <span className="font-medium text-emerald-600 dark:text-emerald-300">+{showPaymentDialog.bonusAmount.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-3 text-center text-xs text-muted-foreground">支付完成后，余额将自动到账</p>
+                        <button
+                          onClick={() => setShowPaymentDialog(null)}
+                          className="mt-4 w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition hover:bg-secondary"
+                        >
+                          关闭
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </section>
@@ -664,3 +1093,6 @@ export default function ProfilePage() {
     </Suspense>
   )
 }
+
+
+

@@ -27,7 +27,8 @@ type AdState = "idle" | "loading" | "requested" | "error"
 
 const ADSENSE_GLOBAL_HIDE_KEY = "triangle_adsense_global_hide"
 const ADSENSE_SLOT_HIDE_PREFIX = "triangle_adsense_slot_hide:"
-const ADSENSE_RENDER_TIMEOUT_MS = 7000
+const ADSENSE_RENDER_TIMEOUT_MS = 2500
+const ADSENSE_STATUS_CHECK_INTERVAL_MS = 500
 
 function getSlotHideKey(slotId: string) {
   return `${ADSENSE_SLOT_HIDE_PREFIX}${slotId}`
@@ -118,6 +119,7 @@ export function AdSenseSlot({
 
     let cancelled = false
     let slotObserver: MutationObserver | null = null
+    let statusTimer: number | null = null
 
     const clearRenderTimer = () => {
       if (renderTimerRef.current !== null) {
@@ -126,21 +128,37 @@ export function AdSenseSlot({
       }
     }
 
+    const clearStatusTimer = () => {
+      if (statusTimer !== null) {
+        window.clearInterval(statusTimer)
+        statusTimer = null
+      }
+    }
+
+    const getSlotElement = () => containerRef.current?.querySelector<HTMLElement>("ins.adsbygoogle")
+
+    const isExplicitlyUnfilled = () => {
+      const slotElement = getSlotElement()
+      if (!slotElement) {
+        return false
+      }
+      return slotElement.getAttribute("data-ad-status") === "unfilled"
+    }
+
     const hasRenderableContent = () => {
-      const slotElement = containerRef.current?.querySelector("ins.adsbygoogle")
+      const slotElement = getSlotElement()
       if (!slotElement) {
         return false
       }
 
-      return (
-        Boolean(slotElement.querySelector("iframe")) ||
-        slotElement.childElementCount > 0 ||
-        slotElement.innerHTML.trim().length > 0
-      )
+      // Hide by default unless Google explicitly marks this slot as filled.
+      // This avoids keeping an empty/failed frame on the page.
+      return slotElement.getAttribute("data-ad-status") === "filled"
     }
 
     const hideCurrentSlot = (hideAll = false) => {
       clearRenderTimer()
+      clearStatusTimer()
       slotObserver?.disconnect()
       slotObserver = null
 
@@ -157,8 +175,13 @@ export function AdSenseSlot({
     }
 
     const watchSlotRender = () => {
-      const slotElement = containerRef.current?.querySelector("ins.adsbygoogle")
+      const slotElement = getSlotElement()
       if (!slotElement) {
+        hideCurrentSlot()
+        return
+      }
+
+      if (isExplicitlyUnfilled()) {
         hideCurrentSlot()
         return
       }
@@ -171,8 +194,14 @@ export function AdSenseSlot({
       }
 
       slotObserver = new MutationObserver(() => {
+        if (isExplicitlyUnfilled()) {
+          hideCurrentSlot()
+          return
+        }
+
         if (hasRenderableContent()) {
           clearRenderTimer()
+          clearStatusTimer()
           slotObserver?.disconnect()
           slotObserver = null
           if (!cancelled) {
@@ -187,8 +216,25 @@ export function AdSenseSlot({
         attributes: true,
       })
 
+      statusTimer = window.setInterval(() => {
+        if (isExplicitlyUnfilled()) {
+          hideCurrentSlot()
+          return
+        }
+
+        if (hasRenderableContent()) {
+          clearRenderTimer()
+          clearStatusTimer()
+          slotObserver?.disconnect()
+          slotObserver = null
+          if (!cancelled) {
+            setState("requested")
+          }
+        }
+      }, ADSENSE_STATUS_CHECK_INTERVAL_MS)
+
       renderTimerRef.current = window.setTimeout(() => {
-        if (!hasRenderableContent()) {
+        if (!hasRenderableContent() || isExplicitlyUnfilled()) {
           hideCurrentSlot()
         }
       }, ADSENSE_RENDER_TIMEOUT_MS)
@@ -227,6 +273,7 @@ export function AdSenseSlot({
     return () => {
       cancelled = true
       clearRenderTimer()
+      clearStatusTimer()
       slotObserver?.disconnect()
       intersectionObserver.disconnect()
     }

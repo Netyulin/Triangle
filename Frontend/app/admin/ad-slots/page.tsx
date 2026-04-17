@@ -10,6 +10,7 @@ import {
   type AdminAdSlot,
 } from "@/lib/admin-api"
 import { ADSENSE_SLOT_IDS } from "@/lib/api"
+import { PageHeader } from "@/components/admin/page-header"
 
 type SlotForm = {
   name: string
@@ -225,18 +226,13 @@ export default function AdminAdSlotsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-            <Megaphone className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">广告位管理</h1>
-            <p className="mt-1 text-sm text-muted-foreground">管理广告位类型、尺寸、位置与启用状态</p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="广告位管理"
+        description="管理广告位类型、尺寸、位置与启用状态"
+        icon={<Megaphone className="h-5 w-5" />}
+        iconClassName="bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
       {message ? <div className="admin-panel px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}

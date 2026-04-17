@@ -2,8 +2,33 @@ import { body, param, query } from 'express-validator';
 import prisma from '../utils/prisma.js';
 import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
-import { queryRaw } from '../utils/dbRaw.js';
-import { isPostgresDatabase } from '../utils/signTables.js';
+
+function isMissingOptionalRelationError(error) {
+  const message = String(error?.message || '').toLowerCase();
+
+  return (
+    error?.code === 'P2021' ||
+    error?.code === 'P2010' ||
+    message.includes('does not exist') ||
+    message.includes('does not exist in the current database') ||
+    message.includes('cannot read properties of undefined') ||
+    message.includes('relation') ||
+    message.includes('table')
+  );
+}
+
+async function runOptionalAdStat(operation, fallbackValue, label) {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!isMissingOptionalRelationError(error)) {
+      throw error;
+    }
+
+    console.warn(`[ad stats] skip optional stat "${label}": ${error.message}`);
+    return fallbackValue;
+  }
+}
 
 const slotTypes = ['banner', 'insertion', 'native', 'splash'];
 const slotPositions = ['top', 'bottom', 'sidebar', 'infeed'];
@@ -329,14 +354,18 @@ export async function deleteAdContent(req, res) {
 }
 
 export async function getAdStats(_req, res) {
-  const [totalSlots, activeSlots, totalContents, activeContents, totalDownloadLogs, totalCpsClicks, slotStats, trendRows] =
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+  const [totalSlots, activeSlots, totalContents, activeContents, totalDownloadLogs, totalCpsClicks, slotStats, cpsClicks] =
     await Promise.all([
       prisma.adSlot.count(),
       prisma.adSlot.count({ where: { isActive: true } }),
       prisma.adContent.count(),
       prisma.adContent.count({ where: { isActive: true } }),
       prisma.downloadLog.count(),
-      prisma.cpsDownload.count(),
+      runOptionalAdStat(() => prisma.cpsDownload.count(), 0, 'total cps clicks'),
       prisma.adSlot.findMany({
         select: {
           id: true,
@@ -348,24 +377,41 @@ export async function getAdStats(_req, res) {
         },
         orderBy: { createdAt: 'desc' }
       }),
-      queryRaw(
-        isPostgresDatabase()
-          ? `
-              SELECT DATE("clickedAt") AS date, COUNT(*) AS count
-              FROM cps_downloads
-              WHERE "clickedAt" >= NOW() - INTERVAL '6 day'
-              GROUP BY DATE("clickedAt")
-              ORDER BY DATE("clickedAt") ASC
-            `
-          : `
-              SELECT DATE(clickedAt) AS date, COUNT(*) AS count
-              FROM CpsDownload
-              WHERE clickedAt >= DATETIME('now', '-6 day')
-              GROUP BY DATE(clickedAt)
-              ORDER BY DATE(clickedAt) ASC
-            `
+      runOptionalAdStat(
+        () =>
+          prisma.cpsDownload.findMany({
+            where: {
+              clickedAt: {
+                gte: sevenDaysAgo
+              }
+            },
+            select: {
+              clickedAt: true
+            },
+            orderBy: {
+              clickedAt: 'asc'
+            }
+          }),
+        [],
+        'cps click trend'
       )
     ]);
+
+  const trendMap = new Map();
+  for (let i = 0; i < 7; i += 1) {
+    const date = new Date(sevenDaysAgo);
+    date.setDate(sevenDaysAgo.getDate() + i);
+    const key = date.toISOString().slice(0, 10);
+    trendMap.set(key, 0);
+  }
+
+  cpsClicks.forEach((item) => {
+    const key = new Date(item.clickedAt).toISOString().slice(0, 10);
+    if (!trendMap.has(key)) {
+      trendMap.set(key, 0);
+    }
+    trendMap.set(key, Number(trendMap.get(key) || 0) + 1);
+  });
 
   return sendSuccess(res, {
     summary: {
@@ -377,12 +423,10 @@ export async function getAdStats(_req, res) {
       totalCpsClicks
     },
     slots: slotStats,
-    trend: Array.isArray(trendRows)
-      ? trendRows.map((item) => ({
-          date: item.date,
-          count: Number(item.count || 0)
-        }))
-      : []
+    trend: Array.from(trendMap.entries()).map(([date, count]) => ({
+      date,
+      count: Number(count || 0)
+    }))
   });
 }
 

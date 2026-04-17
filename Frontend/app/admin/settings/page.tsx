@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState, type ReactNode } from "react"
 import { CheckCircle, Settings2 } from "lucide-react"
 import { fetchAdminSettings, updateAdminSettings } from "@/lib/admin-api"
 import type { SiteSettings } from "@/lib/api"
+import { PageHeader } from "@/components/admin/page-header"
 
 const initialSettings: SiteSettings = {
   siteName: "Triangle",
@@ -62,20 +63,13 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero">
-        <div className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-              <Settings2 className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">系统设置</h1>
-              <p className="mt-1 text-sm text-muted-foreground">控制站点名称、首页精选数量，以及注册开关和邀请码要求。</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="系统设置"
+        description="控制站点名称、首页精选数量，以及注册开关和邀请码要求。"
+        icon={<Settings2 className="h-5 w-5" />}
+        iconClassName="bg-slate-50 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400"
+      />
 
       {error ? (
         <div className="admin-panel flex items-start gap-2 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
@@ -102,7 +96,9 @@ export default function AdminSettingsPage() {
           <Field label="站点名称">
             <input
               value={settings.siteName}
-              onChange={(event) => setSettings((current) => ({ ...current, siteName: event.target.value }))}
+              onChange={(event) =>
+                setSettings((current) => ({ ...current, siteName: event.target.value }))
+              }
               disabled={loading}
               className={inputClass}
             />
@@ -111,7 +107,12 @@ export default function AdminSettingsPage() {
           <Field label="站点描述">
             <textarea
               value={settings.siteDescription}
-              onChange={(event) => setSettings((current) => ({ ...current, siteDescription: event.target.value }))}
+              onChange={(event) =>
+                setSettings((current) => ({
+                  ...current,
+                  siteDescription: event.target.value,
+                }))
+              }
               rows={3}
               disabled={loading}
               className={inputClass}
@@ -121,7 +122,12 @@ export default function AdminSettingsPage() {
           <Field label="首页精选文章数量">
             <select
               value={settings.homeFeaturedPostCount}
-              onChange={(event) => setSettings((current) => ({ ...current, homeFeaturedPostCount: Number(event.target.value) }))}
+              onChange={(event) =>
+                setSettings((current) => ({
+                  ...current,
+                  homeFeaturedPostCount: Number(event.target.value),
+                }))
+              }
               disabled={loading}
               className={inputClass}
             >
@@ -139,7 +145,9 @@ export default function AdminSettingsPage() {
                 <input
                   type="radio"
                   checked={settings.registrationEnabled}
-                  onChange={() => setSettings((current) => ({ ...current, registrationEnabled: true }))}
+                  onChange={() =>
+                    setSettings((current) => ({ ...current, registrationEnabled: true }))
+                  }
                   className="h-4 w-4 border-border text-sky-600 focus:ring-sky-500"
                 />
                 <span>开放</span>
@@ -148,7 +156,13 @@ export default function AdminSettingsPage() {
                 <input
                   type="radio"
                   checked={!settings.registrationEnabled}
-                  onChange={() => setSettings((current) => ({ ...current, registrationEnabled: false, registrationRequiresInvite: false }))}
+                  onChange={() =>
+                    setSettings((current) => ({
+                      ...current,
+                      registrationEnabled: false,
+                      registrationRequiresInvite: false,
+                    }))
+                  }
                   className="h-4 w-4 border-border text-sky-600 focus:ring-sky-500"
                 />
                 <span>关闭</span>
@@ -161,8 +175,17 @@ export default function AdminSettingsPage() {
               <label className="flex items-center gap-2 text-foreground/80">
                 <input
                   type="radio"
-                  checked={settings.registrationEnabled && settings.registrationRequiresInvite}
-                  onChange={() => setSettings((current) => ({ ...current, registrationEnabled: true, registrationRequiresInvite: true }))}
+                  checked={
+                    settings.registrationEnabled &&
+                    settings.registrationRequiresInvite
+                  }
+                  onChange={() =>
+                    setSettings((current) => ({
+                      ...current,
+                      registrationEnabled: true,
+                      registrationRequiresInvite: true,
+                    }))
+                  }
                   className="h-4 w-4 border-border text-sky-600 focus:ring-sky-500"
                 />
                 <span>必须填写邀请码</span>
@@ -171,7 +194,12 @@ export default function AdminSettingsPage() {
                 <input
                   type="radio"
                   checked={!settings.registrationRequiresInvite}
-                  onChange={() => setSettings((current) => ({ ...current, registrationRequiresInvite: false }))}
+                  onChange={() =>
+                    setSettings((current) => ({
+                      ...current,
+                      registrationRequiresInvite: false,
+                    }))
+                  }
                   className="h-4 w-4 border-border text-sky-600 focus:ring-sky-500"
                 />
                 <span>不需要邀请码</span>

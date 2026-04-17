@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
@@ -54,7 +54,7 @@ export default function RequestsPage() {
     }))
   }, [user])
 
-  const loadRequests = async (mode = showMine) => {
+  const loadRequests = useCallback(async (mode = showMine) => {
     setLoading(true)
     setError("")
     try {
@@ -66,11 +66,11 @@ export default function RequestsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [showMine, token])
 
   useEffect(() => {
-    loadRequests(showMine)
-  }, [showMine, token])
+    void loadRequests(showMine)
+  }, [showMine, loadRequests])
 
   const filteredItems = useMemo(() => {
     const text = keyword.trim().toLowerCase()
@@ -116,7 +116,7 @@ export default function RequestsPage() {
         current.map((entry) => (entry.id === item.id ? { ...entry, voteCount: result.voteCount, userVoted: result.userVoted } : entry)),
       )
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "支持失败，请稍后再试。")
+      setError(nextError instanceof Error ? nextError.message : "支持失败，请稍后重试。")
     } finally {
       setVoteLoadingId(null)
     }
@@ -162,7 +162,7 @@ export default function RequestsPage() {
       if (token) await refreshSession()
       await loadRequests(showMine)
     } catch (nextError) {
-      setFormError(nextError instanceof Error ? nextError.message : "提交失败，请稍后再试。")
+      setFormError(nextError instanceof Error ? nextError.message : "提交失败，请稍后重试。")
     } finally {
       setSubmitting(false)
     }
@@ -217,7 +217,7 @@ export default function RequestsPage() {
               {showMine ? "返回公开需求" : "查看我的需求"}
             </button>
             <button
-              onClick={() => loadRequests(showMine)}
+              onClick={() => void loadRequests(showMine)}
               className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground transition hover:text-foreground"
             >
               <RefreshCw className="h-4 w-4" />
@@ -261,7 +261,7 @@ export default function RequestsPage() {
           <div className="mt-8 flex flex-col items-center gap-4 rounded-3xl border border-border bg-card p-8 text-center">
             <p className="max-w-md text-sm text-muted-foreground">{error}</p>
             <button
-              onClick={() => loadRequests(showMine)}
+              onClick={() => void loadRequests(showMine)}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
             >
               <RefreshCw className="h-4 w-4" />
@@ -285,7 +285,6 @@ export default function RequestsPage() {
                   <article key={item.id} className="group rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-accent/20">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
-                        {/* 状态标签行 */}
                         <div className="flex flex-wrap items-center gap-2">
                           <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", meta.color)}>
                             <StatusIcon className="h-3 w-3" />
@@ -294,22 +293,18 @@ export default function RequestsPage() {
                           <span className="text-xs text-muted-foreground">{item.authorName}</span>
                           <span className="text-xs text-muted-foreground">{item.createdAt}</span>
                         </div>
-                        {/* 标题 */}
                         <h2 className="mt-3 text-lg font-bold text-foreground transition-colors group-hover:text-accent">{item.title}</h2>
-                        {/* 描述 */}
                         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
-                        {/* 站内回复 */}
                         {item.adminReply ? (
-                          <div className="mt-4 rounded-xl bg-accent/5 border border-accent/20 p-4">
-                            <p className="text-xs font-medium text-accent mb-1">站内回复</p>
+                          <div className="mt-4 rounded-xl border border-accent/20 bg-accent/5 p-4">
+                            <p className="mb-1 text-xs font-medium text-accent">站内回复</p>
                             <p className="text-sm text-muted-foreground">{item.adminReply}</p>
                           </div>
                         ) : null}
                       </div>
 
-                      {/* 投票按钮 */}
                       <button
-                        onClick={() => handleVote(item)}
+                        onClick={() => void handleVote(item)}
                         disabled={voteLoadingId === item.id}
                         className={cn(
                           "inline-flex items-center gap-2 self-start rounded-xl border px-4 py-2.5 text-sm font-medium transition-all",
@@ -412,7 +407,7 @@ export default function RequestsPage() {
                   取消
                 </button>
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => void handleSubmit()}
                   disabled={submitting}
                   className="rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-70"
                 >

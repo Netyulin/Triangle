@@ -7,6 +7,7 @@ import { AppIcon } from "@/components/app-icon"
 import { fetchAdminNetdiskReports, formatDateTime } from "@/lib/admin-api"
 import type { NetdiskReportItem } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { PageHeader } from "@/components/admin/page-header"
 
 const filters = [
   { key: "all", label: "全部" },
@@ -66,20 +67,13 @@ export default function AdminNetdiskReportsPage() {
   )
 
   return (
-    <div className="space-y-6">
-      <div className="admin-hero">
-        <div className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">网盘失效举报</h1>
-              <p className="mt-1 text-sm text-muted-foreground">这里会显示用户反馈的失效下载链接，方便逐条查看和处理。</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="失效报告"
+        description="这里会显示用户反馈的失效下载链接，方便逐条查看和处理。"
+        icon={<AlertTriangle className="h-5 w-5" />}
+        iconClassName="bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400"
+      />
 
       {error ? <div className="admin-panel px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error}</div> : null}
 
