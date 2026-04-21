@@ -43,7 +43,7 @@ export function useAdminPostEditor(editingSlug: string) {
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [articleCategories, setArticleCategories] = useState<string[]>([])
-  const [editorContent, setEditorContent] = useState("")
+  const [contentDirty, setContentDirty] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -56,6 +56,7 @@ export function useAdminPostEditor(editingSlug: string) {
         if (!active) return
         setArticleCategories([])
       })
+
     return () => {
       active = false
     }
@@ -63,11 +64,12 @@ export function useAdminPostEditor(editingSlug: string) {
 
   useEffect(() => {
     if (!editingSlug) return
-    let active = true
 
+    let active = true
     fetchAdminPostDetail(editingSlug)
       .then((post) => {
         if (!active) return
+
         setForm({
           title: post.title,
           slug: post.slug,
@@ -81,13 +83,18 @@ export function useAdminPostEditor(editingSlug: string) {
           coverImage: post.coverImage || "",
           icon: post.icon || "",
           displayMode:
-            post.displayMode === "cover" || post.displayMode === "icon" ? post.displayMode : post.coverImage ? "cover" : "icon",
+            post.displayMode === "cover" || post.displayMode === "icon"
+              ? post.displayMode
+              : post.coverImage
+                ? "cover"
+                : "icon",
           status: normalizePostStatus(post.status),
         })
-        setEditorContent(post.content || "")
+
+        setContentDirty(false)
       })
       .catch((nextError) => {
-        setError(nextError instanceof Error ? nextError.message : "加载文章失败。")
+        setError(nextError instanceof Error ? nextError.message : "加载文章失败")
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -100,7 +107,7 @@ export function useAdminPostEditor(editingSlug: string) {
 
   const handleImport = async () => {
     if (!importUrl.trim()) {
-      setError("请先输入要导入的链接。")
+      setError("请先输入要导入的链接")
       return
     }
 
@@ -110,6 +117,7 @@ export function useAdminPostEditor(editingSlug: string) {
 
     try {
       const result = await importAdminPostFromUrl(importUrl.trim())
+
       setForm((current) => ({
         ...current,
         title: result.title || current.title,
@@ -118,13 +126,11 @@ export function useAdminPostEditor(editingSlug: string) {
         author: DEFAULT_AUTHOR,
         readingTime: result.readingTime || current.readingTime,
         coverImage: current.coverImage || result.coverImage,
-      }))
-      setEditorContent(result.contentHtml || editorContent)
-      setForm((current) => ({
-        ...current,
         content: result.contentHtml || current.content,
       }))
-      setMessage("导入内容已经填入编辑器。")
+
+      setContentDirty(true)
+      setMessage("网页内容已导入")
       toastSuccess("导入成功", "网页内容已抓取并填充")
     } catch (nextError) {
       const msg = nextError instanceof Error ? nextError.message : "导入失败"
@@ -137,9 +143,11 @@ export function useAdminPostEditor(editingSlug: string) {
 
   const handleCoverUpload = async (file: File | null) => {
     if (!file) return
+
     setUploadingCover(true)
     setError("")
     setMessage("")
+
     try {
       const result = await uploadAdminImage(file, "post-cover")
       setForm((current) => ({
@@ -160,9 +168,11 @@ export function useAdminPostEditor(editingSlug: string) {
 
   const handleIconUpload = async (file: File | null) => {
     if (!file) return
+
     setUploadingIcon(true)
     setError("")
     setMessage("")
+
     try {
       const result = await uploadAdminImage(file, "app-cover")
       setForm((current) => ({
@@ -196,23 +206,31 @@ export function useAdminPostEditor(editingSlug: string) {
     setSaving(true)
     setError("")
     setMessage("")
+
     try {
-      const content = editorMode === "visual" ? editorContent : form.content
-      await saveAdminPost(editingSlug || null, {
+      const payload: Record<string, unknown> = {
         ...form,
         status: normalizePostStatus(form.status),
-        content,
         author: DEFAULT_AUTHOR,
         dateLabel: new Date().toLocaleDateString("zh-CN"),
         publishedAt: new Date().toISOString().slice(0, 10),
         seoTitle: form.title,
         seoDescription: form.excerpt,
-      })
+      }
+
+      if (!editingSlug || contentDirty) {
+        payload.content = form.content
+      }
+
+      await saveAdminPost(editingSlug || null, payload)
       toastSuccess(editingSlug ? "更新成功" : "创建成功", editingSlug ? "文章已更新" : "文章已创建")
+
       if (!editingSlug) {
         setForm(initialForm)
-        setEditorContent("")
         setImportUrl("")
+        setContentDirty(false)
+      } else {
+        setContentDirty(false)
       }
     } catch (nextError) {
       const msg = nextError instanceof Error ? nextError.message : "文章保存失败"
@@ -225,8 +243,10 @@ export function useAdminPostEditor(editingSlug: string) {
 
   const handleDelete = async () => {
     if (!editingSlug) return
+
     const confirmed = await confirmDelete(form.title)
     if (!confirmed) return
+
     setSaving(true)
     try {
       await deleteAdminPost(editingSlug)
@@ -247,6 +267,7 @@ export function useAdminPostEditor(editingSlug: string) {
 
   const handleInsertInlineImages = async (files: File[]) => {
     if (!files.length) return
+
     setUploadingInlineImage(true)
     setError("")
     setMessage("")
@@ -254,23 +275,27 @@ export function useAdminPostEditor(editingSlug: string) {
     try {
       if (editorMode === "html") {
         const snippets: string[] = []
+
         for (const file of files) {
           const result = await uploadAdminImage(file, "post-cover")
           const url = resolveAssetUrl(result.path) || result.path
           snippets.push(`\n<p><img src="${url}" alt="" /></p>\n`)
         }
+
         const html = snippets.join("")
         setForm((current) => {
           const textarea = contentTextareaRef.current
           if (!textarea) return { ...current, content: `${current.content}${html}` }
           return { ...current, content: insertTextAtCursor(textarea, html) }
         })
-        setMessage("正文图片已经插入。")
+
+        setContentDirty(true)
+        setMessage("正文图片已经插入")
       } else {
-        setMessage("请在编辑器中使用图片按钮插入图片，或切换到 HTML 模式粘贴图片。")
+        setMessage("可视模式为 HTML 实时预览，请切换到 HTML 源码模式编辑正文")
       }
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "正文图片上传失败。")
+      setError(nextError instanceof Error ? nextError.message : "正文图片上传失败")
     } finally {
       setUploadingInlineImage(false)
     }
@@ -279,9 +304,15 @@ export function useAdminPostEditor(editingSlug: string) {
   const handleEditorPaste = async (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const files = extractImageFiles(event.clipboardData)
     if (!files.length) return
+
     event.preventDefault()
     await handleInsertInlineImages(files)
   }
+
+  const handleHtmlContentChange = useCallback((content: string) => {
+    setForm((current) => ({ ...current, content }))
+    setContentDirty(true)
+  }, [])
 
   const coverPreview = resolveAssetUrl(form.coverImage)
 
@@ -290,13 +321,13 @@ export function useAdminPostEditor(editingSlug: string) {
     contentTextareaRef,
     coverFileInputRef,
     coverPreview,
-    editorContent,
     editorMode,
     error,
     form,
     handleCoverUpload,
     handleDelete,
     handleEditorPaste,
+    handleHtmlContentChange,
     handleIconUpload,
     handleImageUpload,
     handleImport,
@@ -310,7 +341,6 @@ export function useAdminPostEditor(editingSlug: string) {
     loading,
     message,
     saving,
-    setEditorContent,
     setEditorMode,
     setForm,
     setImportUrl,

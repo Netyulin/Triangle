@@ -1,47 +1,35 @@
 "use client"
 
+import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import dynamic from "next/dynamic"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, FileText, ImagePlus, Link2, Upload, WandSparkles } from "lucide-react"
+import { ArrowLeft, Eye, FileCode2, FileText, ImagePlus, Link2, Upload, WandSparkles } from "lucide-react"
 import { PageHeader } from "@/components/admin/page-header"
 import { resolveAssetUrl } from "@/lib/admin-api"
 import { looksLikeImageUrl } from "@/lib/utils"
 import { extractImageFiles, getInitial } from "./post-editor-shared"
 import { useAdminPostEditor } from "./use-admin-post-editor"
 
-const TiptapEditor = dynamic(
-  () => import("@/components/admin/tiptap-editor").then((mod) => mod.TiptapEditor),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="rounded-xl border border-border bg-secondary/30 px-4 py-6 text-sm text-muted-foreground">
-        编辑器加载中，请稍候...
-      </div>
-    ),
-  },
-)
-
 const inputClass = "admin-input"
 
 export default function AdminPostEditorPage() {
   const searchParams = useSearchParams()
   const editingSlug = searchParams.get("slug") || ""
+
   const {
     articleCategories,
     contentTextareaRef,
     coverFileInputRef,
     coverPreview,
-    editorContent,
     editorMode,
     error,
     form,
     handleCoverUpload,
     handleDelete,
     handleEditorPaste,
+    handleHtmlContentChange,
     handleIconUpload,
-    handleImageUpload,
     handleImport,
     handleInsertInlineImages,
     handlePasteCoverImage,
@@ -53,7 +41,6 @@ export default function AdminPostEditorPage() {
     loading,
     message,
     saving,
-    setEditorContent,
     setEditorMode,
     setForm,
     setImportUrl,
@@ -62,11 +49,32 @@ export default function AdminPostEditorPage() {
     uploadingInlineImage,
   } = useAdminPostEditor(editingSlug)
 
+  const handleOpenPreviewWindow = () => {
+    const htmlBody = form.content || "<p style='color:#888'>暂无内容</p>"
+    const html = `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>文章预览</title>
+  </head>
+  <body>${htmlBody}</body>
+</html>`
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const win = window.open(url, "_blank", "noopener,noreferrer")
+    if (!win) {
+      URL.revokeObjectURL(url)
+      return
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  }
+
   return (
     <main className="space-y-5">
       <PageHeader
         title={editingSlug ? "编辑文章" : "新建文章"}
-        description="创建新的技术文章、评测或教程。"
+        description="创建新的技术文章、评测或教程"
         icon={<FileText className="h-5 w-5" />}
         iconClassName="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
         actions={
@@ -101,6 +109,7 @@ export default function AdminPostEditorPage() {
           </div>
           <WandSparkles className="hidden h-9 w-9 text-slate-400/40 dark:text-slate-500/40 md:block" />
         </div>
+
         <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
           <input value={importUrl} onChange={(event) => setImportUrl(event.target.value)} placeholder="输入要导入的链接地址" className={inputClass} />
           <button type="button" onClick={handleImport} disabled={importing || !importUrl.trim()} className="admin-primary-btn px-5 py-3">
@@ -232,13 +241,19 @@ export default function AdminPostEditorPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-2">
                   <ModeButton active={editorMode === "visual"} onClick={() => setEditorMode("visual")}>
-                    可视化
+                    <Eye className="h-4 w-4" />
+                    所见即所得预览
                   </ModeButton>
                   <ModeButton active={editorMode === "html"} onClick={() => setEditorMode("html")}>
-                    HTML
+                    <FileCode2 className="h-4 w-4" />
+                    HTML 源码
                   </ModeButton>
                 </div>
+
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <button type="button" onClick={handleOpenPreviewWindow} className="admin-secondary-btn px-3 py-1.5 text-xs">
+                    在新窗口预览
+                  </button>
                   <button
                     type="button"
                     disabled={uploadingInlineImage}
@@ -259,25 +274,23 @@ export default function AdminPostEditorPage() {
               </div>
 
               {editorMode === "visual" ? (
-                <TiptapEditor
-                  content={editorContent}
-                  onChange={(content) => {
-                    setEditorContent(content)
-                    setForm((current) => ({ ...current, content }))
-                  }}
-                  placeholder="开始输入文章内容..."
-                  uploadImage={handleImageUpload}
-                  minHeight="420px"
-                />
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <p className="mb-3 text-xs text-muted-foreground">当前是原始 HTML 预览（不做格式重写），请在源码模式编辑正文。</p>
+                  <iframe
+                    title="html-preview"
+                    srcDoc={form.content || "<p style='color:#888'>暂无内容</p>"}
+                    className="h-[520px] w-full rounded-lg border border-border bg-white"
+                  />
+                </div>
               ) : (
                 <textarea
                   ref={contentTextareaRef}
                   value={form.content}
-                  onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
+                  onChange={(event) => handleHtmlContentChange(event.target.value)}
                   onPaste={handleEditorPaste}
-                  rows={18}
+                  rows={22}
                   className={inputClass}
-                  placeholder="支持直接粘贴 HTML 或普通正文内容"
+                  placeholder="可查看并编辑完整 HTML 源码"
                 />
               )}
             </div>
@@ -320,8 +333,8 @@ function ModeButton({ active, children, onClick }: { active: boolean; children: 
       onClick={onClick}
       className={
         active
-          ? "rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-          : "rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          ? "inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          : "inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
       }
     >
       {children}
