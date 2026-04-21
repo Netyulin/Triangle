@@ -24,11 +24,25 @@ function getPushConfig() {
   return { enabled, token, site, endpoint, timeoutMs };
 }
 
+function normalizeSite(configSite) {
+  const raw = normalizeString(configSite, '').trim();
+  if (!raw) return { siteHost: '', siteBase: '' };
+  try {
+    const url = new URL(raw);
+    return { siteHost: url.host, siteBase: `${url.protocol}//${url.host}` };
+  } catch {
+    const host = raw.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').trim();
+    if (!host) return { siteHost: '', siteBase: '' };
+    return { siteHost: host, siteBase: `https://${host}` };
+  }
+}
+
 function buildPublicUrl(pathname) {
   const config = getPushConfig();
-  if (!config.site) return '';
+  const { siteBase } = normalizeSite(config.site);
+  if (!siteBase) return '';
   try {
-    return new URL(pathname, config.site).toString();
+    return new URL(pathname, siteBase).toString();
   } catch {
     return '';
   }
@@ -36,12 +50,13 @@ function buildPublicUrl(pathname) {
 
 async function pushUrlToBaidu(url) {
   const config = getPushConfig();
+  const { siteHost } = normalizeSite(config.site);
   if (!config.enabled) return { skipped: true, reason: 'disabled' };
-  if (!config.token || !config.site) return { skipped: true, reason: 'missing token or site' };
+  if (!config.token || !siteHost) return { skipped: true, reason: 'missing token or site' };
   if (!url) return { skipped: true, reason: 'empty url' };
 
   const endpoint = new URL(config.endpoint);
-  endpoint.searchParams.set('site', config.site);
+  endpoint.searchParams.set('site', siteHost);
   endpoint.searchParams.set('token', config.token);
 
   const controller = new AbortController();
