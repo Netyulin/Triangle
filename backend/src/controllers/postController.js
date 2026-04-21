@@ -6,6 +6,7 @@ import { normalizeBoolean, normalizeInteger, normalizeString, serializePost } fr
 import { importContentFromSource } from '../utils/contentImport.js';
 import { localizeHtmlImages, localizeRemoteImage } from '../utils/imageLocalization.js';
 import { upsertPostCategory, listPostCategories } from '../utils/postCategories.js';
+import { queueBaiduPushForPost } from '../utils/baiduPush.js';
 
 const postStatuses = ['published', 'hidden', 'archived'];
 
@@ -255,6 +256,9 @@ export async function create(req, res) {
   if (existed) return sendError(res, ErrorCodes.SLUG_EXISTS, 'slug already exists');
   const post = await prisma.post.create({ data: { ...payload, authorId: req.user.id }, include: includePostRelations() });
   await upsertPostCategory(payload.category);
+  if (post.status === 'published') {
+    queueBaiduPushForPost(post.slug);
+  }
   return sendSuccess(res, serializePost(post), 'created', 201);
 }
 
@@ -275,6 +279,11 @@ export async function update(req, res) {
   const nextPayload = await localizePostAssets(patchPostData(current, req.body), resolveRequestBaseUrl(req));
   const post = await prisma.post.update({ where: { slug: current.slug }, data: nextPayload, include: includePostRelations() });
   await upsertPostCategory(nextPayload.category);
+  const isNowPublished = post.status === 'published';
+  const wasPublished = current.status === 'published';
+  if (isNowPublished && (!wasPublished || post.slug !== current.slug)) {
+    queueBaiduPushForPost(post.slug);
+  }
   return sendSuccess(res, serializePost(post), 'updated');
 }
 

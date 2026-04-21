@@ -18,7 +18,8 @@
     "smoke": "node scripts/smoke.test.mjs",
     "regression": "node scripts/regression.test.mjs",
     "test": "node scripts/run-tests.mjs",
-    "cleanup:uploads:images": "node scripts/cleanup-unused-upload-images.mjs"
+    "cleanup:uploads:images": "node scripts/cleanup-unused-upload-images.mjs",
+    "push:baidu:all": "node scripts/push-baidu-existing-urls.mjs"
   },
   "keywords": [
     "cms",

@@ -14,6 +14,7 @@ import {
 import { listAppCategories, upsertAppCategory } from '../utils/appCategories.js';
 import { getMembershipLevelRank, normalizeMembershipLevel } from '../utils/membership.js';
 import { readSiteSettings } from '../utils/siteSettings.js';
+import { queueBaiduPushForApp } from '../utils/baiduPush.js';
 
 const appStatuses = ['published', 'hidden', 'archived'];
 
@@ -326,6 +327,9 @@ export async function create(req, res) {
   if (existed) return sendError(res, ErrorCodes.SLUG_EXISTS, 'slug already exists');
   const app = await prisma.app.create({ data: { ...payload, authorId: req.user.id }, include: includeAppRelations() });
   await upsertAppCategory(payload.category);
+  if (app.status === 'published') {
+    queueBaiduPushForApp(app.slug);
+  }
   return sendSuccess(res, serializeApp(app), 'created', 201);
 }
 
@@ -340,6 +344,11 @@ export async function update(req, res) {
   }
   const app = await prisma.app.update({ where: { slug: current.slug }, data: patchAppData(current, body), include: includeAppRelations() });
   await upsertAppCategory(app.category);
+  const isNowPublished = app.status === 'published';
+  const wasPublished = current.status === 'published';
+  if (isNowPublished && (!wasPublished || app.slug !== current.slug)) {
+    queueBaiduPushForApp(app.slug);
+  }
   return sendSuccess(res, serializeApp(app), 'updated');
 }
 
