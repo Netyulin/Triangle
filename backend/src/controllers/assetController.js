@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate.js';
 import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { saveBufferToUploads } from '../utils/assetStorage.js';
 import { normalizeString } from '../utils/serializers.js';
+import { deleteStorageReference, getUploadsRoot } from '../utils/objectStorage.js';
 
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set([
@@ -17,6 +18,7 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/heif'
 ]);
 const ALLOWED_FILE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.heic', '.heif']);
+const REMOVABLE_PREFIXES = ['app-covers/', 'post-covers/'];
 
 function buildUnsupportedImageError() {
   const err = new Error('仅支持 JPG、PNG、WebP、GIF、SVG、HEIC 或 HEIF 图片');
@@ -88,6 +90,54 @@ export const importRemoteImageValidation = validate([
   body('kind').optional().isIn(['post-cover', 'app-cover']).withMessage('kind is invalid')
 ]);
 
+export const removeImageValidation = validate([
+  body('path').trim().notEmpty().withMessage('path is required')
+]);
+
+function toStorageReferenceFromPath(inputPath) {
+  const raw = normalizeString(inputPath).trim();
+  if (!raw) return null;
+
+  const objectStorageBase = normalizeString(process.env.OBJECT_STORAGE_PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
+
+  let candidate = raw;
+  try {
+    if (/^https?:\/\//i.test(candidate)) {
+      const url = new URL(candidate);
+      if (objectStorageBase && candidate.startsWith(`${objectStorageBase}/`)) {
+        const key = decodeURIComponent(candidate.slice(objectStorageBase.length + 1)).replace(/^\/+/, '');
+        if (!REMOVABLE_PREFIXES.some((prefix) => key.startsWith(prefix))) return null;
+        return `s3:${key}`;
+      }
+      candidate = decodeURIComponent(url.pathname || '');
+    }
+  } catch {
+    // fallback to raw string handling
+  }
+
+  const noHash = candidate.split('#')[0];
+  const noQuery = noHash.split('?')[0];
+  const normalized = noQuery.replace(/\\/g, '/').trim();
+
+  if (normalized.startsWith('local:') || normalized.startsWith('s3:')) {
+    const value = normalized.replace(/^(local:|s3:)/, '');
+    if (!REMOVABLE_PREFIXES.some((prefix) => value.includes(`/${prefix}`) || value.startsWith(prefix))) {
+      return null;
+    }
+    return normalized;
+  }
+
+  let relative = normalized;
+  if (relative.startsWith('/uploads/')) relative = relative.slice('/uploads/'.length);
+  if (relative.startsWith('uploads/')) relative = relative.slice('uploads/'.length);
+  relative = relative.replace(/^\/+/, '');
+
+  if (!relative || relative.includes('..')) return null;
+  if (!REMOVABLE_PREFIXES.some((prefix) => relative.startsWith(prefix))) return null;
+
+  return `local:${path.join(getUploadsRoot(), relative)}`;
+}
+
 export async function uploadImage(req, res) {
   const file = req.file;
   if (!file) {
@@ -152,5 +202,21 @@ export async function importRemoteImage(req, res) {
     );
   } catch (err) {
     return sendError(res, ErrorCodes.PARAM_ERROR, err instanceof Error ? err.message : '图片抓取失败');
+  }
+}
+
+export async function removeImage(req, res) {
+  const inputPath = normalizeString(req.body.path).trim();
+  const reference = toStorageReferenceFromPath(inputPath);
+
+  if (!reference) {
+    return sendError(res, ErrorCodes.PARAM_ERROR, 'image path is invalid');
+  }
+
+  try {
+    await deleteStorageReference(reference);
+    return sendSuccess(res, { path: inputPath, deleted: true }, 'deleted');
+  } catch (err) {
+    return sendError(res, ErrorCodes.INTERNAL_ERROR, err instanceof Error ? err.message : 'delete image failed');
   }
 }

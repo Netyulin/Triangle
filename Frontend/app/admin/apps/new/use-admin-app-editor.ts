@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
+  deleteAdminImage,
   deleteAdminApp,
   fetchAdminAppCategories,
   fetchAdminAppDetail,
@@ -145,6 +146,24 @@ export function useAdminAppEditor(editingSlug: string) {
     await handleImageUpload(file, field)
   }
 
+  const handleRemoveImage = async (field: AppMediaField) => {
+    const sourcePath = String(form[field] || "").trim()
+    if (!sourcePath) {
+      setForm((current) => ({ ...current, [field]: "" }))
+      return
+    }
+
+    try {
+      await deleteAdminImage(sourcePath)
+      setForm((current) => ({ ...current, [field]: "" }))
+      toastSuccess("删除成功", "图片已从服务器删除")
+    } catch (nextError) {
+      const msg = nextError instanceof Error ? nextError.message : "删除图片失败"
+      setError(msg)
+      toastError("删除失败", msg)
+    }
+  }
+
   const updateMediaField = (field: AppMediaField, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
   }
@@ -241,6 +260,7 @@ export function useAdminAppEditor(editingSlug: string) {
     form,
     handleDelete,
     handleImageUpload,
+    handleRemoveImage,
     handlePasteImage,
     handleSubmit,
     iconFileInputRef,

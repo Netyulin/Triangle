@@ -560,6 +560,13 @@ export async function importAdminRemoteImage(url: string, kind: "post-cover" | "
   })
 }
 
+export async function deleteAdminImage(path: string) {
+  return adminRequest<{ path: string; deleted: boolean }>("/api/assets/images", {
+    method: "DELETE",
+    body: JSON.stringify({ path }),
+  })
+}
+
 export async function fetchAdminUsers() {
   return adminRequest<{ list: AdminUserItem[] }>("/api/admin/users")
 }

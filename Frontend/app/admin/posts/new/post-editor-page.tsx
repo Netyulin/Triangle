@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, Eye, FileCode2, FileText, ImagePlus, Link2, Upload, WandSparkles } from "lucide-react"
+import { ArrowLeft, Eye, FileCode2, FileText, ImagePlus, Link2, Trash2, Upload, WandSparkles } from "lucide-react"
 import { PageHeader } from "@/components/admin/page-header"
 import { resolveAssetUrl } from "@/lib/admin-api"
 import { looksLikeImageUrl } from "@/lib/utils"
@@ -34,6 +34,8 @@ export default function AdminPostEditorPage() {
     handleInsertInlineImages,
     handlePasteCoverImage,
     handlePasteIconImage,
+    handleRemoveCoverImage,
+    handleRemoveIconImage,
     handleSubmit,
     iconFileInputRef,
     importUrl,
@@ -178,6 +180,15 @@ export default function AdminPostEditorPage() {
                     <Upload className="h-4 w-4" />
                     粘贴剪贴板图片
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveCoverImage()}
+                    disabled={!form.coverImage}
+                    className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-background px-4 py-2 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    删除封面
+                  </button>
                   <input ref={coverFileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleCoverUpload(event.target.files?.[0] || null)} />
                 </div>
                 <input
@@ -206,6 +217,15 @@ export default function AdminPostEditorPage() {
                   <button type="button" onClick={() => void handlePasteIconImage()} disabled={uploadingIcon} className="admin-secondary-btn px-4 py-2 text-sm">
                     <Upload className="h-4 w-4" />
                     粘贴剪贴板图片
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveIconImage()}
+                    disabled={!form.icon}
+                    className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-background px-4 py-2 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    删除图标
                   </button>
                   <input ref={iconFileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleIconUpload(event.target.files?.[0] || null)} />
                 </div>

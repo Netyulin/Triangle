@@ -5,6 +5,8 @@ import { requireInternalUploadPassword } from '../middleware/internalUploadAuth.
 import {
   importRemoteImage,
   importRemoteImageValidation,
+  removeImage,
+  removeImageValidation,
   uploadImage,
   uploadImageMiddleware,
   uploadImageValidation
@@ -14,6 +16,7 @@ const router = express.Router();
 
 router.post('/images/upload', authenticate, requireAdmin, uploadRateLimit, uploadImageMiddleware, uploadImageValidation, uploadImage);
 router.post('/images/import', authenticate, requireAdmin, uploadRateLimit, importRemoteImageValidation, importRemoteImage);
+router.delete('/images', authenticate, requireAdmin, uploadRateLimit, removeImageValidation, removeImage);
 router.post(
   '/images/local-upload',
   requireInternalUploadPassword,

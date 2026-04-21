@@ -31,6 +31,7 @@ export default function AdminAppEditorPage() {
     form,
     handleDelete,
     handleImageUpload,
+    handleRemoveImage,
     handlePasteImage,
     handleSubmit,
     iconFileInputRef,
@@ -265,6 +266,15 @@ export default function AdminAppEditorPage() {
                     <Upload className="h-4 w-4" />
                     粘贴剪贴板图片
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveImage("heroImage")}
+                    disabled={!form.heroImage}
+                    className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-background px-4 py-2 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    删除封面
+                  </button>
                   <span className="text-xs text-muted-foreground">也可以直接粘贴图片地址</span>
                   <input
                     ref={coverFileInputRef}
@@ -312,6 +322,15 @@ export default function AdminAppEditorPage() {
                   >
                     <Upload className="h-4 w-4" />
                     粘贴剪贴板图片
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveImage("icon")}
+                    disabled={!form.icon}
+                    className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-background px-4 py-2 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    删除图标
                   </button>
                   <span className="text-xs text-muted-foreground">也可以直接填字母或图标地址</span>
                   <input

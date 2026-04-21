@@ -3,6 +3,7 @@
 import { ClipboardEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
+  deleteAdminImage,
   deleteAdminPost,
   fetchAdminPostCategories,
   fetchAdminPostDetail,
@@ -201,6 +202,42 @@ export function useAdminPostEditor(editingSlug: string) {
     await handleIconUpload(file)
   }
 
+  const handleRemoveCoverImage = async () => {
+    const sourcePath = String(form.coverImage || "").trim()
+    if (!sourcePath) {
+      setForm((current) => ({ ...current, coverImage: "" }))
+      return
+    }
+
+    try {
+      await deleteAdminImage(sourcePath)
+      setForm((current) => ({ ...current, coverImage: "" }))
+      toastSuccess("删除成功", "封面图片已删除")
+    } catch (nextError) {
+      const msg = nextError instanceof Error ? nextError.message : "删除封面失败"
+      setError(msg)
+      toastError("删除失败", msg)
+    }
+  }
+
+  const handleRemoveIconImage = async () => {
+    const sourcePath = String(form.icon || "").trim()
+    if (!sourcePath) {
+      setForm((current) => ({ ...current, icon: "" }))
+      return
+    }
+
+    try {
+      await deleteAdminImage(sourcePath)
+      setForm((current) => ({ ...current, icon: "" }))
+      toastSuccess("删除成功", "图标图片已删除")
+    } catch (nextError) {
+      const msg = nextError instanceof Error ? nextError.message : "删除图标失败"
+      setError(msg)
+      toastError("删除失败", msg)
+    }
+  }
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setSaving(true)
@@ -334,6 +371,8 @@ export function useAdminPostEditor(editingSlug: string) {
     handleInsertInlineImages,
     handlePasteCoverImage,
     handlePasteIconImage,
+    handleRemoveCoverImage,
+    handleRemoveIconImage,
     handleSubmit,
     iconFileInputRef,
     importUrl,
