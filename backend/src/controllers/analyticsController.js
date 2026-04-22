@@ -5,8 +5,8 @@ import { validate } from '../middleware/validate.js';
 import { normalizeString } from '../utils/serializers.js';
 
 export const pageViewValidation = validate([
-  body('path').optional().isString().withMessage('path must be a string'),
-  body('referrer').optional().isString().withMessage('referrer must be a string')
+  body('path').optional({ nullable: true }).isString().withMessage('path must be a string'),
+  body('referrer').optional({ nullable: true }).isString().withMessage('referrer must be a string')
 ]);
 
 export async function recordPageView(req, res) {

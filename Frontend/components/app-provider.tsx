@@ -111,10 +111,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    const payload = JSON.stringify({
+    const payloadData: { path: string; referrer?: string } = {
       path: pathname || window.location.pathname,
-      referrer: document.referrer || null,
-    })
+    }
+    const referrer = document.referrer || ""
+    if (referrer) {
+      payloadData.referrer = referrer
+    }
+
+    const payload = JSON.stringify(payloadData)
 
     if (navigator.sendBeacon) {
       navigator.sendBeacon("/api/analytics/page-view", new Blob([payload], { type: "application/json" }))
