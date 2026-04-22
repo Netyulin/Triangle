@@ -235,6 +235,15 @@ function resolveDownloadAccess(app, user) {
     };
   }
 
+  // 所有可下载软件都要求先登录（包含 free 等级）
+  if (!user) {
+    return {
+      allowed: false,
+      reason: 'login required',
+      requiresLogin: true
+    };
+  }
+
   const requiredLevel = normalizeMembershipLevel(app.accessLevel);
   const userLevel = normalizeMembershipLevel(user?.membershipLevel);
   if (getMembershipLevelRank(userLevel) < getMembershipLevelRank(requiredLevel)) {
