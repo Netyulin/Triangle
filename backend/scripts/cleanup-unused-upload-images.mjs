@@ -109,6 +109,8 @@ function normalizeUploadRelative(candidate, uploadsRootPosix) {
   value = value.replace(/^\/+/, '').replace(/^\.\/+/, '');
   if (!value || value === '.' || value === '..') return '';
   if (value.split('/').includes('..')) return '';
+  // 仅把看起来像“具体文件”的路径当成上传引用，避免把 /pricing 之类路由误判成文件
+  if (!/\.[a-z0-9]{2,8}$/i.test(value)) return '';
   return value;
 }
 
@@ -353,4 +355,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect().catch(() => {});
   });
-
