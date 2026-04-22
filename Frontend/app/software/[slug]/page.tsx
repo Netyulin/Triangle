@@ -25,6 +25,15 @@ function accessMessage(reason: string) {
 }
 
 const reportReasonOptions = ["链接已失效", "提取信息有误", "压缩密码不对"] as const
+const resourceNoticeItems = [
+  "本站所有资源仅供学习与交流使用，严禁用于商业运营及任何盈利用途。",
+  "严禁利用本站资源从事违法、侵权及其他违反法律法规的活动，否则一切后果由使用者自行承担。",
+  "本站所有文字内容与资源均仅限教育、研究及非商业用途使用。",
+  "本站资源均来源于网络搜集，如有侵犯您的合法权益，请通过邮件联系，我们将及时处理。",
+  "因用户下载、使用资源对资源方造成的任何损失或损害，本站不承担任何责任。",
+  "用户下载、使用所引发的一切风险及法律责任，均由用户自行承担。",
+  "请在下载后 24 小时内删除相关资源，浏览及下载即视为您已阅读并同意本声明。",
+] as const
 
 function getMembershipRank(level?: string) {
   const normalized = String(level || "").trim().toLowerCase()
@@ -448,6 +457,18 @@ return (
                   </div>
                 </section>
               )}
+
+              <section className="rounded-2xl border border-amber-300/40 bg-amber-50/50 p-6 shadow-sm dark:border-amber-700/40 dark:bg-amber-900/10">
+                <h2 className="mb-4 text-base font-semibold text-amber-900 dark:text-amber-200">资源使用声明</h2>
+                <ul className="space-y-2 text-sm leading-7 text-amber-900/90 dark:text-amber-100/90">
+                  {resourceNoticeItems.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-600/80 dark:bg-amber-300/80" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
 
               {/* AdSense #2 */}
               {ADSENSE_SLOT_IDS.triangle_detail_bottom && adSwitches.triangle_detail_bottom ? (
