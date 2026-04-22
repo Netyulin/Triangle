@@ -424,6 +424,26 @@ export async function updateAdminRequest(id: number | string, payload: { status?
   })
 }
 
+export async function importAdminAppFromSource(payload: { url?: string; rawContent?: string }) {
+  return adminRequest<{
+    sourceUrl: string
+    finalUrl: string
+    name: string
+    subtitle: string
+    heroImage: string
+    summary: string
+    review: string
+    highlights: string[]
+    readingTime: string
+    siteName: string
+    publishedAt: string
+    warnings: string[]
+  }>("/api/apps/import-from-url", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function deleteAdminRequest(id: number | string) {
   return adminRequest<null>(`/api/admin/requests/${id}`, {
     method: "DELETE",

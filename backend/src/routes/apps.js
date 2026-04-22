@@ -8,11 +8,13 @@ import {
   create,
   update,
   remove,
+  importFromUrl,
   listValidation,
   createValidation,
   updateValidation,
   slugParamValidation,
-  accessValidation
+  accessValidation,
+  importContentValidation
 } from '../controllers/appController.js';
 import * as netdiskReportController from '../controllers/netdiskReportController.js';
 import { authenticate, optionalAuthenticate, requireAdmin } from '../middleware/auth.js';
@@ -22,6 +24,7 @@ const router = express.Router();
 router.get('/', optionalAuthenticate, listValidation, list);
 router.get('/featured', featured);
 router.get('/categories', categories);
+router.post('/import-from-url', authenticate, requireAdmin, importContentValidation, importFromUrl);
 router.get('/:slug/access', optionalAuthenticate, accessValidation, access);
 router.post(
   '/:slug/netdisk-reports',

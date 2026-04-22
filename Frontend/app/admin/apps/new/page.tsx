@@ -4,11 +4,12 @@ import Image from "next/image"
 import { type ReactNode } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, Package, Plus, Trash2, Upload } from "lucide-react"
+import { ArrowLeft, FileCode2, Link2, Package, Plus, Trash2, Upload, WandSparkles } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { PageHeader } from "@/components/admin/page-header"
 import { TiptapEditor } from "@/components/admin/tiptap-editor"
 import { PageHeaderSkeleton, FormFieldSkeleton } from "@/components/admin/skeleton"
+import { uploadAdminImage } from "@/lib/admin-api"
 import {
   extractImageFromClipboardData,
   platformOptions,
@@ -28,17 +29,24 @@ export default function AdminAppEditorPage() {
     coverFileInputRef,
     coverPreview,
     error,
+    htmlFileInputRef,
     form,
     handleDelete,
+    handleImportFromHtmlFile,
+    handleImportFromUrl,
     handleImageUpload,
     handleRemoveImage,
     handlePasteImage,
     handleSubmit,
     iconFileInputRef,
     iconPreview,
+    importUrl,
+    importing,
     loading,
+    message,
     saving,
     setForm,
+    setImportUrl,
     setSlugTouched,
     summaryContent,
     setSummaryContent,
@@ -99,6 +107,60 @@ export default function AdminAppEditorPage() {
           {error}
         </div>
       ) : null}
+
+      {message ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+          {message}
+        </div>
+      ) : null}
+
+      <section className="admin-panel p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">导入助手</p>
+            <h2 className="mt-2 text-2xl font-black text-foreground">像文章发布一样导入详情</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">支持输入网页链接抓取，或直接上传 HTML 文件自动解析并填充摘要说明。</p>
+          </div>
+          <WandSparkles className="hidden h-9 w-9 text-slate-400/40 dark:text-slate-500/40 md:block" />
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+          <input
+            value={importUrl}
+            onChange={(event) => setImportUrl(event.target.value)}
+            placeholder="输入要导入的网页链接"
+            className={inputClass}
+          />
+          <button
+            type="button"
+            onClick={handleImportFromUrl}
+            disabled={importing || !importUrl.trim()}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:opacity-50"
+          >
+            <Link2 className="h-4 w-4" />
+            {importing ? "导入中..." : "抓取并导入"}
+          </button>
+        </div>
+
+        <div className="mt-3">
+          <button
+            type="button"
+            disabled={importing}
+            onClick={() => htmlFileInputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium transition hover:bg-secondary/70 disabled:opacity-50"
+          >
+            <FileCode2 className="h-4 w-4" />
+            上传 HTML 文件导入
+          </button>
+          <input
+            ref={htmlFileInputRef}
+            type="file"
+            accept=".html,.htm,text/html"
+            className="hidden"
+            onChange={(event) => void handleImportFromHtmlFile(event.target.files?.[0] || null)}
+          />
+        </div>
+      </section>
 
       <form onSubmit={handleSubmit} className="admin-panel p-6 md:p-8">
         <div className="space-y-6">

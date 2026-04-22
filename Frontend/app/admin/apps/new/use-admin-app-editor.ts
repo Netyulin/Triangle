@@ -7,6 +7,7 @@ import {
   deleteAdminApp,
   fetchAdminAppCategories,
   fetchAdminAppDetail,
+  importAdminAppFromSource,
   resolveAssetUrl,
   saveAdminApp,
   uploadAdminImage,
@@ -35,15 +36,19 @@ export function useAdminAppEditor(editingSlug: string) {
   const router = useRouter()
   const coverFileInputRef = useRef<HTMLInputElement | null>(null)
   const iconFileInputRef = useRef<HTMLInputElement | null>(null)
+  const htmlFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [summaryContent, setSummaryContent] = useState("")
   const [form, setForm] = useState<AppEditorForm>(initialForm)
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [uploadingIcon, setUploadingIcon] = useState(false)
   const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
+  const [importUrl, setImportUrl] = useState("")
   const [slugTouched, setSlugTouched] = useState(Boolean(editingSlug))
 
   useEffect(() => {
@@ -168,10 +173,94 @@ export function useAdminAppEditor(editingSlug: string) {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  const applyImportedData = (result: {
+    name?: string
+    subtitle?: string
+    summary?: string
+    review?: string
+    heroImage?: string
+    highlights?: string[]
+  }) => {
+    setForm((current) => {
+      const nextName = (result.name || "").trim() || current.name
+      const nextSlug = current.slug || buildSlug(nextName)
+      const nextSummary = result.summary || current.summary
+      const nextHeroImage = current.heroImage || result.heroImage || ""
+      return {
+        ...current,
+        name: nextName,
+        slug: nextSlug,
+        subtitle: (result.subtitle || "").trim() || current.subtitle || nextName,
+        summary: nextSummary,
+        review: (result.review || "").trim() || current.review,
+        highlights: Array.isArray(result.highlights) && result.highlights.length ? result.highlights.join("\n") : current.highlights,
+        heroImage: nextHeroImage,
+        displayMode: current.heroImage || current.icon ? current.displayMode : nextHeroImage ? "cover" : "icon",
+      }
+    })
+
+    if (result.summary?.trim()) {
+      setSummaryContent(result.summary)
+    }
+  }
+
+  const handleImportFromUrl = async () => {
+    if (!importUrl.trim()) {
+      setError("请先输入要导入的网址")
+      return
+    }
+
+    setImporting(true)
+    setError("")
+    setMessage("")
+
+    try {
+      const result = await importAdminAppFromSource({ url: importUrl.trim() })
+      applyImportedData(result)
+      setMessage("网页内容已导入到软件详情")
+      toastSuccess("导入成功", "已抓取并填充软件内容")
+    } catch (nextError) {
+      const msg = nextError instanceof Error ? nextError.message : "导入失败"
+      setError(msg)
+      toastError("导入失败", msg)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleImportFromHtmlFile = async (file: File | null) => {
+    if (!file) return
+
+    setImporting(true)
+    setError("")
+    setMessage("")
+
+    try {
+      const rawContent = await file.text()
+      if (!rawContent.trim()) {
+        throw new Error("HTML 文件内容为空")
+      }
+      const result = await importAdminAppFromSource({ rawContent })
+      applyImportedData(result)
+      setMessage("HTML 文件已导入到软件详情")
+      toastSuccess("导入成功", "HTML 内容已解析并填充")
+    } catch (nextError) {
+      const msg = nextError instanceof Error ? nextError.message : "HTML 导入失败"
+      setError(msg)
+      toastError("导入失败", msg)
+    } finally {
+      setImporting(false)
+      if (htmlFileInputRef.current) {
+        htmlFileInputRef.current.value = ""
+      }
+    }
+  }
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setSaving(true)
     setError("")
+    setMessage("")
     try {
       const downloadLinks = normalizeDownloadLinks(form.downloadLinks)
       const primaryDownload = downloadLinks[0]?.url || ""
@@ -257,17 +346,24 @@ export function useAdminAppEditor(editingSlug: string) {
     coverFileInputRef,
     coverPreview,
     error,
+    htmlFileInputRef,
     form,
     handleDelete,
+    handleImportFromHtmlFile,
+    handleImportFromUrl,
     handleImageUpload,
     handleRemoveImage,
     handlePasteImage,
     handleSubmit,
     iconFileInputRef,
     iconPreview,
+    importUrl,
+    importing,
     loading,
+    message,
     saving,
     setForm,
+    setImportUrl,
     setSlugTouched,
     slugTouched,
     summaryContent,

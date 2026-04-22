@@ -15,6 +15,8 @@ import { listAppCategories, upsertAppCategory } from '../utils/appCategories.js'
 import { getMembershipLevelRank, normalizeMembershipLevel } from '../utils/membership.js';
 import { readSiteSettings } from '../utils/siteSettings.js';
 import { queueBaiduPushForApp } from '../utils/baiduPush.js';
+import { importContentFromSource } from '../utils/contentImport.js';
+import { localizeHtmlImages, localizeRemoteImage } from '../utils/imageLocalization.js';
 
 const appStatuses = ['published', 'hidden', 'archived'];
 
@@ -73,8 +75,22 @@ const updateValidation = validate(writeValidationRules);
 const slugParamValidation = validate([param('slug').trim().notEmpty().withMessage('slug is required')]);
 
 const accessValidation = slugParamValidation;
+const importContentValidation = validate([
+  body('url').optional().isString().withMessage('url must be a string'),
+  body('rawContent').optional().isString().withMessage('rawContent must be a string'),
+  body().custom((value) => {
+    const hasUrl = typeof value?.url === 'string' && value.url.trim();
+    const hasContent = typeof value?.rawContent === 'string' && value.rawContent.trim();
 
-export { listValidation, createValidation, updateValidation, slugParamValidation, accessValidation };
+    if (!hasUrl && !hasContent) {
+      throw new Error('url or rawContent is required');
+    }
+
+    return true;
+  })
+]);
+
+export { listValidation, createValidation, updateValidation, slugParamValidation, accessValidation, importContentValidation };
 
 function includeAppRelations() {
   return {
@@ -244,6 +260,46 @@ function resolveDownloadAccess(app, user) {
   };
 }
 
+function resolveRequestBaseUrl(req) {
+  const envSiteUrl = normalizeString(process.env.SITE_URL || '').trim();
+  if (envSiteUrl) return envSiteUrl;
+
+  const forwardedProto = normalizeString(req.headers['x-forwarded-proto'] || '').trim();
+  const forwardedHost = normalizeString(req.headers['x-forwarded-host'] || '').trim();
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  const host = normalizeString(req.headers.host || '').trim();
+  if (host) {
+    const protocol = req.secure ? 'https' : 'http';
+    return `${protocol}://${host}`;
+  }
+
+  return '';
+}
+
+function mapImportResultToAppPayload(result) {
+  const name = normalizeString(result?.title, '').trim();
+  const excerpt = normalizeString(result?.excerpt, '').trim();
+  const summary = normalizeString(result?.contentHtml, '').trim();
+
+  return {
+    sourceUrl: normalizeString(result?.sourceUrl, '').trim(),
+    finalUrl: normalizeString(result?.finalUrl, '').trim(),
+    name,
+    subtitle: excerpt || name,
+    heroImage: normalizeString(result?.coverImage, '').trim(),
+    summary,
+    review: excerpt,
+    highlights: excerpt ? [excerpt] : [],
+    readingTime: normalizeString(result?.readingTime, '').trim(),
+    siteName: normalizeString(result?.siteName, '').trim(),
+    publishedAt: normalizeString(result?.publishedAt, '').trim(),
+    warnings: Array.isArray(result?.warnings) ? result.warnings : []
+  };
+}
+
 export async function list(req, res) {
   const page = normalizeInteger(req.query.page, 1);
   const pageSize = normalizeInteger(req.query.pageSize, 12);
@@ -366,4 +422,37 @@ export async function remove(req, res) {
     prisma.app.delete({ where: { slug } })
   ]);
   return sendSuccess(res, null, 'deleted');
+}
+
+export async function importFromUrl(req, res) {
+  try {
+    const result = await importContentFromSource({
+      url: req.body.url,
+      rawContent: req.body.rawContent
+    });
+
+    const localized = mapImportResultToAppPayload(result);
+
+    if (localized.heroImage) {
+      try {
+        localized.heroImage = await localizeRemoteImage(localized.heroImage, 'app-cover');
+      } catch (error) {
+        console.warn('[app import hero localize skipped]', localized.heroImage, error instanceof Error ? error.message : error);
+      }
+    }
+
+    if (localized.summary) {
+      const importBaseUrl = localized.finalUrl || localized.sourceUrl || req.body.url || resolveRequestBaseUrl(req);
+      localized.summary = await localizeHtmlImages(localized.summary, 'app-cover', importBaseUrl);
+    }
+
+    return sendSuccess(res, localized, 'imported');
+  } catch (error) {
+    if (error instanceof Error) {
+      return sendError(res, ErrorCodes.PARAM_ERROR, error.message);
+    }
+
+    console.error('[app import failed]', error);
+    return sendError(res, ErrorCodes.INTERNAL_ERROR, 'failed to import content');
+  }
 }
