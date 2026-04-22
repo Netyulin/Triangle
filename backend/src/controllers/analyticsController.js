@@ -5,12 +5,25 @@ import { validate } from '../middleware/validate.js';
 import { normalizeString } from '../utils/serializers.js';
 
 export const pageViewValidation = validate([
-  body('path').trim().notEmpty().withMessage('path is required'),
+  body('path').optional().isString().withMessage('path must be a string'),
   body('referrer').optional().isString().withMessage('referrer must be a string')
 ]);
 
 export async function recordPageView(req, res) {
-  const path = normalizeString(req.body.path).trim();
+  const payloadPath = normalizeString(req.body?.path, '').trim();
+  const headerReferrer = normalizeString(req.get('Referer') || '').trim();
+  const bodyReferrer = normalizeString(req.body?.referrer, '').trim();
+
+  let path = payloadPath;
+  if (!path && headerReferrer) {
+    try {
+      const refUrl = new URL(headerReferrer);
+      path = `${refUrl.pathname}${refUrl.search || ''}`;
+    } catch {
+      // ignore invalid referrer
+    }
+  }
+
   if (!path) {
     return sendSuccess(res, { recorded: false }, 'ignored');
   }
@@ -20,7 +33,7 @@ export async function recordPageView(req, res) {
       path,
       ip: req.ip || req.connection?.remoteAddress || 'unknown',
       userAgent: req.get('User-Agent') || null,
-      referrer: req.body.referrer ? normalizeString(req.body.referrer).trim() : req.get('Referer') || null
+      referrer: bodyReferrer || headerReferrer || null
     }
   });
 
