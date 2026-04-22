@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useRef, useState } from "react"
+import { ClipboardEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   deleteAdminImage,
@@ -18,12 +18,15 @@ import {
   AppEditorForm,
   AppMediaField,
   Compatibility,
+  EditorMode,
   Platform,
   buildSlug,
   combineSizeValue,
   compatibilityOptions,
   defaultDownloadLinks,
+  extractImageFiles,
   initialForm,
+  insertTextAtCursor,
   normalizeDownloadLinks,
   platformOptions,
   pricingOptions,
@@ -37,15 +40,19 @@ export function useAdminAppEditor(editingSlug: string) {
   const coverFileInputRef = useRef<HTMLInputElement | null>(null)
   const iconFileInputRef = useRef<HTMLInputElement | null>(null)
   const htmlFileInputRef = useRef<HTMLInputElement | null>(null)
+  const galleryFileInputRef = useRef<HTMLInputElement | null>(null)
+  const summaryTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
-  const [summaryContent, setSummaryContent] = useState("")
   const [form, setForm] = useState<AppEditorForm>(initialForm)
+  const [editorMode, setEditorMode] = useState<EditorMode>("visual")
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [uploadingIcon, setUploadingIcon] = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [uploadingInlineImage, setUploadingInlineImage] = useState(false)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [importUrl, setImportUrl] = useState("")
@@ -83,6 +90,7 @@ export function useAdminAppEditor(editingSlug: string) {
               Array.isArray(app.compatibility) && app.compatibility.length
                 ? app.compatibility.filter((item): item is Compatibility => compatibilityOptions.includes(item as Compatibility))
                 : initialForm.compatibility,
+            gallery: Array.isArray(app.gallery) ? app.gallery.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [],
             downloadLinks: normalizeDownloadLinks(
               (Array.isArray(app.downloadLinks) && app.downloadLinks.length ? app.downloadLinks : defaultDownloadLinks).map((item) => ({
                 name: item.name || "",
@@ -111,12 +119,6 @@ export function useAdminAppEditor(editingSlug: string) {
     if (slugTouched) return
     setForm((current) => ({ ...current, slug: buildSlug(current.name) }))
   }, [form.name, slugTouched])
-
-  useEffect(() => {
-    if (!loading && form.summary && summaryContent !== form.summary) {
-      setSummaryContent(form.summary)
-    }
-  }, [loading, form.summary, summaryContent])
 
   const handleImageUpload = async (file: File | null, field: AppMediaField) => {
     if (!file) return
@@ -173,6 +175,50 @@ export function useAdminAppEditor(editingSlug: string) {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  const handleGalleryUpload = async (file: File | null) => {
+    if (!file) return
+    setUploadingGallery(true)
+    setError("")
+    try {
+      const result = await uploadAdminImage(file, "app-cover")
+      setForm((current) => ({
+        ...current,
+        gallery: [...current.gallery, result.path],
+      }))
+      toastSuccess("上传成功", "截图已添加")
+    } catch (nextError) {
+      const msg = nextError instanceof Error ? nextError.message : "截图上传失败"
+      setError(msg)
+      toastError("上传失败", msg)
+    } finally {
+      setUploadingGallery(false)
+      if (galleryFileInputRef.current) galleryFileInputRef.current.value = ""
+    }
+  }
+
+  const handleRemoveGalleryImage = async (index: number) => {
+    const sourcePath = String(form.gallery[index] || "").trim()
+    if (!sourcePath) {
+      setForm((current) => ({
+        ...current,
+        gallery: current.gallery.filter((_, i) => i !== index),
+      }))
+      return
+    }
+
+    try {
+      await deleteAdminImage(sourcePath)
+    } catch {
+      // 图片可能不是当前服务可删除路径，不阻断编辑流程
+    }
+
+    setForm((current) => ({
+      ...current,
+      gallery: current.gallery.filter((_, i) => i !== index),
+    }))
+    toastSuccess("删除成功", "截图已移除")
+  }
+
   const applyImportedData = (result: {
     name?: string
     subtitle?: string
@@ -199,9 +245,6 @@ export function useAdminAppEditor(editingSlug: string) {
       }
     })
 
-    if (result.summary?.trim()) {
-      setSummaryContent(result.summary)
-    }
   }
 
   const handleImportFromUrl = async () => {
@@ -256,6 +299,52 @@ export function useAdminAppEditor(editingSlug: string) {
     }
   }
 
+  const handleInsertInlineImages = async (files: File[]) => {
+    if (!files.length) return
+
+    setUploadingInlineImage(true)
+    setError("")
+    setMessage("")
+
+    try {
+      if (editorMode === "html") {
+        const snippets: string[] = []
+        for (const file of files) {
+          const result = await uploadAdminImage(file, "app-cover")
+          const url = resolveAssetUrl(result.path) || result.path
+          snippets.push(`\n<p><img src="${url}" alt="" /></p>\n`)
+        }
+
+        const html = snippets.join("")
+        setForm((current) => {
+          const textarea = summaryTextareaRef.current
+          if (!textarea) return { ...current, summary: `${current.summary}${html}` }
+          return { ...current, summary: insertTextAtCursor(textarea, html) }
+        })
+        setMessage("图片已插入摘要 HTML")
+      } else {
+        setMessage("当前是可视模式，请切换到 HTML 源码模式后插入图片")
+      }
+    } catch (nextError) {
+      const msg = nextError instanceof Error ? nextError.message : "摘要图片上传失败"
+      setError(msg)
+    } finally {
+      setUploadingInlineImage(false)
+    }
+  }
+
+  const handleEditorPaste = async (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = extractImageFiles(event.clipboardData)
+    if (!files.length) return
+
+    event.preventDefault()
+    await handleInsertInlineImages(files)
+  }
+
+  const handleHtmlContentChange = useCallback((content: string) => {
+    setForm((current) => ({ ...current, summary: content }))
+  }, [])
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setSaving(true)
@@ -269,14 +358,14 @@ export function useAdminAppEditor(editingSlug: string) {
         ...restForm,
         subtitle: restForm.subtitle.trim() || restForm.name.trim(),
         pricing: restForm.pricing || pricingOptions[0],
-        summary: summaryContent,
+        summary: restForm.summary,
         size: combineSizeValue(restForm.size, sizeUnit),
         rating: 0,
         downloads: "0",
         updatedAt: new Date().toISOString().slice(0, 10),
         compatibility: form.compatibility,
         platforms: form.platforms,
-        gallery: [],
+        gallery: form.gallery.filter((item) => item.trim().length > 0),
         tags: [form.category].filter(Boolean),
         editorialScore: 0,
         highlights: splitLines(form.highlights),
@@ -290,7 +379,6 @@ export function useAdminAppEditor(editingSlug: string) {
       toastSuccess(editingSlug ? "更新成功" : "创建成功", editingSlug ? "软件已更新" : "软件已创建")
       if (!editingSlug) {
         setForm(initialForm)
-        setSummaryContent(initialForm.summary)
         setSlugTouched(false)
       }
     } catch (nextError) {
@@ -346,13 +434,20 @@ export function useAdminAppEditor(editingSlug: string) {
     coverFileInputRef,
     coverPreview,
     error,
+    editorMode,
     htmlFileInputRef,
+    galleryFileInputRef,
     form,
     handleDelete,
     handleImportFromHtmlFile,
     handleImportFromUrl,
     handleImageUpload,
+    handleGalleryUpload,
+    handleInsertInlineImages,
+    handleEditorPaste,
+    handleHtmlContentChange,
     handleRemoveImage,
+    handleRemoveGalleryImage,
     handlePasteImage,
     handleSubmit,
     iconFileInputRef,
@@ -362,15 +457,17 @@ export function useAdminAppEditor(editingSlug: string) {
     loading,
     message,
     saving,
+    setEditorMode,
     setForm,
     setImportUrl,
     setSlugTouched,
     slugTouched,
-    summaryContent,
-    setSummaryContent,
+    summaryTextareaRef,
     updateCompatibilityForPlatform,
     updateMediaField,
     uploadingCover,
+    uploadingGallery,
+    uploadingInlineImage,
     uploadingIcon,
   }
 }

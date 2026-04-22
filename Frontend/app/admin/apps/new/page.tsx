@@ -4,12 +4,11 @@ import Image from "next/image"
 import { type ReactNode } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, FileCode2, Link2, Package, Plus, Trash2, Upload, WandSparkles } from "lucide-react"
+import { ArrowLeft, Eye, FileCode2, ImagePlus, Link2, Package, Plus, Trash2, Upload, WandSparkles } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { PageHeader } from "@/components/admin/page-header"
-import { TiptapEditor } from "@/components/admin/tiptap-editor"
 import { PageHeaderSkeleton, FormFieldSkeleton } from "@/components/admin/skeleton"
-import { uploadAdminImage } from "@/lib/admin-api"
+import { resolveAssetUrl } from "@/lib/admin-api"
 import {
   extractImageFromClipboardData,
   platformOptions,
@@ -29,12 +28,19 @@ export default function AdminAppEditorPage() {
     coverFileInputRef,
     coverPreview,
     error,
+    editorMode,
+    galleryFileInputRef,
     htmlFileInputRef,
     form,
     handleDelete,
+    handleGalleryUpload,
     handleImportFromHtmlFile,
     handleImportFromUrl,
     handleImageUpload,
+    handleInsertInlineImages,
+    handleEditorPaste,
+    handleHtmlContentChange,
+    handleRemoveGalleryImage,
     handleRemoveImage,
     handlePasteImage,
     handleSubmit,
@@ -45,16 +51,39 @@ export default function AdminAppEditorPage() {
     loading,
     message,
     saving,
+    setEditorMode,
     setForm,
     setImportUrl,
     setSlugTouched,
-    summaryContent,
-    setSummaryContent,
+    summaryTextareaRef,
     updateCompatibilityForPlatform,
     updateMediaField,
     uploadingCover,
+    uploadingGallery,
+    uploadingInlineImage,
     uploadingIcon,
   } = useAdminAppEditor(editingSlug)
+
+  const handleOpenPreviewWindow = () => {
+    const htmlBody = form.summary || "<p style='color:#888'>暂无内容</p>"
+    const html = `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>软件详情预览</title>
+  </head>
+  <body>${htmlBody}</body>
+</html>`
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const win = window.open(url, "_blank", "noopener,noreferrer")
+    if (!win) {
+      URL.revokeObjectURL(url)
+      return
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  }
 
   if (loading) {
     return (
@@ -432,6 +461,78 @@ export default function AdminAppEditorPage() {
             </Field>
           </div>
 
+          <Field label="软件截图">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={uploadingGallery}
+                  onClick={() => galleryFileInputRef.current?.click()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium transition hover:bg-secondary/70 disabled:opacity-50"
+                >
+                  <Upload className="h-4 w-4" />
+                  {uploadingGallery ? "上传中..." : "上传截图"}
+                </button>
+                <input
+                  ref={galleryFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => void handleGalleryUpload(e.target.files?.[0] || null)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm((c) => ({ ...c, gallery: [...c.gallery, ""] }))}
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium transition hover:bg-secondary/70"
+                >
+                  <Plus className="h-4 w-4" />
+                  手动添加地址
+                </button>
+              </div>
+
+              {form.gallery.length ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {form.gallery.map((item, idx) => {
+                    const preview = resolveAssetUrl(item) || item
+                    return (
+                      <div key={`${idx}-${item}`} className="space-y-2 rounded-xl border border-border bg-background p-3">
+                        <div className="relative h-32 overflow-hidden rounded-lg bg-secondary">
+                          {preview ? (
+                            <Image src={preview} alt={`截图 ${idx + 1}`} fill className="object-cover" unoptimized />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">未设置截图地址</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={item}
+                            onChange={(e) =>
+                              setForm((c) => ({
+                                ...c,
+                                gallery: c.gallery.map((g, i) => (i === idx ? e.target.value : g)),
+                              }))
+                            }
+                            className={inputClass}
+                            placeholder="截图地址"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void handleRemoveGalleryImage(idx)}
+                            className="inline-flex items-center justify-center rounded-xl border border-destructive/30 bg-background px-3 py-2 text-destructive transition hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">暂未添加截图</p>
+              )}
+            </div>
+          </Field>
+
           {/* 平台 & 兼容 */}
           <div className="grid gap-6 md:grid-cols-2">
             <Field label="适用平台">
@@ -526,20 +627,60 @@ export default function AdminAppEditorPage() {
           {/* 摘要 */}
           <Field label="摘要说明">
             <div className="space-y-3">
-              <TiptapEditor
-                content={summaryContent}
-                onChange={(content) => {
-                  setSummaryContent(content)
-                  setForm((c) => ({ ...c, summary: content }))
-                }}
-                placeholder="在这里填写软件摘要..."
-                uploadImage={async (file: File) => {
-                  const result = await uploadAdminImage(file, "app-cover")
-                  return result.path
-                }}
-                minHeight="200px"
-              />
-              <p className="text-xs text-muted-foreground">支持富文本编辑，可插入图片</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <ModeButton active={editorMode === "visual"} onClick={() => setEditorMode("visual")}>
+                    <Eye className="h-4 w-4" />
+                    所见即所得预览
+                  </ModeButton>
+                  <ModeButton active={editorMode === "html"} onClick={() => setEditorMode("html")}>
+                    <FileCode2 className="h-4 w-4" />
+                    HTML 源码
+                  </ModeButton>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <button type="button" onClick={handleOpenPreviewWindow} className="admin-secondary-btn px-3 py-1.5 text-xs">
+                    在新窗口预览
+                  </button>
+                  <button
+                    type="button"
+                    disabled={uploadingInlineImage}
+                    onClick={() => {
+                      const input = document.createElement("input")
+                      input.type = "file"
+                      input.accept = "image/*"
+                      input.multiple = true
+                      input.onchange = () => void handleInsertInlineImages(Array.from(input.files || []))
+                      input.click()
+                    }}
+                    className="admin-secondary-btn px-3 py-1.5 text-xs"
+                  >
+                    <ImagePlus className="h-4 w-4" />
+                    {uploadingInlineImage ? "上传中..." : "上传摘要图片"}
+                  </button>
+                </div>
+              </div>
+
+              {editorMode === "visual" ? (
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <p className="mb-3 text-xs text-muted-foreground">可视模式用于预览最终效果；编辑请切换到 HTML 源码模式。</p>
+                  <iframe
+                    title="summary-preview"
+                    srcDoc={form.summary || "<p style='color:#888'>暂无内容</p>"}
+                    className="h-[420px] w-full rounded-lg border border-border bg-white"
+                  />
+                </div>
+              ) : (
+                <textarea
+                  ref={summaryTextareaRef}
+                  value={form.summary}
+                  onChange={(event) => handleHtmlContentChange(event.target.value)}
+                  onPaste={handleEditorPaste}
+                  rows={16}
+                  className={inputClass}
+                  placeholder="可查看并编辑完整 HTML 源码"
+                />
+              )}
             </div>
           </Field>
 
@@ -670,6 +811,22 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <span className="mb-2 block text-sm font-medium text-foreground">{label}</span>
       {children}
     </label>
+  )
+}
+
+function ModeButton({ active, children, onClick }: { active: boolean; children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? "inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          : "inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+      }
+    >
+      {children}
+    </button>
   )
 }
 

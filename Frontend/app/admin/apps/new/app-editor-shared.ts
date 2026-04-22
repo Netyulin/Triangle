@@ -6,6 +6,7 @@ export type SizeUnit = "Kb" | "Mb" | "Gb"
 export type DownloadLink = { name: string; url: string }
 export type DisplayMode = "cover" | "icon"
 export type AppMediaField = "heroImage" | "icon"
+export type EditorMode = "visual" | "html"
 
 export const pricingOptions = ["免费", "破解版", "买断制", "订阅制"] as const
 export const platformOptions: Platform[] = ["Windows", "Macos", "IOS", "Android", "Linux"]
@@ -38,6 +39,7 @@ export const initialForm = {
   accessLevel: "free",
   platforms: ["Windows"] as Platform[],
   compatibility: ["PC"] as Compatibility[],
+  gallery: [] as string[],
   downloadLinks: defaultDownloadLinks,
   displayMode: "icon" as DisplayMode,
 }
@@ -62,6 +64,18 @@ export function extractImageFromClipboardData(data: DataTransfer | null) {
   return null
 }
 
+export function extractImageFiles(data: DataTransfer | null) {
+  if (!data) return []
+
+  const files: File[] = []
+  for (const item of Array.from(data.items || [])) {
+    if (!item.type.startsWith("image/")) continue
+    const file = item.getAsFile()
+    if (file) files.push(file)
+  }
+  return files
+}
+
 export async function readClipboardImageFile() {
   if (typeof navigator === "undefined" || !navigator.clipboard?.read) {
     return null
@@ -82,6 +96,12 @@ export function splitLines(value: string) {
     .split(/[\n\r]+/)
     .map((item) => item.trim())
     .filter(Boolean)
+}
+
+export function insertTextAtCursor(textarea: HTMLTextAreaElement, value: string) {
+  const start = textarea.selectionStart ?? textarea.value.length
+  const end = textarea.selectionEnd ?? textarea.value.length
+  return `${textarea.value.slice(0, start)}${value}${textarea.value.slice(end)}`
 }
 
 export function normalizeDownloadLinks(items: DownloadLink[]) {
