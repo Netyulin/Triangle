@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, AlertCircle, Download } from 'lucide-react';
 import { Navbar } from '@/components/navbar';
@@ -18,9 +18,17 @@ type DownloadLink = { name: string; url: string };
 function accessMessage(reason: string) {
   if (reason === 'login required') return '登录后才能继续下载。';
   if (reason === 'membership not enough') return '当前会员等级不足，请先升级会员。';
-  if (reason === 'daily quota exhausted') return '今日下载数已达限制。';
+  if (reason === 'daily quota exhausted') return '今日下载次数已达限制。';
   if (reason === 'download disabled') return '该软件当前暂时关闭下载。';
   return '当前暂时无法下载。';
+}
+
+function getMembershipRank(level?: string) {
+  const normalized = String(level || '').trim().toLowerCase();
+  if (normalized === 'supreme' || normalized === 'vip') return 3;
+  if (normalized === 'lifetime' || normalized === 'premium') return 2;
+  if (normalized === 'sponsor' || normalized === 'member') return 1;
+  return 0;
 }
 
 export default function DownloadInterstitialPage() {
@@ -46,7 +54,7 @@ export default function DownloadInterstitialPage() {
       try {
         const [info, access] = await Promise.all([
           fetchDownloadInfo(slug),
-          request<AppAccessPayload>(`/api/apps/${slug}/access`, token ? { token } : {})
+          request<AppAccessPayload>(`/api/apps/${slug}/access`, token ? { token } : {}),
         ]);
         setDownloadInfo(info);
         setAccessInfo(access);
@@ -90,11 +98,12 @@ export default function DownloadInterstitialPage() {
 
   const remainingDownloads = accessInfo?.userPermissions.remainingDownloads ?? 0;
   const isLimitReached = accessInfo?.downloadPermission.reason === 'daily quota exhausted';
-  const canShowCountdown = Boolean(accessInfo?.downloadPermission.allowed) && !isLimitReached && resolvedLinks.length > 0;
-  const title = downloadInfo?.name || slug || '下载';
+  const skipCountdown = getMembershipRank(accessInfo?.userPermissions.membershipLevel) >= 1;
+  const canDirectDownload = Boolean(accessInfo?.downloadPermission.allowed) && !isLimitReached && resolvedLinks.length > 0 && skipCountdown;
+  const canShowCountdown = Boolean(accessInfo?.downloadPermission.allowed) && !isLimitReached && resolvedLinks.length > 0 && !skipCountdown;
 
   const handleLinkClick = (url: string) => {
-    if (!countdownReady) return;
+    if (!countdownReady && !skipCountdown) return;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -207,13 +216,37 @@ export default function DownloadInterstitialPage() {
                 </div>
               </div>
             </div>
+          ) : canDirectDownload ? (
+            <div className="w-full rounded-3xl border border-border bg-card p-6 shadow-sm">
+              <div className="mx-auto w-full max-w-md space-y-4 text-center">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  赞助会员及以上无需等待，可直接点击下载。
+                </div>
+                <div className="grid gap-3">
+                  {resolvedLinks.map((item) => (
+                    <button
+                      key={item.url}
+                      type="button"
+                      onClick={() => handleLinkClick(item.url)}
+                      className="inline-flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-secondary"
+                    >
+                      <span>{item.name}</span>
+                      <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                        <Download className="h-3.5 w-3.5" />
+                        点击下载
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="w-full rounded-2xl border border-border bg-card px-4 py-5 text-center text-sm text-muted-foreground">
               {accessMessage(accessInfo.downloadPermission.reason)}
             </div>
           )}
 
-          {ADSENSE_SLOT_IDS.triangle_download_interstitial && adSwitches.triangle_download_interstitial ? (
+          {ADSENSE_SLOT_IDS.triangle_download_interstitial && adSwitches.triangle_download_interstitial && !skipCountdown ? (
             <AdSenseSlot
               slotId={ADSENSE_SLOT_IDS.triangle_download_interstitial}
               width={320}

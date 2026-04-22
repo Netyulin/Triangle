@@ -26,6 +26,14 @@ function accessMessage(reason: string) {
 
 const reportReasonOptions = ["链接已失效", "提取信息有误", "压缩密码不对"] as const
 
+function getMembershipRank(level?: string) {
+  const normalized = String(level || "").trim().toLowerCase()
+  if (normalized === "supreme" || normalized === "vip") return 3
+  if (normalized === "lifetime" || normalized === "premium") return 2
+  if (normalized === "sponsor" || normalized === "member") return 1
+  return 0
+}
+
 type AppDetailCompat = AppSummary & {
   shortDescription?: string
   averageRating?: number
@@ -63,6 +71,7 @@ export default function SoftwareDetailPage() {
   const slug = decodeURIComponent(pathname.split("/").filter(Boolean).pop() || "")
   const downloadPermission = access?.downloadPermission ?? { allowed: false, reason: "", requiresLogin: true }
   const downloadLinks = useMemo(() => access?.downloadLinks ?? [], [access?.downloadLinks])
+  const skipDownloadCountdown = getMembershipRank(access?.userPermissions?.membershipLevel) >= 1
   const primaryDownload = downloadLinks[0]?.url || access?.downloadUrl || app?.downloadUrl || ""
   const resolvedDownloadLinks = downloadPermission.allowed
     ? downloadLinks.length > 0
@@ -195,7 +204,7 @@ export default function SoftwareDetailPage() {
   const openDownloadFlow = () => {
     if (!primaryDownload) return
     setDownloadOpen(true)
-    setCountdownReady(false)
+    setCountdownReady(skipDownloadCountdown)
     setReportExpanded(false)
     setReportNetdisk(downloadLinks[0]?.name ?? "")
     setReportReason(reportReasonOptions[0])
@@ -204,7 +213,7 @@ export default function SoftwareDetailPage() {
   }
 
   const handleDownloadLink = (url: string) => {
-    if (!url || !countdownReady) return
+    if (!url || (!countdownReady && !skipDownloadCountdown)) return
 
     window.open(url, "_blank", "noopener,noreferrer")
   }
@@ -526,16 +535,22 @@ return (
             </div>
           ) : downloadPermission.allowed && resolvedDownloadLinks.length > 0 ? (
             <div className="space-y-4">
-              <div className="space-y-3">
-                <DownloadCountdown
-                  seconds={5}
-                  softwareName={app?.name ?? slug}
-                  onComplete={() => setCountdownReady(true)}
-                />
-              </div>
+              {!skipDownloadCountdown ? (
+                <div className="space-y-3">
+                  <DownloadCountdown
+                    seconds={5}
+                    softwareName={app?.name ?? slug}
+                    onComplete={() => setCountdownReady(true)}
+                  />
+                </div>
+              ) : (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  赞助会员及以上无需等待，可直接点击下载。
+                </div>
+              )}
               <div className="space-y-3">
                 <p className="text-center text-sm text-muted-foreground">
-                  倒计时结束后，下面的下载地址才可以点击。
+                  {skipDownloadCountdown ? "你当前账号可直接下载。" : "倒计时结束后，下面的下载地址才可以点击。"}
                 </p>
                 <div className="grid gap-3">
                   {resolvedDownloadLinks.map((item) => (
@@ -543,13 +558,13 @@ return (
                       key={item.url}
                       type="button"
                       onClick={() => handleDownloadLink(item.url)}
-                      disabled={!countdownReady}
+                      disabled={!skipDownloadCountdown && !countdownReady}
                       className="inline-flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <span>{item.name}</span>
                       <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                         <Download className="h-3.5 w-3.5" />
-                        {countdownReady ? "点击下载" : "倒计时中"}
+                        {skipDownloadCountdown || countdownReady ? "点击下载" : "倒计时中"}
                       </span>
                     </button>
                   ))}
