@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import DownloadCountdown from "@/components/download/DownloadCountdown"
 import { useAppContext } from "@/components/app-provider"
 import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
-import { resolveAssetUrl } from "@/lib/utils"
+import { buildAuthUrl, resolveAssetUrl } from "@/lib/utils"
 import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
 
 function accessMessage(reason: string) {
@@ -179,7 +179,7 @@ export default function SoftwareDetailPage() {
   const handleFavorite = async () => {
     if (!slug) return
     if (!token) {
-      router.push("/login")
+      router.push(buildAuthUrl("/login", pathname || "/"))
       return
     }
 

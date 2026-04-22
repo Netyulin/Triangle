@@ -8,6 +8,7 @@ import { Navbar } from "@/components/navbar"
 import { SiteLogo } from "@/components/site-logo"
 import { useAppContext } from "@/components/app-provider"
 import { request, type AuthPayload } from "@/lib/api"
+import { buildAuthUrl, getSafeRedirectTarget } from "@/lib/utils"
 import { CreditCard, Eye, EyeOff, Heart, List, MessageSquare } from "lucide-react"
 
 const features = [
@@ -27,6 +28,8 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const redirectTarget = getSafeRedirectTarget(searchParams.get("redirect"), "/profile")
+  const registerHref = buildAuthUrl("/register", redirectTarget)
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -47,8 +50,7 @@ function LoginContent() {
         }),
       })
       saveSession(payload)
-      const redirect = searchParams.get("redirect")
-      router.push(redirect || "/profile")
+      router.push(redirectTarget)
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "登录失败，请稍后再试。")
     } finally {
@@ -137,7 +139,7 @@ function LoginContent() {
 
               <p className="text-center text-sm text-muted-foreground">
                 还没有账号？
-                <Link href="/register" className="ml-1 font-semibold text-accent hover:underline">
+                <Link href={registerHref} className="ml-1 font-semibold text-accent hover:underline">
                   去注册
                 </Link>
               </p>

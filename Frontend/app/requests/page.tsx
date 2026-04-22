@@ -1,12 +1,12 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { useAppContext } from "@/components/app-provider"
 import { request, type RequestItem, type RequestListPayload } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { buildAuthUrl, cn } from "@/lib/utils"
 import { CheckCircle2, Clock3, LoaderCircle, MessageSquare, Plus, RefreshCw, Search, ThumbsUp, X, XCircle } from "lucide-react"
 
 type FilterKey = "all" | RequestItem["status"]
@@ -26,6 +26,7 @@ function statusMeta(status: RequestItem["status"]) {
 }
 
 export default function RequestsPage() {
+  const pathname = usePathname()
   const router = useRouter()
   const { token, user, refreshSession } = useAppContext()
 
@@ -92,7 +93,7 @@ export default function RequestsPage() {
 
   const openMine = () => {
     if (!token) {
-      router.push("/login")
+      router.push(buildAuthUrl("/login", pathname || "/requests"))
       return
     }
     setShowMine((value) => !value)
@@ -100,7 +101,7 @@ export default function RequestsPage() {
 
   const handleVote = async (item: RequestItem) => {
     if (!token) {
-      router.push("/login")
+      router.push(buildAuthUrl("/login", pathname || "/requests"))
       return
     }
 

@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import { Bookmark, Clock3, RefreshCw } from "lucide-react"
 
 import { AppIcon } from "@/components/app-icon"
@@ -11,10 +11,11 @@ import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { useAppContext } from "@/components/app-provider"
 import { request, type FavoritesPayload, type PostSummary } from "@/lib/api"
-import { resolveAssetUrl } from "@/lib/utils"
+import { buildAuthUrl, resolveAssetUrl } from "@/lib/utils"
 
 export default function ArticleDetailPage() {
   const params = useParams<{ slug: string }>()
+  const pathname = usePathname()
   const router = useRouter()
   const { token } = useAppContext()
 
@@ -56,7 +57,7 @@ export default function ArticleDetailPage() {
   const handleFavorite = async () => {
     if (!slug) return
     if (!token) {
-      router.push("/login")
+      router.push(buildAuthUrl("/login", pathname || "/"))
       return
     }
 

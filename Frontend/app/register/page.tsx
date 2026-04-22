@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useMemo, useState } from "react"
+import { FormEvent, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, Eye, EyeOff } from "lucide-react"
@@ -10,7 +10,7 @@ import { AvatarPicker } from "@/components/avatar-picker"
 import { useAppContext } from "@/components/app-provider"
 import { request, type AuthPayload } from "@/lib/api"
 import { type AvatarGender } from "@/lib/avatar-random"
-import { cn } from "@/lib/utils"
+import { buildAuthUrl, getSafeRedirectTarget, cn } from "@/lib/utils"
 
 const genderOptions: Array<{ value: AvatarGender; label: string }> = [
   { value: "male", label: "男" },
@@ -47,6 +47,15 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [redirectQuery, setRedirectQuery] = useState("")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    setRedirectQuery(new URLSearchParams(window.location.search).get("redirect") || "")
+  }, [])
+
+  const redirectTarget = getSafeRedirectTarget(redirectQuery, "/profile")
+  const loginHref = buildAuthUrl("/login", redirectTarget)
 
   const strength = useMemo(() => getStrength(form.password), [form.password])
   const strengthText = ["", "很弱", "偏弱", "中等", "较强", "很强"][strength]
@@ -95,7 +104,7 @@ export default function RegisterPage() {
       }
 
       saveSession(nextPayload)
-      router.push("/profile")
+      router.push(redirectTarget)
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "注册失败，请稍后再试。")
     } finally {
@@ -125,7 +134,7 @@ export default function RegisterPage() {
               <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="mt-4 text-base font-semibold text-foreground">注册暂未开放</p>
               <p className="mt-2 text-sm text-muted-foreground">已有账号的话，可以直接前往登录。</p>
-              <Link href="/login" className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
+              <Link href={loginHref} className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
                 去登录
               </Link>
             </div>
@@ -265,7 +274,7 @@ export default function RegisterPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 已经有账号了？
-                <Link href="/login" className="ml-1 font-semibold text-accent hover:underline">
+                <Link href={loginHref} className="ml-1 font-semibold text-accent hover:underline">
                   去登录
                 </Link>
               </p>

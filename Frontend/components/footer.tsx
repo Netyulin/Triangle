@@ -1,13 +1,31 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
+import { usePathname } from "next/navigation"
 import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { Separator } from "@/components/ui/separator"
+import { buildAuthUrl } from "@/lib/utils"
 
 export function Footer() {
   const { siteSettings, t } = useAppContext()
+  const pathname = usePathname()
+  const [currentSearch, setCurrentSearch] = useState("")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentSearch(window.location.search || "")
+    }
+  }, [pathname])
+
+  const currentPath = useMemo(() => {
+    const basePath = pathname || "/"
+    return currentSearch ? `${basePath}${currentSearch}` : basePath
+  }, [pathname, currentSearch])
+  const loginHref = buildAuthUrl("/login", currentPath)
+  const registerHref = buildAuthUrl("/register", currentPath)
 
   const footerLinks = {
     [t.footerLinks]: [
@@ -17,8 +35,8 @@ export function Footer() {
       { label: t.navRequests, href: "/requests" },
     ],
     [t.footerAccount]: [
-      { label: t.login, href: "/login" },
-      { label: t.register, href: "/register" },
+      { label: t.login, href: loginHref },
+      { label: t.register, href: registerHref },
       { label: t.profile, href: "/profile" },
       { label: t.navSearch, href: "/search" },
     ],

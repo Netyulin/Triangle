@@ -48,3 +48,24 @@ export function looksLikeImageUrl(value: string | null | undefined) {
   if (!source) return false
   return /^https?:\/\//i.test(source) || source.startsWith('data:image/') || source.startsWith('/')
 }
+
+export function getSafeRedirectTarget(redirect: string | null | undefined, fallback = '/profile') {
+  const source = String(redirect ?? '').trim()
+  if (!source) return fallback
+  if (!source.startsWith('/') || source.startsWith('//')) return fallback
+
+  try {
+    const parsed = new URL(source, 'http://localhost')
+    if (parsed.origin !== 'http://localhost') return fallback
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return fallback
+  }
+}
+
+export function buildAuthUrl(path: '/login' | '/register', redirect: string | null | undefined) {
+  const target = getSafeRedirectTarget(redirect, '')
+  if (!target) return path
+  if (target.startsWith('/login') || target.startsWith('/register')) return path
+  return `${path}?redirect=${encodeURIComponent(target)}`
+}

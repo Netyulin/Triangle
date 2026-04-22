@@ -25,7 +25,7 @@ import {
   type User,
 } from "@/lib/api"
 import { type AvatarGender } from "@/lib/avatar-random"
-import { cn } from "@/lib/utils"
+import { buildAuthUrl, cn } from "@/lib/utils"
 
 type TabKey = "profile" | "favorites" | "requests" | "recharge" | "messages"
 
@@ -497,7 +497,7 @@ function ProfileContent() {
             <UserIcon className="mx-auto h-10 w-10 text-muted-foreground" />
             <h1 className="mt-4 text-2xl font-black text-foreground">请先登录</h1>
             <p className="mt-2 text-sm text-muted-foreground">登录后才能查看和修改自己的头像、资料与记录。</p>
-            <Link href="/login" className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
+            <Link href={buildAuthUrl("/login", "/profile")} className="mt-6 inline-block rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
               去登录
             </Link>
           </section>

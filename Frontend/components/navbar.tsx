@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ChevronDown, ClipboardList, FileText, Heart, LogOut, Menu, Moon, PenTool, Search, Sun, User, X, Mail, MessageCircle } from "lucide-react"
@@ -9,7 +9,7 @@ import { useAppContext } from "@/components/app-provider"
 import { SiteLogo } from "@/components/site-logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { request } from "@/lib/api"
-import { cn, resolveAssetUrl } from "@/lib/utils"
+import { buildAuthUrl, cn, resolveAssetUrl } from "@/lib/utils"
 
 type CategoryItem = {
   name: string
@@ -38,6 +38,7 @@ export function Navbar() {
   const [articleCategories, setArticleCategories] = useState<CategoryItem[]>([])
   const [openDropdownHref, setOpenDropdownHref] = useState<string | null>(null)
   const [mobileDropdownHref, setMobileDropdownHref] = useState<string | null>(null)
+  const [currentSearch, setCurrentSearch] = useState("")
 
   const navItems: NavItem[] = [
     { label: t.navHome, href: "/" },
@@ -68,6 +69,9 @@ export function Navbar() {
     setUserMenuOpen(false)
     setOpenDropdownHref(null)
     setMobileDropdownHref(null)
+    if (typeof window !== "undefined") {
+      setCurrentSearch(window.location.search || "")
+    }
   }, [pathname])
 
   useEffect(() => {
@@ -120,6 +124,12 @@ export function Navbar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
   const displayName = user ? user.name || user.username : ""
   const displayInitial = displayName.slice(0, 1).toUpperCase()
+  const currentPath = useMemo(() => {
+    const basePath = pathname || "/"
+    return currentSearch ? `${basePath}${currentSearch}` : basePath
+  }, [pathname, currentSearch])
+  const loginHref = buildAuthUrl("/login", currentPath)
+  const registerHref = buildAuthUrl("/register", currentPath)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(248,250,252,0.82))] shadow-[0_12px_28px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl supports-[backdrop-filter]:bg-[linear-gradient(180deg,rgba(248,250,252,0.9),rgba(248,250,252,0.74))] dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(15,23,42,0.76))] dark:shadow-[0_16px_36px_-26px_rgba(2,6,23,0.8)] supports-[backdrop-filter]:dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.86),rgba(15,23,42,0.68))]">
@@ -337,13 +347,13 @@ export function Navbar() {
           ) : (
             <div className="flex items-center gap-2">
               <Link
-                href="/login"
+                href={loginHref}
                 className="hidden rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:block"
               >
                 {t.login}
               </Link>
               <Link
-                href="/register"
+                href={registerHref}
                 className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 {t.register}

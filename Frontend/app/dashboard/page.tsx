@@ -7,6 +7,7 @@ import { AppSigningCard } from "@/components/dashboard/app-signing-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAppContext } from "@/components/app-provider"
+import { buildAuthUrl } from "@/lib/utils"
 
 export default function DashboardPage() {
   const { token, user } = useAppContext()
@@ -25,7 +26,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <Button asChild>
-                <Link href="/login">前往登录</Link>
+                <Link href={buildAuthUrl("/login", "/dashboard")}>前往登录</Link>
               </Button>
             </CardContent>
           </Card>
