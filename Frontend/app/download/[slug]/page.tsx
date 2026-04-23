@@ -13,7 +13,7 @@ import DownloadSkeleton from '@/components/download/DownloadSkeleton';
 import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, fetchDownloadInfo, request, type AppAccessPayload, type DownloadInfo } from '@/lib/api';
 import { useAppContext } from '@/components/app-provider';
 
-type DownloadLink = { name: string; url: string };
+type DownloadLink = { name: string; url: string; extractionCode?: string };
 
 function accessMessage(reason: string) {
   if (reason === 'login required') return '登录后才能继续下载。';
@@ -29,6 +29,15 @@ function getMembershipRank(level?: string) {
   if (normalized === 'lifetime' || normalized === 'premium') return 2;
   if (normalized === 'sponsor' || normalized === 'member') return 1;
   return 0;
+}
+
+function resolveExtractionCode(link: { url?: string | null; extractionCode?: string | null }) {
+  const manualCode = String(link.extractionCode || '').trim();
+  if (manualCode) return manualCode;
+  const rawUrl = String(link.url || '').trim();
+  if (!rawUrl) return '';
+  const fallback = rawUrl.slice(-4).trim();
+  return fallback.length === 4 ? fallback : '';
 }
 
 export default function DownloadInterstitialPage() {
@@ -93,7 +102,7 @@ export default function DownloadInterstitialPage() {
       return [];
     }
 
-    return [{ name: '默认下载地址', url: fallbackUrl }];
+    return [{ name: '默认下载地址', url: fallbackUrl, extractionCode: '' }];
   }, [accessInfo?.downloadLinks, accessInfo?.downloadUrl, downloadInfo?.downloadUrl]);
 
   const remainingDownloads = accessInfo?.userPermissions.remainingDownloads ?? 0;
@@ -206,7 +215,10 @@ export default function DownloadInterstitialPage() {
                       disabled={!countdownReady}
                       className="inline-flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <span>{item.name}</span>
+                      <span>
+                        {item.name}
+                        {resolveExtractionCode(item) ? `（提取码:${resolveExtractionCode(item)}）` : ''}
+                      </span>
                       <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                         <Download className="h-3.5 w-3.5" />
                         {countdownReady ? '点击下载' : '倒计时中'}
@@ -230,7 +242,10 @@ export default function DownloadInterstitialPage() {
                       onClick={() => handleLinkClick(item.url)}
                       className="inline-flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-secondary"
                     >
-                      <span>{item.name}</span>
+                      <span>
+                        {item.name}
+                        {resolveExtractionCode(item) ? `（提取码:${resolveExtractionCode(item)}）` : ''}
+                      </span>
                       <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                         <Download className="h-3.5 w-3.5" />
                         点击下载

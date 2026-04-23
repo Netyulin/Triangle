@@ -713,7 +713,7 @@ export default function AdminAppEditorPage() {
               {form.downloadLinks.map((link, idx) => (
                 <div
                   key={idx}
-                  className="grid gap-3 rounded-xl border border-border bg-background p-4 md:grid-cols-[180px_minmax(0,1fr)_auto]"
+                  className="grid gap-3 rounded-xl border border-border bg-background p-4 md:grid-cols-[160px_minmax(0,1fr)_140px_auto]"
                 >
                   <input
                     value={link.name}
@@ -741,6 +741,19 @@ export default function AdminAppEditorPage() {
                     className={inputClass}
                     placeholder="下载链接"
                   />
+                  <input
+                    value={link.extractionCode || ""}
+                    onChange={(e) =>
+                      setForm((c) => ({
+                        ...c,
+                        downloadLinks: c.downloadLinks.map((item, i) =>
+                          i === idx ? { ...item, extractionCode: e.target.value } : item
+                        ),
+                      }))
+                    }
+                    className={inputClass}
+                    placeholder="提取码(可选)"
+                  />
                   <button
                     type="button"
                     onClick={() =>
@@ -761,7 +774,7 @@ export default function AdminAppEditorPage() {
                 onClick={() =>
                   setForm((c) => ({
                     ...c,
-                    downloadLinks: [...c.downloadLinks, { name: "", url: "" }],
+                    downloadLinks: [...c.downloadLinks, { name: "", url: "", extractionCode: "" }],
                   }))
                 }
                 className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium transition hover:bg-secondary/70"

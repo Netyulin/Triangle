@@ -1,9 +1,9 @@
-"use client"
+﻿"use client"
 
 export type Platform = "Windows" | "Macos" | "IOS" | "Android" | "Linux"
 export type Compatibility = "PC" | "Apple Silicon" | "Intel芯片" | "移动平台"
 export type SizeUnit = "Kb" | "Mb" | "Gb"
-export type DownloadLink = { name: string; url: string }
+export type DownloadLink = { name: string; url: string; extractionCode?: string }
 export type DisplayMode = "cover" | "icon"
 export type AppMediaField = "heroImage" | "icon"
 export type EditorMode = "visual" | "html"
@@ -14,9 +14,9 @@ export const sizeUnitOptions: SizeUnit[] = ["Kb", "Mb", "Gb"]
 export const compatibilityOptions: Compatibility[] = ["PC", "Apple Silicon", "Intel芯片", "移动平台"]
 
 export const defaultDownloadLinks: DownloadLink[] = [
-  { name: "百度网盘", url: "" },
-  { name: "夸克网盘", url: "" },
-  { name: "迅雷网盘", url: "" },
+  { name: "百度网盘", url: "", extractionCode: "" },
+  { name: "夸克网盘", url: "", extractionCode: "" },
+  { name: "迅雷网盘", url: "", extractionCode: "" },
 ]
 
 export const initialForm = {
@@ -109,6 +109,7 @@ export function normalizeDownloadLinks(items: DownloadLink[]) {
     .map((item, index) => ({
       name: item.name.trim() || `网盘 ${index + 1}`,
       url: item.url.trim(),
+      extractionCode: String(item.extractionCode || "").trim(),
     }))
     .filter((item) => item.name || item.url)
 }

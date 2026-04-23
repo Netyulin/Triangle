@@ -43,6 +43,17 @@ function getMembershipRank(level?: string) {
   return 0
 }
 
+function resolveExtractionCode(link: { url?: string | null; extractionCode?: string | null }) {
+  const manualCode = String(link.extractionCode || "").trim()
+  if (manualCode) return manualCode
+
+  const rawUrl = String(link.url || "").trim()
+  if (!rawUrl) return ""
+
+  const fallback = rawUrl.slice(-4).trim()
+  return fallback.length === 4 ? fallback : ""
+}
+
 type AppDetailCompat = AppSummary & {
   shortDescription?: string
   averageRating?: number
@@ -86,7 +97,7 @@ export default function SoftwareDetailPage() {
     ? downloadLinks.length > 0
       ? downloadLinks
       : primaryDownload
-        ? [{ name: "默认下载地址", url: primaryDownload }]
+        ? [{ name: "默认下载地址", url: primaryDownload, extractionCode: "" }]
         : []
     : []
 
@@ -604,7 +615,10 @@ return (
                       disabled={!skipDownloadCountdown && !countdownReady}
                       className="inline-flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <span>{item.name}</span>
+                      <span>
+                        {item.name}
+                        {resolveExtractionCode(item) ? `（提取码:${resolveExtractionCode(item)}）` : ""}
+                      </span>
                       <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                         <Download className="h-3.5 w-3.5" />
                         {skipDownloadCountdown || countdownReady ? "点击下载" : "倒计时中"}

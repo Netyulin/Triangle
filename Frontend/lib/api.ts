@@ -118,7 +118,7 @@ export type AppSummary = {
   accessLevel: string
   isDownloadable: boolean
   downloadUrl: string | null
-  downloadLinks: Array<{ name: string; url: string }>
+  downloadLinks: Array<{ name: string; url: string; extractionCode?: string }>
   seoTitle?: string | null
   seoDescription?: string | null
 }
@@ -289,7 +289,7 @@ export type AppAccessPayload = {
   accessLevel: string
   isDownloadable: boolean
   downloadUrl: string | null
-  downloadLinks: Array<{ name: string; url: string }>
+  downloadLinks: Array<{ name: string; url: string; extractionCode?: string }>
   downloadPermission: {
     allowed: boolean
     reason: string
@@ -392,7 +392,7 @@ export type DownloadInfo = {
   downloadUrl: string
   /** CPS 联盟跳转链接 */
   affiliateLink: string
-  downloadLinks?: Array<{ name: string; url: string }>
+  downloadLinks?: Array<{ name: string; url: string; extractionCode?: string }>
 }
 
 export function getToken() {

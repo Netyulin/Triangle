@@ -95,6 +95,7 @@ export function useAdminAppEditor(editingSlug: string) {
               (Array.isArray(app.downloadLinks) && app.downloadLinks.length ? app.downloadLinks : defaultDownloadLinks).map((item) => ({
                 name: item.name || "",
                 url: item.url || "",
+                extractionCode: item.extractionCode || "",
               })),
             ),
             displayMode:

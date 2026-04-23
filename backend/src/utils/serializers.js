@@ -81,13 +81,17 @@ function normalizeDownloadLinkEntry(entry, index) {
 
   const name = normalizeString(entry.name || entry.title || '').trim() || (index === 0 ? '百度网盘' : `网盘 ${index + 1}`);
   const url = normalizeString(entry.url || entry.href || '').trim();
+  const extractionCode = normalizeString(entry.extractionCode || entry.extractCode || entry.code || '').trim();
+  const affiliateUrl = normalizeString(entry.affiliateUrl || '').trim();
   if (!url) {
     return null;
   }
 
   return {
     name,
-    url
+    url,
+    ...(extractionCode ? { extractionCode } : {}),
+    ...(affiliateUrl ? { affiliateUrl } : {})
   };
 }
 
