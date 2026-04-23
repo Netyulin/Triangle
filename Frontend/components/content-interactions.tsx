@@ -357,16 +357,7 @@ export function ContentInteractions({
           </div>
           {ratingError ? <p className="mt-2 text-xs text-destructive">{ratingError}</p> : null}
           {!token ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              登录后可评分：
-              <Link href={buildAuthUrl("/login")} className="mx-1 text-primary underline">
-                登录
-              </Link>
-              /
-              <Link href={buildAuthUrl("/register")} className="mx-1 text-primary underline">
-                注册
-              </Link>
-            </p>
+            <p className="mt-2 text-xs text-muted-foreground">登录后可评分</p>
           ) : null}
         </div>
       ) : null}
@@ -431,4 +422,3 @@ export function ContentInteractions({
     </section>
   )
 }
-
