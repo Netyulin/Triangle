@@ -69,6 +69,10 @@ export type AuthPayload = {
   permissions: UserPermissions
 }
 
+export type MessagePayload = {
+  message?: string
+}
+
 export type SiteSettings = {
   siteName: string
   siteDescription: string
@@ -525,6 +529,27 @@ export async function trackAdClick(adId: string, slotId?: string) {
 
 export async function fetchDownloadInfo(slug: string) {
   return request<DownloadInfo>(`/api/download/${slug}`)
+}
+
+export async function forgotPassword(email: string) {
+  return request<MessagePayload>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  })
+}
+
+export async function verifyResetPasswordToken(token: string) {
+  return request<{ valid: boolean }>("/api/auth/reset-password/verify", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  })
+}
+
+export async function resetPasswordByToken(token: string, password: string) {
+  return request<MessagePayload>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+  })
 }
 
 export async function fetchAppRating(slug: string, token?: string) {

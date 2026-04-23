@@ -10,7 +10,7 @@ import { AvatarPicker } from "@/components/avatar-picker"
 import { useAppContext } from "@/components/app-provider"
 import { request, type AuthPayload } from "@/lib/api"
 import { type AvatarGender } from "@/lib/avatar-random"
-import { buildAuthUrl, getSafeRedirectTarget, cn } from "@/lib/utils"
+import { buildAuthUrl, cn, getSafeRedirectTarget } from "@/lib/utils"
 
 const genderOptions: Array<{ value: AvatarGender; label: string }> = [
   { value: "male", label: "男" },
@@ -149,6 +149,7 @@ export default function RegisterPage() {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">用户名</label>
                   <input
+                    required
                     value={form.username}
                     onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
                     placeholder="建议 3 到 30 个字符"
@@ -158,6 +159,7 @@ export default function RegisterPage() {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">显示名称</label>
                   <input
+                    required
                     value={form.name}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                     placeholder="你希望展示的名字"
@@ -170,11 +172,16 @@ export default function RegisterPage() {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">邮箱</label>
                   <input
+                    type="email"
+                    required
                     value={form.email}
                     onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
                     placeholder="请输入常用邮箱"
                     className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
                   />
+                  <p className="mt-2 text-xs font-medium text-red-500">
+                    找回密码用，非常重要，请谨慎填写。
+                  </p>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">性别</label>
@@ -202,6 +209,7 @@ export default function RegisterPage() {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">邀请码</label>
                   <input
+                    required
                     value={form.inviteCode}
                     onChange={(event) => setForm((current) => ({ ...current, inviteCode: event.target.value }))}
                     placeholder="请输入邀请码"
@@ -216,6 +224,7 @@ export default function RegisterPage() {
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
+                      required
                       value={form.password}
                       onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
                       placeholder="至少 8 位"
@@ -246,6 +255,7 @@ export default function RegisterPage() {
                   <div className="relative">
                     <input
                       type={showConfirm ? "text" : "password"}
+                      required
                       value={form.confirmPassword}
                       onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
                       placeholder="请再输入一次密码"

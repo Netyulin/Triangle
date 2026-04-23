@@ -12,9 +12,9 @@ import { buildAuthUrl, getSafeRedirectTarget } from "@/lib/utils"
 import { CreditCard, Eye, EyeOff, Heart, List, MessageSquare } from "lucide-react"
 
 const features = [
-  { icon: Heart, title: "收藏同步", desc: "登录后可以统一查看自己收藏的软件和文章。" },
+  { icon: Heart, title: "收藏同步", desc: "登录后可统一查看自己收藏的软件和文章。" },
   { icon: List, title: "需求记录", desc: "随时查看自己提交过的需求和处理进度。" },
-  { icon: MessageSquare, title: "互动记录", desc: "投票、评论和浏览记录都会保存在账号里。" },
+  { icon: MessageSquare, title: "互动记录", desc: "投票、评论和浏览记录都会保存到账号里。" },
   { icon: CreditCard, title: "会员信息", desc: "可查看会员状态、下载次数和充值记录。" },
 ]
 
@@ -124,6 +124,11 @@ function LoginContent() {
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
+                </div>
+                <div className="mt-2 text-right">
+                  <Link href="/forgot-password" className="text-xs font-medium text-accent hover:underline">
+                    忘记密码？
+                  </Link>
                 </div>
               </div>
 
