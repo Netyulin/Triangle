@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
@@ -21,6 +21,12 @@ type AppContextValue = {
 
 const AppContext = createContext<AppContextValue | null>(null)
 const SITE_SETTINGS_UPDATED_EVENT = "triangle-site-settings-updated"
+const AUTH_ERROR_MESSAGES = new Set(["login required", "token expired", "invalid token", "user not found"])
+
+function isAuthFailure(error: unknown) {
+  if (!(error instanceof Error)) return false
+  return AUTH_ERROR_MESSAGES.has(error.message.trim().toLowerCase())
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -90,7 +96,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user)
       setPermissions(data.permissions)
       await refreshUnreadCount()
-    } catch {
+    } catch (error) {
+      if (isAuthFailure(error)) {
+        clearToken()
+        setTokenState("")
+        setUser(null)
+        setPermissions(null)
+        setUnreadCount(0)
+        return
+      }
       // 网络异常时保留 token，下次访问会自动重试
     }
   }
@@ -132,8 +146,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }).catch(() => {})
     }
 
-    void refreshUnreadCount()
-  }, [pathname])
+    if (token && user) {
+      void refreshUnreadCount()
+    }
+  }, [pathname, token, user])
 
   const saveSession = (payload: AuthPayload) => {
     setToken(payload.token)

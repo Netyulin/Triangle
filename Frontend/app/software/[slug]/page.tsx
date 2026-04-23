@@ -59,7 +59,7 @@ type AppDetailCompat = AppSummary & {
 export default function SoftwareDetailPage() {
   const pathname = usePathname()
   const router = useRouter()
-  const { token } = useAppContext()
+  const { token, user } = useAppContext()
 
   const [app, setApp] = useState<AppSummary | null>(null)
   const [access, setAccess] = useState<AppAccessPayload | null>(null)
@@ -123,7 +123,7 @@ export default function SoftwareDetailPage() {
       setApp(appData)
       setAccess(accessData)
 
-      if (token) {
+      if (token && user) {
         try {
           const favorites = await request<FavoritesPayload>("/api/auth/favorites", { token })
           setFavorited(favorites.apps.some((item) => item.slug === slug))
@@ -138,7 +138,7 @@ export default function SoftwareDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [slug, token])
+  }, [slug, token, user])
 
   useEffect(() => {
     void loadDetail()
@@ -621,8 +621,27 @@ return (
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-background px-4 py-5 text-center text-sm text-muted-foreground">
-              {accessMessage(downloadPermission.reason)}
+            <div className="space-y-4 rounded-2xl border border-border bg-background px-4 py-5 text-center text-sm text-muted-foreground">
+              <p>{accessMessage(downloadPermission.reason)}</p>
+              {downloadPermission.reason === "login required" ? (
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    type="button"
+                    className="rounded-xl"
+                    onClick={() => router.push(buildAuthUrl("/login", pathname || "/"))}
+                  >
+                    去登录
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => router.push(buildAuthUrl("/register", pathname || "/"))}
+                  >
+                    去注册
+                  </Button>
+                </div>
+              ) : null}
             </div>
           )}
         </DialogContent>

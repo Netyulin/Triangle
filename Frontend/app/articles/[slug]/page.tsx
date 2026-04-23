@@ -17,7 +17,7 @@ export default function ArticleDetailPage() {
   const params = useParams<{ slug: string }>()
   const pathname = usePathname()
   const router = useRouter()
-  const { token } = useAppContext()
+  const { token, user } = useAppContext()
 
   const [post, setPost] = useState<PostSummary | null>(null)
   const [favorited, setFavorited] = useState(false)
@@ -52,7 +52,7 @@ export default function ArticleDetailPage() {
 
       setPost(postData)
 
-      if (token) {
+      if (token && user) {
         try {
           const favorites = await request<FavoritesPayload>("/api/auth/favorites", { token })
           setFavorited(favorites.posts.some((item) => item.slug === slug))
@@ -67,7 +67,7 @@ export default function ArticleDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [slug, token])
+  }, [slug, token, user])
 
   useEffect(() => {
     void loadDetail()
