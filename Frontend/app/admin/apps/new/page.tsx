@@ -12,7 +12,6 @@ import { resolveAssetUrl } from "@/lib/admin-api"
 import {
   extractImageFromClipboardData,
   platformOptions,
-  pricingOptions,
   sizeUnitOptions,
   toggleCompatibility,
   togglePlatformValue,
@@ -227,34 +226,6 @@ export default function AdminAppEditorPage() {
                 placeholder="一句话说明这个软件适合做什么"
               />
             </Field>
-            <Field label="收费方式">
-              <select
-                value={form.pricing}
-                onChange={(e) => setForm((c) => ({ ...c, pricing: e.target.value }))}
-                className={inputClass}
-              >
-                {pricingOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            <Field label="状态">
-              <select
-                value={form.status}
-                onChange={(e) => setForm((c) => ({ ...c, status: e.target.value }))}
-                className={inputClass}
-              >
-                <option value="published">已发布</option>
-                <option value="hidden">已隐藏</option>
-                <option value="draft">草稿</option>
-              </select>
-            </Field>
-
             <Field label="访问等级限制">
               <select
                 value={form.accessLevel}
@@ -267,6 +238,20 @@ export default function AdminAppEditorPage() {
                 <option value="supreme">至尊会员</option>
               </select>
               <p className="mt-1.5 text-xs text-muted-foreground">低于该等级的用户只能浏览详情，无法下载</p>
+            </Field>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Field label="状态">
+              <select
+                value={form.status}
+                onChange={(e) => setForm((c) => ({ ...c, status: e.target.value }))}
+                className={inputClass}
+              >
+                <option value="published">已发布</option>
+                <option value="hidden">已隐藏</option>
+                <option value="draft">草稿</option>
+              </select>
             </Field>
 
             <Field label="分类">
