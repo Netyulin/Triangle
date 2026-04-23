@@ -24,9 +24,11 @@ const DEFAULT_AVATAR_COUNT = 10;
 const USER_ID_COLUMN = isPostgresDatabase() ? '"userId"' : 'userId';
 const REQUEST_ID_COLUMN = isPostgresDatabase() ? '"requestId"' : 'requestId';
 const COMMENT_ID_COLUMN = isPostgresDatabase() ? '"commentId"' : 'commentId';
+const APP_SLUG_COLUMN = isPostgresDatabase() ? '"appSlug"' : 'appSlug';
 const CONTENT_TYPE_COLUMN = isPostgresDatabase() ? '"contentType"' : 'contentType';
 const CONTENT_ID_COLUMN = isPostgresDatabase() ? '"contentId"' : 'contentId';
 const CREATED_AT_COLUMN = isPostgresDatabase() ? '"createdAt"' : 'createdAt';
+const UPDATED_AT_COLUMN = isPostgresDatabase() ? '"updatedAt"' : 'updatedAt';
 const ORDER_BY_CREATED_AT = isPostgresDatabase() ? `${CREATED_AT_COLUMN} DESC` : 'datetime(createdAt) DESC';
 
 async function renameLegacyColumn(table, legacyColumn, nextColumn) {
@@ -213,6 +215,17 @@ export async function ensureUserFeatureTables() {
       )
     `);
 
+    await executeRaw(`
+      CREATE TABLE IF NOT EXISTS app_ratings (
+        "userId" INTEGER NOT NULL,
+        "appSlug" TEXT NOT NULL,
+        rating DOUBLE PRECISION NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY ("userId", "appSlug")
+      )
+    `);
+
     await renameLegacyColumn('request_votes', 'userid', 'userId');
     await renameLegacyColumn('request_votes', 'requestid', 'requestId');
     await renameLegacyColumn('request_votes', 'createdat', 'createdAt');
@@ -225,6 +238,11 @@ export async function ensureUserFeatureTables() {
     await renameLegacyColumn('favorites', 'contenttype', 'contentType');
     await renameLegacyColumn('favorites', 'contentid', 'contentId');
     await renameLegacyColumn('favorites', 'createdat', 'createdAt');
+
+    await renameLegacyColumn('app_ratings', 'userid', 'userId');
+    await renameLegacyColumn('app_ratings', 'appslug', 'appSlug');
+    await renameLegacyColumn('app_ratings', 'createdat', 'createdAt');
+    await renameLegacyColumn('app_ratings', 'updatedat', 'updatedAt');
 
     await renameLegacyColumn('recharge_records', 'userid', 'userId');
     await renameLegacyColumn('recharge_records', 'createdat', 'createdAt');
@@ -268,6 +286,17 @@ export async function ensureUserFeatureTables() {
       status TEXT NOT NULL DEFAULT 'completed',
       description TEXT,
       createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS app_ratings (
+      userId INTEGER NOT NULL,
+      appSlug TEXT NOT NULL,
+      rating REAL NOT NULL CHECK (rating >= 1 AND rating <= 5),
+      createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (userId, appSlug)
     )
   `);
 }
@@ -364,4 +393,80 @@ export async function listRechargeRecords(userId) {
     `SELECT id, amount, status, description, ${CREATED_AT_COLUMN} AS "createdAt" FROM recharge_records WHERE ${USER_ID_COLUMN} = ? ORDER BY ${ORDER_BY_CREATED_AT}`,
     userId
   );
+}
+
+function mapDecimal(value, fallback = 0) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+
+  const parsed = Number.parseFloat(String(value ?? fallback));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export async function getAppRatingSummary(appSlug, userId) {
+  await ensureUserFeatureTables();
+
+  const summaryRows = await queryRaw(
+    `SELECT COUNT(*) AS "reviewCount", COALESCE(AVG(rating), 0) AS "averageRating" FROM app_ratings WHERE ${APP_SLUG_COLUMN} = ?`,
+    appSlug
+  );
+
+  const summaryRow = summaryRows[0] ?? {};
+  const reviewCount = mapNumber(summaryRow.reviewCount);
+  const averageRating = Number(mapDecimal(summaryRow.averageRating, 0).toFixed(1));
+
+  let userRating = 0;
+  if (userId) {
+    const userRows = await queryRaw(
+      `SELECT rating FROM app_ratings WHERE ${USER_ID_COLUMN} = ? AND ${APP_SLUG_COLUMN} = ? LIMIT 1`,
+      userId,
+      appSlug
+    );
+    userRating = Number(mapDecimal(userRows[0]?.rating, 0).toFixed(1));
+  }
+
+  return {
+    averageRating,
+    reviewCount,
+    userRating
+  };
+}
+
+export async function upsertAppRating(userId, appSlug, rating) {
+  await ensureUserFeatureTables();
+
+  const normalizedRating = Number(mapDecimal(rating, 0).toFixed(1));
+
+  if (isPostgresDatabase()) {
+    await executeRaw(
+      `
+      INSERT INTO app_ratings (${USER_ID_COLUMN}, ${APP_SLUG_COLUMN}, rating, ${CREATED_AT_COLUMN}, ${UPDATED_AT_COLUMN})
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT (${USER_ID_COLUMN}, ${APP_SLUG_COLUMN})
+      DO UPDATE SET rating = EXCLUDED.rating, ${UPDATED_AT_COLUMN} = CURRENT_TIMESTAMP
+      `,
+      userId,
+      appSlug,
+      normalizedRating
+    );
+  } else {
+    await executeRaw(
+      `
+      INSERT INTO app_ratings (${USER_ID_COLUMN}, ${APP_SLUG_COLUMN}, rating, ${CREATED_AT_COLUMN}, ${UPDATED_AT_COLUMN})
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT(${USER_ID_COLUMN}, ${APP_SLUG_COLUMN})
+      DO UPDATE SET rating = excluded.rating, ${UPDATED_AT_COLUMN} = CURRENT_TIMESTAMP
+      `,
+      userId,
+      appSlug,
+      normalizedRating
+    );
+  }
+
+  return getAppRatingSummary(appSlug, userId);
 }

@@ -298,6 +298,36 @@ export type AppAccessPayload = {
   userPermissions: UserPermissions
 }
 
+export type AppRatingPayload = {
+  averageRating: number
+  reviewCount: number
+  userRating: number
+}
+
+export type CommentItem = {
+  id: string
+  contentId: string
+  contentType: "app" | "post"
+  userId?: number | null
+  authorName: string
+  authorAvatar?: string | null
+  authorRole?: string | null
+  authorUsername?: string | null
+  authorMembershipLevel?: string | null
+  authorMembershipLabel?: string | null
+  isAnonymous?: boolean
+  isAdminReply?: boolean
+  content: string
+  parentId?: string | null
+  createdAt: string
+  likes: number
+  dislikes: number
+  canDelete?: boolean
+  userLiked?: boolean
+  userDisliked?: boolean
+  replies?: CommentItem[]
+}
+
 export type NetdiskReportItem = {
   id: number
   appSlug: string
@@ -495,4 +525,58 @@ export async function trackAdClick(adId: string, slotId?: string) {
 
 export async function fetchDownloadInfo(slug: string) {
   return request<DownloadInfo>(`/api/download/${slug}`)
+}
+
+export async function fetchAppRating(slug: string, token?: string) {
+  return request<AppRatingPayload>(`/api/apps/${slug}/rating`, token ? { token } : {})
+}
+
+export async function submitAppRating(slug: string, rating: number, token: string) {
+  return request<AppRatingPayload>(`/api/apps/${slug}/rating`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ rating }),
+  })
+}
+
+export async function fetchComments(contentType: "app" | "post", contentId: string, token?: string) {
+  const query = new URLSearchParams({
+    contentType,
+    contentId,
+  })
+  return request<CommentItem[]>(`/api/comments?${query.toString()}`, token ? { token } : {})
+}
+
+export async function createComment(
+  payload: {
+    contentType: "app" | "post"
+    contentId: string
+    content: string
+    parentId?: string | null
+    anonymous?: boolean
+  },
+  token: string
+) {
+  return request<CommentItem>("/api/comments", {
+    method: "POST",
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function reactComment(id: string, action: "like" | "dislike", token: string) {
+  return request<{ likes: number; dislikes: number; userLiked: boolean; userDisliked: boolean }>(
+    `/api/comments/${id}/${action}`,
+    {
+      method: "POST",
+      token,
+    }
+  )
+}
+
+export async function removeComment(id: string, token: string) {
+  return request<null>(`/api/comments/${id}`, {
+    method: "DELETE",
+    token,
+  })
 }

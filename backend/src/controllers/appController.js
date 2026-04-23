@@ -17,6 +17,7 @@ import { readSiteSettings } from '../utils/siteSettings.js';
 import { queueBaiduPushForApp } from '../utils/baiduPush.js';
 import { importContentFromSource } from '../utils/contentImport.js';
 import { localizeHtmlImages, localizeRemoteImage } from '../utils/imageLocalization.js';
+import { getAppRatingSummary, upsertAppRating } from '../utils/userFeatures.js';
 
 const appStatuses = ['published', 'hidden', 'archived'];
 
@@ -75,6 +76,10 @@ const updateValidation = validate(writeValidationRules);
 const slugParamValidation = validate([param('slug').trim().notEmpty().withMessage('slug is required')]);
 
 const accessValidation = slugParamValidation;
+const ratingValidation = validate([
+  param('slug').trim().notEmpty().withMessage('slug is required'),
+  body('rating').isFloat({ min: 1, max: 5 }).withMessage('rating must be between 1 and 5')
+]);
 const importContentValidation = validate([
   body('url').optional().isString().withMessage('url must be a string'),
   body('rawContent').optional().isString().withMessage('rawContent must be a string'),
@@ -90,7 +95,7 @@ const importContentValidation = validate([
   })
 ]);
 
-export { listValidation, createValidation, updateValidation, slugParamValidation, accessValidation, importContentValidation };
+export { listValidation, createValidation, updateValidation, slugParamValidation, accessValidation, ratingValidation, importContentValidation };
 
 function includeAppRelations() {
   return {
@@ -345,7 +350,13 @@ export async function detail(req, res) {
   if (!req.user && app.status !== 'published') {
     return sendError(res, ErrorCodes.APP_NOT_FOUND, 'app not found');
   }
-  return sendSuccess(res, serializeApp(app));
+  const ratingSummary = await getAppRatingSummary(app.slug, req.user?.id);
+  return sendSuccess(res, {
+    ...serializeApp(app),
+    averageRating: ratingSummary.averageRating,
+    reviewCount: ratingSummary.reviewCount,
+    userRating: ratingSummary.userRating
+  });
 }
 
 export async function access(req, res) {
@@ -384,6 +395,40 @@ export async function access(req, res) {
     downloadPermission: permission,
     userPermissions: serializeUserPermissions(user)
   });
+}
+
+export async function rating(req, res) {
+  const app = await prisma.app.findUnique({
+    where: { slug: req.params.slug },
+    select: { slug: true, status: true }
+  });
+
+  if (!app || (!req.user && app.status !== 'published')) {
+    return sendError(res, ErrorCodes.APP_NOT_FOUND, 'app not found');
+  }
+
+  const summary = await getAppRatingSummary(app.slug, req.user?.id);
+  return sendSuccess(res, summary);
+}
+
+export async function submitRating(req, res) {
+  const app = await prisma.app.findUnique({
+    where: { slug: req.params.slug },
+    select: { slug: true, status: true }
+  });
+
+  if (!app || app.status !== 'published') {
+    return sendError(res, ErrorCodes.APP_NOT_FOUND, 'app not found');
+  }
+
+  const ratingValue = Number(req.body.rating);
+  const summary = await upsertAppRating(req.user.id, app.slug, ratingValue);
+  await prisma.app.update({
+    where: { slug: app.slug },
+    data: { rating: summary.averageRating }
+  });
+
+  return sendSuccess(res, summary, 'rated');
 }
 
 export async function create(req, res) {

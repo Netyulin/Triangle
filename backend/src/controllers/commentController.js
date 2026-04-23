@@ -10,6 +10,7 @@ import { isPostgresDatabase } from '../utils/signTables.js';
 const USER_ID_COLUMN = isPostgresDatabase() ? '"userId"' : 'userId';
 const COMMENT_ID_COLUMN = isPostgresDatabase() ? '"commentId"' : 'commentId';
 const CREATED_AT_COLUMN = isPostgresDatabase() ? '"createdAt"' : 'createdAt';
+const ANONYMOUS_AUTHOR_NAME = '匿名用户';
 
 const listValidation = validate([
   query('contentId').notEmpty().withMessage('contentId is required'),
@@ -21,7 +22,7 @@ const createValidation = validate([
   body('contentId').notEmpty().withMessage('contentId is required'),
   body('contentType').optional().isIn(['app', 'post']).withMessage('contentType must be app or post'),
   body('type').optional().isIn(['app', 'post']).withMessage('type must be app or post'),
-  body('authorName').optional().trim().notEmpty().withMessage('authorName is required'),
+  body('anonymous').optional().isBoolean().withMessage('anonymous must be boolean'),
   body('content').trim().isLength({ min: 1, max: 1000 }).withMessage('content length must be between 1 and 1000')
 ]);
 
@@ -39,9 +40,28 @@ function buildTree(comments, parentId = null) {
 function markCommentTree(comments, reactionSummary, user) {
   return comments.map((comment) => {
     const reaction = reactionSummary.get(comment.id) || { userLiked: false, userDisliked: false };
+    const isAnonymous = comment.authorName === ANONYMOUS_AUTHOR_NAME;
+    const membershipLevel = isAnonymous ? 'anonymous' : normalizeString(comment.user?.membershipLevel || '').trim().toLowerCase();
+    const membershipLevelLabel =
+      membershipLevel === 'supreme' || membershipLevel === 'vip'
+        ? '至尊会员'
+        : membershipLevel === 'lifetime' || membershipLevel === 'premium'
+          ? '终身会员'
+          : membershipLevel === 'sponsor' || membershipLevel === 'member'
+            ? '赞助会员'
+            : membershipLevel === 'free'
+              ? '免费用户'
+              : null;
+
     return serializeComment({
       ...comment,
       authorAvatar: comment.authorAvatar || buildDefaultAvatar(comment.authorName),
+      authorRole: isAnonymous ? null : (comment.user?.role ?? null),
+      authorUsername: isAnonymous ? null : normalizeString(comment.user?.username || comment.user?.name || '').trim() || null,
+      authorMembershipLevel: isAnonymous ? null : (membershipLevel || null),
+      authorMembershipLabel: isAnonymous ? null : membershipLevelLabel,
+      isAnonymous,
+      isAdminReply: !isAnonymous && comment.user?.role === 'admin',
       canDelete: Boolean(user && (user.role === 'admin' || comment.userId === user.id)),
       userLiked: reaction.userLiked,
       userDisliked: reaction.userDisliked,
@@ -70,7 +90,18 @@ export async function list(req, res) {
       contentId,
       ...(contentType ? { contentType } : {})
     },
-    orderBy: [{ createdAt: 'asc' }]
+    orderBy: [{ createdAt: 'asc' }],
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          role: true,
+          membershipLevel: true
+        }
+      }
+    }
   });
 
   const reactionSummary = await getCommentReactionSummary(
@@ -91,9 +122,14 @@ export async function create(req, res) {
         where: { id: req.user.id }
       })
     : null;
+  const anonymous = req.body.anonymous === true || String(req.body.anonymous).toLowerCase() === 'true';
 
   if (!contentType) {
     return sendError(res, ErrorCodes.PARAM_ERROR, 'contentType or type is required');
+  }
+
+  if (!user) {
+    return sendError(res, ErrorCodes.FORBIDDEN, 'login required');
   }
 
   if (user && !user.canComment) {
@@ -104,7 +140,9 @@ export async function create(req, res) {
     return sendError(res, ErrorCodes.FORBIDDEN, 'reply permission denied');
   }
 
-  const authorName = user ? normalizeString(user.name || user.username).trim() : normalizeString(req.body.authorName).trim();
+  const authorName = anonymous
+    ? ANONYMOUS_AUTHOR_NAME
+    : normalizeString(user.name || user.username).trim();
   if (!authorName) {
     return sendError(res, ErrorCodes.PARAM_ERROR, 'authorName is required');
   }
@@ -141,6 +179,20 @@ export async function create(req, res) {
     if (parent.contentId !== contentId || parent.contentType !== contentType) {
       return sendError(res, ErrorCodes.PARAM_ERROR, 'parent comment must belong to the same content');
     }
+  } else {
+    const existing = await prisma.comment.findFirst({
+      where: {
+        userId: user.id,
+        contentId,
+        contentType,
+        parentId: null
+      },
+      select: { id: true }
+    });
+
+    if (existing) {
+      return sendError(res, ErrorCodes.FORBIDDEN, 'each user can only post one main comment for this content');
+    }
   }
 
   const comment = await prisma.comment.create({
@@ -148,22 +200,32 @@ export async function create(req, res) {
       contentId,
       contentType,
       authorName,
-      authorAvatar: user
-        ? user.avatar || buildDefaultAvatar(user.name || user.username, user.gender)
-        : req.body.authorAvatar
-          ? normalizeString(req.body.authorAvatar).trim()
-          : buildDefaultAvatar(authorName),
+      authorAvatar: anonymous
+        ? buildDefaultAvatar(ANONYMOUS_AUTHOR_NAME)
+        : user.avatar || buildDefaultAvatar(user.name || user.username, user.gender),
       content: normalizeString(req.body.content).trim(),
       parentId,
       likes: 0,
       dislikes: 0,
-      userId: user?.id ?? null,
+      userId: user.id,
       appSlug: contentType === 'app' ? contentId : null,
       postSlug: contentType === 'post' ? contentId : null
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          role: true,
+          membershipLevel: true
+        }
+      }
     }
   });
 
-  return sendSuccess(res, comment, 'comment created', 201);
+  const reactionSummary = new Map([[comment.id, { userLiked: false, userDisliked: false }]]);
+  return sendSuccess(res, markCommentTree([comment], reactionSummary, req.user)[0], 'comment created', 201);
 }
 
 export async function like(req, res) {

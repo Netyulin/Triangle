@@ -15,6 +15,7 @@ import { useAppContext } from "@/components/app-provider"
 import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
 import { buildAuthUrl, resolveAssetUrl } from "@/lib/utils"
 import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
+import { ContentInteractions } from "@/components/content-interactions"
 
 function accessMessage(reason: string) {
   if (reason === "login required") return "登录后才能查看下载链接。"
@@ -490,6 +491,13 @@ return (
                   </div>
                 </section>
               )}
+
+              <ContentInteractions
+                contentType="app"
+                contentId={slug}
+                contentTitle={app.name}
+                enableRating
+              />
 
               <section className="rounded-2xl border border-amber-300/40 bg-amber-50/50 p-6 shadow-sm dark:border-amber-700/40 dark:bg-amber-900/10">
                 <h2 className="mb-4 text-base font-semibold text-amber-900 dark:text-amber-200">资源使用声明</h2>

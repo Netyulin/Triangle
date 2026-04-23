@@ -9,6 +9,7 @@ import { Bookmark, Clock3, RefreshCw } from "lucide-react"
 import { AppIcon } from "@/components/app-icon"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
+import { ContentInteractions } from "@/components/content-interactions"
 import { useAppContext } from "@/components/app-provider"
 import { request, type FavoritesPayload, type PostSummary } from "@/lib/api"
 import { buildAuthUrl, resolveAssetUrl } from "@/lib/utils"
@@ -110,14 +111,16 @@ export default function NewsDetailPage() {
       })
       setFavorited(result.favorited)
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "操作失败，请稍后重试")
+      setError(nextError instanceof Error ? nextError.message : "收藏失败，请稍后重试")
     } finally {
       setFavoriteLoading(false)
     }
   }
 
   const normalizedContent = normalizeArticleHtml(post?.content || "")
-  const fallbackContent = (post?.excerpt || post?.seoDescription || "").trim() || "这篇文章正文暂未同步，请稍后刷新或联系站点管理员处理。"
+  const fallbackContent =
+    (post?.excerpt || post?.seoDescription || "").trim() ||
+    "这篇文章正文暂未同步，请稍后刷新或联系站点管理员处理。"
 
   return (
     <div className="min-h-screen bg-background">
@@ -206,11 +209,13 @@ export default function NewsDetailPage() {
                 ) : (
                   <div className="space-y-4 text-muted-foreground">
                     <p>{fallbackContent}</p>
-                    <p className="text-xs opacity-80">提示：若你刚通过脚本发布文章，请检查是否把完整正文写入了文章 content 字段。</p>
+                    <p className="text-xs opacity-80">提示：若你刚通过脚本发布文章，请检查是否把完整正文写入了文章的 content 字段。</p>
                   </div>
                 )}
               </div>
             </section>
+
+            <ContentInteractions contentType="post" contentId={post.slug} contentTitle={post.title} />
           </article>
         )}
       </main>

@@ -14,7 +14,7 @@ import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 const router = express.Router();
 
 router.get('/', optionalAuthenticate, listValidation, list);
-router.post('/', optionalAuthenticate, createValidation, create);
+router.post('/', authenticate, createValidation, create);
 router.post('/:id/like', authenticate, actionValidation, like);
 router.post('/:id/dislike', authenticate, actionValidation, dislike);
 router.delete('/:id', authenticate, actionValidation, remove);
