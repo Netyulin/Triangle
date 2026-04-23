@@ -13,24 +13,6 @@ import { useAppContext } from "@/components/app-provider"
 import { request, type FavoritesPayload, type PostSummary } from "@/lib/api"
 import { buildAuthUrl, resolveAssetUrl } from "@/lib/utils"
 
-function normalizeArticleHtml(value: string) {
-  const source = String(value || "").trim()
-  if (!source) return ""
-
-  const looksLikeDocument = /<!doctype|<\s*html[\s>]|<\s*head[\s>]|<\s*body[\s>]/i.test(source)
-  if (!looksLikeDocument) return source
-
-  const bodyMatch = source.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  const bodyHtml = bodyMatch ? bodyMatch[1] : source
-
-  return bodyHtml
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<!doctype[^>]*>/gi, "")
-    .replace(/<\/?(html|head|body)[^>]*>/gi, "")
-    .trim()
-}
-
 export default function ArticleDetailPage() {
   const params = useParams<{ slug: string }>()
   const pathname = usePathname()
@@ -96,9 +78,6 @@ export default function ArticleDetailPage() {
       setFavoriteLoading(false)
     }
   }
-
-  const normalizedContent = normalizeArticleHtml(post?.content || "")
-  const fallbackContent = (post?.excerpt || post?.seoDescription || "").trim() || "这篇文章正文暂未同步，请稍后刷新或联系站点管理员处理。"
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,14 +161,7 @@ export default function ArticleDetailPage() {
 
             <section className="rounded-[30px] border border-border bg-card p-6 md:p-8">
               <div className="prose prose-neutral dark:prose-invert max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground">
-                {normalizedContent ? (
-                  <div dangerouslySetInnerHTML={{ __html: normalizedContent }} />
-                ) : (
-                  <div className="space-y-4 text-muted-foreground">
-                    <p>{fallbackContent}</p>
-                    <p className="text-xs opacity-80">提示：若你刚通过脚本发布文章，请检查是否把完整正文写入了文章 content 字段。</p>
-                  </div>
-                )}
+                <div dangerouslySetInnerHTML={{ __html: post.content || "" }} />
               </div>
             </section>
           </article>
