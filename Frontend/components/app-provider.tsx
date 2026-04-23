@@ -31,6 +31,7 @@ function isAuthFailure(error: unknown) {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [token, setTokenState] = useState("")
+  const [bootstrapped, setBootstrapped] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [permissions, setPermissions] = useState<UserPermissions | null>(null)
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null)
@@ -39,6 +40,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = "zh-CN"
     setTokenState(window.localStorage.getItem("triangle-token") ?? "")
+    setBootstrapped(true)
   }, [])
 
   useEffect(() => {
@@ -81,8 +83,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshSession = async () => {
-    const storedToken = window.localStorage.getItem("triangle-token") ?? ""
-    if (!storedToken) {
+    if (!token) {
       setUser(null)
       setPermissions(null)
       setTokenState("")
@@ -91,8 +92,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const data = await request<{ user: User; permissions: UserPermissions }>("/api/auth/me", { token: storedToken })
-      setTokenState(storedToken)
+      const data = await request<{ user: User; permissions: UserPermissions }>("/api/auth/me", { token })
       setUser(data.user)
       setPermissions(data.permissions)
       await refreshUnreadCount()
@@ -110,15 +110,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const storedToken = window.localStorage.getItem("triangle-token")
-    if (storedToken) {
+    if (!bootstrapped) return
+    if (token) {
       void refreshSession()
-    } else if (!token) {
+    } else {
       setUser(null)
       setPermissions(null)
       setUnreadCount(0)
     }
-  }, [token])
+  }, [bootstrapped, token])
 
   useEffect(() => {
     if (typeof window === "undefined") {
