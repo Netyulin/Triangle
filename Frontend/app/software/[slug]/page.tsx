@@ -514,7 +514,7 @@ return (
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                 <h3 className="text-base font-bold">立即获取</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {app.accessLevel === "free" ? "免费使用，无需注册"
+                  {app.accessLevel === "free" ? "免费软件，登录即可下载"
                     : app.accessLevel === "sponsor" ? "赞助会员专属"
                     : app.accessLevel === "lifetime" ? "终身会员专属"
                     : "至尊会员专属"}
