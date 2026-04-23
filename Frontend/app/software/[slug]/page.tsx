@@ -617,7 +617,9 @@ return (
                     >
                       <span>
                         {item.name}
-                        {resolveExtractionCode(item) ? `（提取码:${resolveExtractionCode(item)}）` : ""}
+                        {skipDownloadCountdown || countdownReady
+                          ? (resolveExtractionCode(item) ? `（提取码:${resolveExtractionCode(item)}）` : "")
+                          : ""}
                       </span>
                       <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                         <Download className="h-3.5 w-3.5" />
