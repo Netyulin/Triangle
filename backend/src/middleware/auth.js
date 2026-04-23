@@ -94,7 +94,7 @@ export function optionalAuthenticate(req, res, next) {
   } else if (xToken) {
     token = xToken;
   } else {
-    return res.status(401).json(error(ErrorCodes.TOKEN_INVALID, 'invalid token'));
+    return next();
   }
 
   try {
@@ -102,11 +102,11 @@ export function optionalAuthenticate(req, res, next) {
     return resolveAuthenticatedUser(payload)
       .then((user) => {
         if (!user) {
-          return res.status(401).json(error(ErrorCodes.USER_NOT_FOUND, 'user not found'));
+          return next();
         }
 
         if (user.status !== 'active') {
-          return res.status(403).json(error(ErrorCodes.FORBIDDEN, user.status === 'banned' ? 'account is banned' : 'account is disabled'));
+          return next();
         }
 
         req.user = {
@@ -118,13 +118,10 @@ export function optionalAuthenticate(req, res, next) {
       })
       .catch((err) => {
         console.error('[optional authenticate failed]', err);
-        return res.status(500).json(error(ErrorCodes.INTERNAL_ERROR, 'internal server error'));
+        return next();
       });
   } catch (err) {
-    if (err?.name === 'TokenExpiredError') {
-      return res.status(401).json(error(ErrorCodes.TOKEN_EXPIRED, 'token expired'));
-    }
-    return res.status(401).json(error(ErrorCodes.TOKEN_INVALID, 'invalid token'));
+    return next();
   }
 }
 

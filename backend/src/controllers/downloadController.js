@@ -2,6 +2,7 @@ import { param } from 'express-validator';
 import prisma from '../utils/prisma.js';
 import { ErrorCodes, sendError, sendSuccess } from '../utils/response.js';
 import { validate } from '../middleware/validate.js';
+import { getMembershipLevelRank, normalizeMembershipLevel } from '../utils/membership.js';
 
 const slugValidation = validate([param('slug').trim().notEmpty().withMessage('slug is required')]);
 
@@ -9,7 +10,8 @@ export { slugValidation };
 
 export async function getDownloadInfo(req, res) {
   const { slug } = req.params;
-  const { mirror } = req.query; // 可选：指定镜像索引
+  const { mirror } = req.query;
+  const user = req.user ?? null;
 
   const app = await prisma.app.findUnique({
     where: { slug },
@@ -22,7 +24,8 @@ export async function getDownloadInfo(req, res) {
       downloadUrl: true,
       downloadLinks: true,
       affiliateLink: true,
-      isDownloadable: true
+      isDownloadable: true,
+      accessLevel: true
     }
   });
 
@@ -34,10 +37,25 @@ export async function getDownloadInfo(req, res) {
     return sendError(res, ErrorCodes.FORBIDDEN, 'download not available');
   }
 
+  if (!user) {
+    return sendError(res, ErrorCodes.UNAUTHORIZED, 'login required');
+  }
+
+  if (user.role !== 'admin') {
+    const userLevel = normalizeMembershipLevel(user.membershipLevel);
+    const requiredLevel = normalizeMembershipLevel(app.accessLevel);
+    if (getMembershipLevelRank(userLevel) < getMembershipLevelRank(requiredLevel)) {
+      return sendError(res, ErrorCodes.FORBIDDEN, 'membership not enough');
+    }
+
+    if (user.downloadQuotaDaily <= user.downloadCountDaily) {
+      return sendError(res, ErrorCodes.FORBIDDEN, 'daily quota exhausted');
+    }
+  }
+
   const ip = req.ip || req.connection?.remoteAddress || 'unknown';
   const userAgent = req.headers['user-agent'] || null;
 
-  // 确定最终下载 URL 和 CPS 跳转 URL
   let finalDownloadUrl = app.downloadUrl;
   let finalAffiliateUrl = app.affiliateLink || app.downloadUrl;
 
@@ -48,7 +66,7 @@ export async function getDownloadInfo(req, res) {
     if (selectedMirror.url) {
       finalDownloadUrl = selectedMirror.url;
     }
-    // per-mirror CPS 链接优先，否则用全局 affiliateLink
+
     if (selectedMirror.affiliateUrl) {
       finalAffiliateUrl = selectedMirror.affiliateUrl;
     } else if (app.affiliateLink) {
@@ -56,7 +74,6 @@ export async function getDownloadInfo(req, res) {
     }
   }
 
-  // 创建 CPS 下载记录
   await prisma.cpsDownload.create({
     data: {
       softwareSlug: slug,
