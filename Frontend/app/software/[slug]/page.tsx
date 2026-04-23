@@ -97,17 +97,39 @@ export default function SoftwareDetailPage() {
     setError("")
 
     try {
-      const [appData, accessData] = await Promise.all([
-        request<AppSummary>(`/api/apps/${slug}`, token ? { token } : {}),
-        request<AppAccessPayload>(`/api/apps/${slug}/access`, token ? { token } : {}),
-      ])
+      let appData: AppSummary
+      let accessData: AppAccessPayload
+      try {
+        ;[appData, accessData] = await Promise.all([
+          request<AppSummary>(`/api/apps/${slug}`, token ? { token } : {}),
+          request<AppAccessPayload>(`/api/apps/${slug}/access`, token ? { token } : {}),
+        ])
+      } catch (detailError) {
+        const shouldRetryAsGuest =
+          Boolean(token) &&
+          detailError instanceof Error &&
+          ["invalid token", "token expired", "login required"].includes(detailError.message.toLowerCase())
+
+        if (!shouldRetryAsGuest) {
+          throw detailError
+        }
+
+        ;[appData, accessData] = await Promise.all([
+          request<AppSummary>(`/api/apps/${slug}`),
+          request<AppAccessPayload>(`/api/apps/${slug}/access`),
+        ])
+      }
 
       setApp(appData)
       setAccess(accessData)
 
       if (token) {
-        const favorites = await request<FavoritesPayload>("/api/auth/favorites", { token })
-        setFavorited(favorites.apps.some((item) => item.slug === slug))
+        try {
+          const favorites = await request<FavoritesPayload>("/api/auth/favorites", { token })
+          setFavorited(favorites.apps.some((item) => item.slug === slug))
+        } catch {
+          setFavorited(false)
+        }
       } else {
         setFavorited(false)
       }

@@ -34,12 +34,31 @@ export default function ArticleDetailPage() {
     setError("")
 
     try {
-      const postData = await request<PostSummary>(`/api/posts/${slug}`, token ? { token } : {})
+      let postData: PostSummary
+      try {
+        postData = await request<PostSummary>(`/api/posts/${slug}`, token ? { token } : {})
+      } catch (detailError) {
+        const shouldRetryAsGuest =
+          Boolean(token) &&
+          detailError instanceof Error &&
+          ["invalid token", "token expired", "login required"].includes(detailError.message.toLowerCase())
+
+        if (!shouldRetryAsGuest) {
+          throw detailError
+        }
+
+        postData = await request<PostSummary>(`/api/posts/${slug}`)
+      }
+
       setPost(postData)
 
       if (token) {
-        const favorites = await request<FavoritesPayload>("/api/auth/favorites", { token })
-        setFavorited(favorites.posts.some((item) => item.slug === slug))
+        try {
+          const favorites = await request<FavoritesPayload>("/api/auth/favorites", { token })
+          setFavorited(favorites.posts.some((item) => item.slug === slug))
+        } catch {
+          setFavorited(false)
+        }
       } else {
         setFavorited(false)
       }
