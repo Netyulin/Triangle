@@ -163,9 +163,7 @@ export default function HomePage() {
                         <span className={textClasses.body}>{activeSlide.subtitle}</span>
                       </div>
                       <h1 className="text-3xl font-black leading-tight text-balance md:text-5xl">{activeSlide.title}</h1>
-                      {activeSlide.type === "post" ? (
-                        <p className={`mt-4 max-w-xl text-balance text-sm leading-7 md:text-base ${textClasses.body}`}>{activeSlide.desc}</p>
-                      ) : null}
+                      <p className={`mt-4 max-w-xl text-balance text-sm leading-7 md:text-base ${textClasses.body}`}>{activeSlide.desc}</p>
                       <div className="mt-6 flex flex-wrap gap-3">
                         <Link href={activeSlide.href} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-transform hover:scale-[1.02]">
                           <BookOpen className="h-4 w-4" />

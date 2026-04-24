@@ -31,7 +31,7 @@ function buildHeroSlideFromApp(app, index) {
     tag: app.category,
     subtitle: `${app.pricing} / ${app.version}`,
     title: app.name,
-    desc: stripHtmlTags(app.summary),
+    desc: (app.subtitle || '').trim() || stripHtmlTags(app.summary),
     color: index % 2 === 0 ? 'from-[#1a1a2e] to-[#16213e]' : 'from-[#0f2027] to-[#203a43]',
     coverBg: index % 2 === 0 ? 'bg-[#1d4ed8]' : 'bg-slate-800',
     coverText: String(app.name || 'A').slice(0, 2).toUpperCase(),
