@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "SET NODE_OPTIONS=--max-old-space-size=8192 && next dev --webpack -p 3004",
-    "dev:turbo": "SET NODE_OPTIONS=--max-old-space-size=8192 && next dev -p 3004",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev --webpack -p 3004",
+    "dev:turbo": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev -p 3004",
     "build": "next build",
     "start": "next start -p 3004",
     "lint": "eslint .",
@@ -73,6 +73,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.27",
+    "cross-env": "^7.0.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.3",
     "playwright": "^1.59.1",

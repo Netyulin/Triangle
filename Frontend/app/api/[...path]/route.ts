@@ -126,27 +126,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  try {
-    const { path } = await params
-    const pathStr = buildProxyPath(path)
-    const apiUrl = `${API_BASE}/api/${pathStr}${request.nextUrl.search}`
-
-    const response = await fetch(apiUrl, {
-      method: 'DELETE',
-      headers: buildProxyHeaders(request),
-    })
-    const text = await response.text()
-
-    return new NextResponse(text, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-  } catch (error) {
-    return toProxyErrorResponse(error)
-  }
+  const { path } = await params
+  const pathStr = buildProxyPath(path)
+  return forwardWithBody(request, 'DELETE', pathStr)
 }
 
 export async function PATCH(
