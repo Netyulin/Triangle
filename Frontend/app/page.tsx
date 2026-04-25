@@ -156,7 +156,7 @@ export default function HomePage() {
 
               return (
                 <div className={`relative overflow-hidden ${textClasses.title}`} style={resolveHeroGradientStyle(activeSlide.color)}>
-                  <div className="flex flex-col gap-8 p-6 md:h-[320px] md:flex-row md:items-center md:justify-between">
+                  <div className="flex flex-col gap-6 p-6 pb-28 md:h-[320px] md:flex-row md:items-center md:justify-between md:gap-8 md:pb-6">
                     <div className="max-w-2xl">
                       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
                         <span className={`rounded-full ${textClasses.tagBg} px-2.5 py-1 font-semibold`}>{activeSlide.tag}</span>
@@ -178,9 +178,9 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-center">
+                    <div className="relative z-0 flex items-center justify-center md:mt-0">
                       {activeSlide.icon ? (
-                        <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-[2rem] border border-white/20 bg-white/10 shadow-2xl md:h-36 md:w-36">
+                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/10 shadow-2xl md:h-36 md:w-36 md:rounded-[2rem]">
                           {looksLikeImageUrl(activeSlide.icon) ? (
                             <Image
                               src={resolveAssetUrl(activeSlide.icon)}
@@ -201,7 +201,7 @@ export default function HomePage() {
                         </div>
                       ) : (
                         <div
-                          className={`flex h-28 w-28 items-center justify-center rounded-[2rem] bg-slate-800 text-4xl font-black shadow-2xl md:h-36 md:w-36 ${activeSlide.coverColor} ${coverTextClass}`}
+                          className={`flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-slate-800 text-4xl font-black shadow-2xl md:h-36 md:w-36 md:rounded-[2rem] ${activeSlide.coverColor} ${coverTextClass}`}
                           style={resolveSolidColorStyle(activeSlide.coverBg)}
                         >
                           {activeSlide.coverText}
@@ -211,7 +211,7 @@ export default function HomePage() {
                   </div>
 
                   {home && home.heroSlides.length > 1 ? (
-                    <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
+                    <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-3">
                       <div className="h-1 w-48 overflow-hidden rounded-full bg-white/20">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${textClasses.dotActive}`}
