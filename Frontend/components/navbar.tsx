@@ -248,14 +248,6 @@ export function Navbar() {
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
-          <Link
-            href="/feedback"
-            aria-label="反馈"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/70 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <MessageCircle className="h-4 w-4" />
-          </Link>
-
           {user ? (
             <div ref={userMenuRef} className="relative">
               <button
@@ -348,7 +340,7 @@ export function Navbar() {
             <div className="flex items-center gap-2">
               <Link
                 href={loginHref}
-                className="hidden rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:block"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 {t.login}
               </Link>
@@ -572,6 +564,5 @@ export function Navbar() {
     </header>
   )
 }
-
 
 
