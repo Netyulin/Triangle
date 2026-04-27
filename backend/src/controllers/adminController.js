@@ -42,12 +42,15 @@ const recentValidation = validate([
 const activeIpsValidation = validate([
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
   query('pageSize').optional().isInt({ min: 1, max: 100 }).withMessage('pageSize must be between 1 and 100'),
-  query('keyword').optional().isString().withMessage('keyword must be a string')
+  query('keyword').optional().isString().withMessage('keyword must be a string'),
+  query('view').optional().isIn(['recent', 'date', 'region', 'cumulative']).withMessage('view is invalid'),
+  query('date').optional().matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('date must be in YYYY-MM-DD format')
 ]);
 
 export { trendsValidation, recentValidation, activeIpsValidation };
 
 let geoIpLiteModulePromise = null;
+let zhCountryNames = null;
 
 async function loadGeoIpLite() {
   if (!geoIpLiteModulePromise) {
@@ -57,6 +60,70 @@ async function loadGeoIpLite() {
   const mod = await geoIpLiteModulePromise;
   if (!mod) return null;
   return mod.default ?? mod;
+}
+
+function getChineseCountryName(countryCode) {
+  const code = normalizeString(countryCode).trim().toUpperCase();
+  if (!code) return '';
+
+  if (!zhCountryNames && typeof Intl?.DisplayNames === 'function') {
+    zhCountryNames = new Intl.DisplayNames(['zh-CN'], { type: 'region' });
+  }
+
+  try {
+    return zhCountryNames?.of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
+const CHINA_REGION_MAP = {
+  BJ: '北京',
+  TJ: '天津',
+  HE: '河北',
+  SX: '山西',
+  NM: '内蒙古',
+  LN: '辽宁',
+  JL: '吉林',
+  HL: '黑龙江',
+  SH: '上海',
+  JS: '江苏',
+  ZJ: '浙江',
+  AH: '安徽',
+  FJ: '福建',
+  JX: '江西',
+  SD: '山东',
+  HA: '河南',
+  HB: '湖北',
+  HN: '湖南',
+  GD: '广东',
+  GX: '广西',
+  HI: '海南',
+  CQ: '重庆',
+  SC: '四川',
+  GZ: '贵州',
+  YN: '云南',
+  XZ: '西藏',
+  SN: '陕西',
+  GS: '甘肃',
+  QH: '青海',
+  NX: '宁夏',
+  XJ: '新疆',
+  HK: '香港',
+  MO: '澳门',
+  TW: '台湾',
+};
+
+function localizeRegion(countryCode, regionCode) {
+  const country = normalizeString(countryCode).trim().toUpperCase();
+  const region = normalizeString(regionCode).trim();
+  if (!region) return '';
+
+  if (country === 'CN') {
+    return CHINA_REGION_MAP[region.toUpperCase()] || region;
+  }
+
+  return region;
 }
 
 function normalizeIp(rawIp) {
@@ -80,9 +147,11 @@ function isPrivateOrLocalIp(ip) {
 
 function formatRegion(geoRecord) {
   if (!geoRecord) return '未知地区';
-  const parts = [geoRecord.country, geoRecord.region, geoRecord.city]
-    .map((item) => normalizeString(item).trim())
-    .filter(Boolean);
+
+  const country = getChineseCountryName(geoRecord.country);
+  const region = localizeRegion(geoRecord.country, geoRecord.region);
+  const city = normalizeString(geoRecord.city).trim();
+  const parts = [country, region, city].filter(Boolean).filter((item, index, arr) => arr.indexOf(item) === index);
   return parts.length ? parts.join(' / ') : '未知地区';
 }
 
@@ -95,6 +164,36 @@ async function resolveIpRegion(ip) {
 
   const record = geoIp.lookup(ip);
   return formatRegion(record);
+}
+
+function parseSelectedDate(rawDate) {
+  const source = normalizeString(rawDate).trim();
+  if (!source) return null;
+
+  const date = new Date(`${source}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function getDateRange(selectedDate) {
+  if (!selectedDate) return null;
+
+  const start = new Date(selectedDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
+function formatDayKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatHourKey(date) {
+  return `${String(date.getHours()).padStart(2, '0')}:00`;
 }
 
 export async function stats(req, res) {
@@ -308,11 +407,25 @@ export async function activeIps(req, res) {
   const page = normalizeInteger(req.query.page, 1);
   const pageSize = normalizeInteger(req.query.pageSize, 20);
   const keyword = normalizeString(req.query.keyword).trim().toLowerCase();
+  const view = normalizeString(req.query.view, 'recent').trim().toLowerCase() || 'recent';
+  const selectedDateText = normalizeString(req.query.date).trim();
+  const selectedDate = parseSelectedDate(selectedDateText);
+  const selectedRange = getDateRange(selectedDate);
   const ipKeywordLike = /^[0-9a-fA-F:.]+$/.test(keyword);
 
   const pageViews = await runOptionalStat(
     () =>
       prisma.pageView.findMany({
+        ...(selectedRange
+          ? {
+              where: {
+                createdAt: {
+                  gte: selectedRange.start,
+                  lt: selectedRange.end
+                }
+              }
+            }
+          : {}),
         select: {
           ip: true,
           createdAt: true
@@ -345,41 +458,109 @@ export async function activeIps(req, res) {
 
   let list = Array.from(ipMap.values()).sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime());
 
-  if (keyword) {
-    if (ipKeywordLike) {
-      list = list.filter((item) => item.ip.toLowerCase().includes(keyword));
-    } else {
-      const decorated = await Promise.all(
-        list.map(async (item) => ({
-          ...item,
-          region: await resolveIpRegion(item.ip)
-        }))
-      );
-      list = decorated.filter((item) => item.region.toLowerCase().includes(keyword));
-    }
-  }
-
-  const total = list.length;
-  const totalPages = Math.max(Math.ceil(total / pageSize), 1);
-  const safePage = Math.min(Math.max(page, 1), totalPages);
-  const start = (safePage - 1) * pageSize;
-  const paged = list.slice(start, start + pageSize);
-
-  const rows = await Promise.all(
-    paged.map(async (item) => ({
-      ip: item.ip,
-      region: await resolveIpRegion(item.ip),
-      views: item.views,
-      firstSeenAt: item.firstSeenAt,
-      lastSeenAt: item.lastSeenAt
+  const decoratedIpRows = await Promise.all(
+    list.map(async (item) => ({
+      ...item,
+      region: await resolveIpRegion(item.ip)
     }))
   );
 
+  const filteredIpRows = keyword
+    ? decoratedIpRows.filter((item) => {
+        if (ipKeywordLike) {
+          return item.ip.toLowerCase().includes(keyword);
+        }
+        return item.region.toLowerCase().includes(keyword);
+      })
+    : decoratedIpRows;
+
+  const summary = {
+    totalViews: pageViews.length,
+    uniqueIpCount: filteredIpRows.length,
+    selectedDate: selectedDateText || null
+  };
+
+  let rows = [];
+  if (view === 'region') {
+    const regionMap = new Map();
+    for (const item of filteredIpRows) {
+      const region = item.region || '未知地区';
+      if (!regionMap.has(region)) {
+        regionMap.set(region, {
+          region,
+          views: 0,
+          uniqueIps: 0,
+          lastSeenAt: item.lastSeenAt
+        });
+      }
+
+      const row = regionMap.get(region);
+      row.views += item.views;
+      row.uniqueIps += 1;
+      if (item.lastSeenAt > row.lastSeenAt) row.lastSeenAt = item.lastSeenAt;
+    }
+
+    rows = Array.from(regionMap.values()).sort((a, b) => {
+      if (b.views !== a.views) return b.views - a.views;
+      return b.lastSeenAt.getTime() - a.lastSeenAt.getTime();
+    });
+  } else if (view === 'date') {
+    const bucketMap = new Map();
+    for (const item of pageViews) {
+      const bucket = selectedDate ? formatHourKey(item.createdAt) : formatDayKey(item.createdAt);
+      if (!bucketMap.has(bucket)) {
+        bucketMap.set(bucket, {
+          label: bucket,
+          views: 0,
+          ipSet: new Set(),
+          firstSeenAt: item.createdAt,
+          lastSeenAt: item.createdAt
+        });
+      }
+
+      const row = bucketMap.get(bucket);
+      const ip = normalizeIp(item.ip);
+      row.views += 1;
+      row.ipSet.add(ip);
+      if (item.createdAt < row.firstSeenAt) row.firstSeenAt = item.createdAt;
+      if (item.createdAt > row.lastSeenAt) row.lastSeenAt = item.createdAt;
+    }
+
+    rows = Array.from(bucketMap.values())
+      .map((item) => ({
+        label: item.label,
+        views: item.views,
+        uniqueIps: item.ipSet.size,
+        firstSeenAt: item.firstSeenAt,
+        lastSeenAt: item.lastSeenAt
+      }))
+      .sort((a, b) => (selectedDate ? a.label.localeCompare(b.label) : b.label.localeCompare(a.label)));
+
+    if (keyword) {
+      rows = rows.filter((item) => item.label.toLowerCase().includes(keyword));
+    }
+  } else if (view === 'cumulative') {
+    rows = [...filteredIpRows].sort((a, b) => {
+      if (b.views !== a.views) return b.views - a.views;
+      return b.lastSeenAt.getTime() - a.lastSeenAt.getTime();
+    });
+  } else {
+    rows = [...filteredIpRows].sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime());
+  }
+
+  const total = rows.length;
+  const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const start = (safePage - 1) * pageSize;
+  const paged = rows.slice(start, start + pageSize);
+
   return sendSuccess(res, {
-    list: rows,
+    view,
+    list: paged,
     total,
     page: safePage,
     pageSize,
-    totalPages
+    totalPages,
+    summary
   });
 }

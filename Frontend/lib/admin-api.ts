@@ -134,12 +134,35 @@ export type AdminActiveIpItem = {
   lastSeenAt: string
 }
 
+export type AdminActiveIpRegionItem = {
+  region: string
+  views: number
+  uniqueIps: number
+  lastSeenAt: string
+}
+
+export type AdminActiveIpDateItem = {
+  label: string
+  views: number
+  uniqueIps: number
+  firstSeenAt: string
+  lastSeenAt: string
+}
+
+export type AdminActiveIpView = "recent" | "date" | "region" | "cumulative"
+
 export type AdminActiveIpListPayload = {
-  list: AdminActiveIpItem[]
+  view: AdminActiveIpView
+  list: Array<AdminActiveIpItem | AdminActiveIpRegionItem | AdminActiveIpDateItem>
   total: number
   page: number
   pageSize: number
   totalPages: number
+  summary: {
+    totalViews: number
+    uniqueIpCount: number
+    selectedDate: string | null
+  }
 }
 
 export type AdminAdSlot = {
@@ -332,11 +355,13 @@ export async function fetchAdminTrends(days = 7) {
   return adminRequest<TrendPayload>(`/api/admin/trends?days=${days}`)
 }
 
-export async function fetchAdminActiveIps(params?: { page?: number; pageSize?: number; keyword?: string }) {
+export async function fetchAdminActiveIps(params?: { page?: number; pageSize?: number; keyword?: string; view?: AdminActiveIpView; date?: string }) {
   const query = new URLSearchParams()
   if (params?.page) query.set("page", String(params.page))
   if (params?.pageSize) query.set("pageSize", String(params.pageSize))
   if (params?.keyword?.trim()) query.set("keyword", params.keyword.trim())
+  if (params?.view) query.set("view", params.view)
+  if (params?.date?.trim()) query.set("date", params.date.trim())
   const suffix = query.toString() ? `?${query.toString()}` : ""
   return adminRequest<AdminActiveIpListPayload>(`/api/admin/active-ips${suffix}`)
 }
@@ -978,4 +1003,3 @@ export async function upgradeMembershipLevel(targetLevelKey: string) {
     body: JSON.stringify({ targetLevelKey }),
   })
 }
-
