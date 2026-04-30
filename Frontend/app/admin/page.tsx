@@ -12,6 +12,7 @@ import {
   Package,
   Plus,
   TrendingUp,
+  Users,
 } from "lucide-react"
 import { AdminTable } from "@/components/admin/admin-table"
 import { AdminTrendChart } from "@/components/admin/admin-trend-chart"
@@ -30,6 +31,7 @@ type StatsData = {
   newAppsThisWeek: number
   publishedPosts: number
   totalRequests: number
+  totalUsers: number
   todayDownloads: number
   uniqueIPsToday: number
 }
@@ -45,6 +47,7 @@ export default function AdminDashboardPage() {
     newAppsThisWeek: 0,
     publishedPosts: 0,
     totalRequests: 0,
+    totalUsers: 0,
     todayDownloads: 0,
     uniqueIPsToday: 0,
   })
@@ -67,6 +70,7 @@ export default function AdminDashboardPage() {
           newAppsThisWeek: adminStats.newAppsThisWeek ?? 0,
           publishedPosts: adminStats.publishedPosts ?? 0,
           totalRequests: adminStats.totalRequests ?? 0,
+          totalUsers: adminStats.totalUsers ?? 0,
           todayDownloads: adminStats.todayDownloads ?? 0,
           uniqueIPsToday: adminStats.uniqueIPsToday ?? 0,
         })
@@ -116,7 +120,7 @@ export default function AdminDashboardPage() {
   const todayDownloads = stats.todayDownloads ?? 0
   const uniqueIPsToday = stats.uniqueIPsToday ?? 0
 
-  // Cards definition 鈥?6 cards
+  // Cards definition
   const cards = [
     {
       label: "今日浏览",
@@ -149,6 +153,14 @@ export default function AdminDashboardPage() {
       icon: <MessageSquare className="h-5 w-5" />,
       color: "from-amber-500 to-orange-600 shadow-amber-500/15",
       href: "/admin/submissions?status=pending",
+    },
+    {
+      label: "用户总数",
+      value: loading ? "-" : String(stats.totalUsers),
+      sub: "总计",
+      icon: <Users className="h-5 w-5" />,
+      color: "from-cyan-500 to-sky-600 shadow-cyan-500/15",
+      href: "/admin/users",
     },
     {
       label: "本周新增软件",
@@ -184,8 +196,8 @@ export default function AdminDashboardPage() {
         <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>
       ) : null}
 
-      {/* ====== 6 KPI Cards (保持不变) ====== */}
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      {/* ====== KPI Cards ====== */}
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         {cards.map((card) => {
           const CardInner = () => (
             <div className={`group p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-24px_rgba(15,23,42,0.12)] ${card.href ? 'cursor-pointer' : ''}`}>
@@ -273,6 +285,5 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
-
 
 

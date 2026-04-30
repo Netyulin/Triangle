@@ -50,6 +50,7 @@ export type InviteCodeItem = {
 export type AdminStats = {
   totalApps: number
   totalPosts: number
+  totalUsers: number
   totalTopics: number
   totalComments: number
   totalRequests: number

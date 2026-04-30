@@ -2,7 +2,7 @@
 
 import { KeyRound, ShieldBan, ShieldCheck, ShieldOff, Smartphone, Trash2, Users } from "lucide-react"
 import { MembershipBadge, getMembershipMeta } from "@/components/membership-badge"
-import { updateAdminUser } from "@/lib/admin-api"
+import { formatDateTime, updateAdminUser } from "@/lib/admin-api"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/components/admin/page-header"
 import { filters, membershipOptions, normalizeMembershipLevel, shortUdid, statusLabel } from "./users-shared"
@@ -95,6 +95,7 @@ export default function AdminUsersPageContent() {
                           <p>用户名：{user.username}</p>
                           <p>邮箱：{user.email || "-"}</p>
                           <p>手机号：{user.phone || "-"}</p>
+                          <p>注册时间：{formatDateTime(user.createdAt)}</p>
                           <p>最近登录：{user.lastLoginAt || "-"}</p>
                           <p>最近登录 IP：{user.lastLoginIp || "-"}</p>
                           <p>封禁到期：{user.banUntil || "-"}</p>

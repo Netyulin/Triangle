@@ -208,6 +208,7 @@ export async function stats(req, res) {
   const [
     totalApps,
     totalPosts,
+    totalUsers,
     totalTopics,
     totalComments,
     totalRequests,
@@ -226,6 +227,7 @@ export async function stats(req, res) {
   ] = await Promise.all([
     prisma.app.count(),
     prisma.post.count(),
+    prisma.user.count(),
     prisma.topic.count(),
     prisma.comment.count(),
     prisma.softwareRequest.count(),
@@ -263,6 +265,7 @@ export async function stats(req, res) {
   return sendSuccess(res, {
     totalApps,
     totalPosts,
+    totalUsers,
     totalTopics,
     totalComments,
     totalRequests,
