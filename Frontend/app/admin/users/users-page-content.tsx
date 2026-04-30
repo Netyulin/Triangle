@@ -5,12 +5,13 @@ import { MembershipBadge, getMembershipMeta } from "@/components/membership-badg
 import { formatDateTime, updateAdminUser } from "@/lib/admin-api"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/components/admin/page-header"
-import { filters, membershipOptions, normalizeMembershipLevel, shortUdid, statusLabel } from "./users-shared"
+import { activityFilters, filters, membershipOptions, normalizeMembershipLevel, registrationSourceFilters, registrationSourceLabel, shortUdid, statusLabel } from "./users-shared"
 import { useAdminUsers } from "./use-admin-users"
 
 export default function AdminUsersPageContent() {
   const {
     activeFilter,
+    activityFilter,
     deviceLoadingUserId,
     deviceMap,
     error,
@@ -27,9 +28,12 @@ export default function AdminUsersPageContent() {
     loading,
     message,
     patchUser,
+    registrationSourceFilter,
     setActiveFilter,
+    setActivityFilter,
     setError,
     setMessage,
+    setRegistrationSourceFilter,
     stats,
     toggleExpanded,
     visibleUsers,
@@ -69,6 +73,38 @@ export default function AdminUsersPageContent() {
         })}
       </div>
 
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-sm font-medium text-foreground">注册来源</span>
+          <select
+            value={registrationSourceFilter}
+            onChange={(event) => setRegistrationSourceFilter(event.target.value as typeof registrationSourceFilter)}
+            className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+          >
+            {registrationSourceFilters.map((item) => (
+              <option key={item.key} value={item.key}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="space-y-2">
+          <span className="text-sm font-medium text-foreground">最后活跃时间</span>
+          <select
+            value={activityFilter}
+            onChange={(event) => setActivityFilter(event.target.value as typeof activityFilter)}
+            className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+          >
+            {activityFilters.map((item) => (
+              <option key={item.key} value={item.key}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <section className="admin-panel p-4">
         {loading ? (
           <div className="py-12 text-center text-sm text-muted-foreground">正在加载用户数据...</div>
@@ -95,10 +131,11 @@ export default function AdminUsersPageContent() {
                           <p>用户名：{user.username}</p>
                           <p>邮箱：{user.email || "-"}</p>
                           <p>手机号：{user.phone || "-"}</p>
+                          <p>注册来源：{registrationSourceLabel(user.registrationSource)}</p>
                           <p>注册时间：{formatDateTime(user.createdAt)}</p>
-                          <p>最近登录：{user.lastLoginAt || "-"}</p>
+                          <p>最近登录：{formatDateTime(user.lastLoginAt)}</p>
                           <p>最近登录 IP：{user.lastLoginIp || "-"}</p>
-                          <p>封禁到期：{user.banUntil || "-"}</p>
+                          <p>封禁到期：{formatDateTime(user.banUntil)}</p>
                           <p>当前等级：{currentMeta.label}</p>
                         </div>
                       </div>

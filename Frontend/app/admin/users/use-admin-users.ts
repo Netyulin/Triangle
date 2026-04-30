@@ -12,11 +12,13 @@ import {
   type AdminUserDevice,
   type AdminUserItem,
 } from "@/lib/admin-api"
-import { normalizeMembershipLevel, type UserFilter } from "./users-shared"
+import { normalizeMembershipLevel, type ActivityFilter, type RegistrationSourceFilter, type UserFilter } from "./users-shared"
 
 export function useAdminUsers() {
   const [users, setUsers] = useState<AdminUserItem[]>([])
   const [activeFilter, setActiveFilter] = useState<UserFilter>("all")
+  const [registrationSourceFilter, setRegistrationSourceFilter] = useState<RegistrationSourceFilter>("all")
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
@@ -42,10 +44,40 @@ export function useAdminUsers() {
   }, [])
 
   const visibleUsers = useMemo(() => {
-    if (activeFilter === "all") return users
-    if (activeFilter === "active") return users.filter((item) => !item.status || item.status === "active")
-    return users.filter((item) => item.status === activeFilter)
-  }, [activeFilter, users])
+    const now = Date.now()
+    const oneDayAgo = now - 24 * 60 * 60 * 1000
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+
+    return users.filter((item) => {
+      const matchesStatus =
+        activeFilter === "all"
+          ? true
+          : activeFilter === "active"
+            ? !item.status || item.status === "active"
+            : item.status === activeFilter
+
+      const source = item.registrationSource || "other"
+      const matchesSource = registrationSourceFilter === "all" ? true : source === registrationSourceFilter
+
+      const lastLoginMs = item.lastLoginAt ? new Date(item.lastLoginAt).getTime() : Number.NaN
+      const hasLastLogin = Number.isFinite(lastLoginMs)
+
+      const matchesActivity =
+        activityFilter === "all"
+          ? true
+          : activityFilter === "never"
+            ? !hasLastLogin
+            : hasLastLogin &&
+              (activityFilter === "today"
+                ? lastLoginMs >= oneDayAgo
+                : activityFilter === "7d"
+                  ? lastLoginMs >= sevenDaysAgo
+                  : lastLoginMs >= thirtyDaysAgo)
+
+      return matchesStatus && matchesSource && matchesActivity
+    })
+  }, [activeFilter, activityFilter, registrationSourceFilter, users])
 
   const stats = useMemo(
     () => ({
@@ -212,6 +244,7 @@ export function useAdminUsers() {
 
   return {
     activeFilter,
+    activityFilter,
     deviceLoadingUserId,
     deviceMap,
     error,
@@ -228,9 +261,12 @@ export function useAdminUsers() {
     loading,
     message,
     patchUser,
+    registrationSourceFilter,
     setActiveFilter,
+    setActivityFilter,
     setError,
     setMessage,
+    setRegistrationSourceFilter,
     stats,
     toggleExpanded,
     users,

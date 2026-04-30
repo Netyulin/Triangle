@@ -97,6 +97,7 @@ export type AdminRequestListPayload = {
 export type AdminUserItem = User & {
   createdAt?: string
   updatedAt?: string
+  registrationSource?: "email" | "wechat" | "other"
   lastLoginAt?: string | null
   banUntil?: string | null
   canReply?: boolean

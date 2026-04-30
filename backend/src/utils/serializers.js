@@ -117,6 +117,12 @@ export function serializeUser(user) {
     return null;
   }
 
+  const registrationSource = user.wechatOpenId
+    ? 'wechat'
+    : user.email
+      ? 'email'
+      : 'other';
+
   const normalizedMembershipLevel = normalizeMembershipLevel(user.membershipLevel);
   const bannedUntil = user.bannedUntil ?? null;
   const isBanned = user.status === 'banned' && (!bannedUntil || new Date(bannedUntil) > new Date());
@@ -150,6 +156,7 @@ export function serializeUser(user) {
     canSign,
     canSelfSign,
     isBanned,
+    registrationSource,
     lastLoginAt: user.lastLoginAt ?? null,
     lastLoginIp: user.lastLoginIp ?? null,
     createdAt: user.createdAt,
