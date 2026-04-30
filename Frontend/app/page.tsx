@@ -367,7 +367,14 @@ export default function HomePage() {
                       <li key={item.slug}>
                         <Link href={`/software/${item.slug}`} className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-muted">
                           <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-foreground">{item.rank}</span>
-                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-black text-foreground">{getInitial(item.name)}</div>
+                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary text-xs font-black text-foreground">
+                            <AppIcon
+                              value={item.icon}
+                              name={item.name || getInitial(item.name)}
+                              className="flex h-full w-full items-center justify-center"
+                              imageClassName="h-full w-full object-cover"
+                            />
+                          </div>
                           <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{item.name}</p><p className="truncate text-xs text-muted-foreground">{item.subtitle}</p></div>
                           <span className="text-xs text-muted-foreground">{item.downloads}</span>
                         </Link>
