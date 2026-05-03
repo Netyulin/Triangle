@@ -381,7 +381,7 @@ npm run cleanup:uploads:images
 
 ```bash
 cd /opt/triangle/backend
-npm run cleanup:uploads:images -- --apply
+npm run cleanup:uploads:images -- --apply --confirm=DELETE_UPLOADS
 ```
 
 ### 可选参数
@@ -390,12 +390,17 @@ npm run cleanup:uploads:images -- --apply
 - `--prune-empty-dirs`：删除清理后变空的目录
 - `--include-non-image`：默认仅处理图片；加此参数会处理 uploads 下全部文件
 - `--dir=/your/uploads/path`：指定扫描目录（默认 `backend/uploads`）
+- `--confirm=DELETE_UPLOADS`：实际删除必填确认口令；少了这个参数会被脚本直接拦截
+- `--allow-missing-references`：仅在你确认“数据库仍引用但磁盘缺失”的历史图片已经排查过时才使用；否则脚本会为安全起见中止删除
 
 ### 安全建议
 
 - 默认是 dry-run（仅预览），建议先执行一遍确认列表。
 - 建议在低峰期执行，并先备份上传目录（或做快照）。
 - 如果你启用了对象存储（S3/R2），该脚本只清理本地 `uploads` 目录，不会触发对象存储删除。
+- 2026-05-03 起，脚本新增双重高风险保护：
+  - 没有 `--confirm=DELETE_UPLOADS` 时，`--apply` 不会生效
+  - 一旦检测到“数据库仍引用但磁盘缺失”的图片，默认直接中止，避免在历史脏数据未确认前继续删除
 ## 2026-04-13 补充说明
 
 - 前端签名页相关文件已经恢复可编译状态：

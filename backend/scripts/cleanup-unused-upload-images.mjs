@@ -25,6 +25,8 @@ function parseArgs(argv) {
     includeNonImage: false,
     pruneEmptyDirs: false,
     dir: '',
+    confirmToken: '',
+    allowMissingReferences: false,
   };
 
   for (const token of argv) {
@@ -46,6 +48,14 @@ function parseArgs(argv) {
     }
     if (token.startsWith('--dir=')) {
       args.dir = token.slice('--dir='.length).trim();
+      continue;
+    }
+    if (token.startsWith('--confirm=')) {
+      args.confirmToken = token.slice('--confirm='.length).trim();
+      continue;
+    }
+    if (token === '--allow-missing-references') {
+      args.allowMissingReferences = true;
       continue;
     }
   }
@@ -250,6 +260,7 @@ async function loadDatabaseImageReferences(uploadsRootPosix) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  const confirmPhrase = 'DELETE_UPLOADS';
   const uploadsRoot = args.dir ? path.resolve(args.dir) : getUploadsRoot();
   const uploadsRootPosix = toPosix(uploadsRoot);
 
@@ -327,6 +338,22 @@ async function main() {
 
   if (!args.apply) {
     console.log('\n未执行删除。如需实际删除，请追加 --apply 参数。');
+    return;
+  }
+
+  if (args.confirmToken !== confirmPhrase) {
+    console.error('\n[高风险拦截] 当前为实际删除模式，但未提供确认口令。');
+    console.error(`请显式追加 --confirm=${confirmPhrase} 后再执行。`);
+    console.error('这样可以避免误把一次 dry-run / 临时命令直接升级成真实删除。');
+    process.exitCode = 1;
+    return;
+  }
+
+  if (missingFromDisk.length > 0 && !args.allowMissingReferences) {
+    console.error('\n[高风险拦截] 检测到“数据库仍引用但磁盘缺失”的历史图片。');
+    console.error('为避免在脏数据未排查完前继续清理，本次已中止。');
+    console.error('请先确认缺图原因；如果确认继续清理，再追加 --allow-missing-references。');
+    process.exitCode = 1;
     return;
   }
 
