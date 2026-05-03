@@ -70,7 +70,6 @@ function SoftwareCard({ app }: { app: AppSummary }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-bold text-foreground transition-colors group-hover:text-accent">{app.name}</h3>
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{app.category}</span>
             <span className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground">{accessLabel(app.accessLevel)}</span>
           </div>
           <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{app.subtitle || app.summaryText}</p>
@@ -83,19 +82,14 @@ function SoftwareCard({ app }: { app: AppSummary }) {
       </div>
 
       <div className="mt-5 flex flex-1 flex-col justify-end">
-        {app.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {app.tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground">
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2">
+          {app.tags.slice(0, 4).map((tag) => (
+            <span key={tag} className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground">
+              {tag}
+            </span>
+          ))}
           {app.platforms.slice(0, 4).map((platform) => (
-            <span key={platform} className="rounded-lg border border-border px-2 py-1">
+            <span key={platform} className="rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground">
               {platform}
             </span>
           ))}
@@ -280,7 +274,7 @@ function SoftwarePageContent() {
             <p className="mt-2 text-sm text-muted-foreground">可以换个关键词，或者重新选择分类与排序方式。</p>
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredApps.map((app) => (
               <SoftwareCard key={app.slug} app={app} />
             ))}
