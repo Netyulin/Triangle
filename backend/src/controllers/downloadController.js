@@ -8,6 +8,17 @@ const slugValidation = validate([param('slug').trim().notEmpty().withMessage('sl
 
 export { slugValidation };
 
+function parseDownloadCount(value) {
+  const text = String(value ?? '').trim().toUpperCase();
+  if (!text) return 0;
+
+  const numeric = Number.parseFloat(text);
+  if (!Number.isFinite(numeric)) return 0;
+  if (text.endsWith('M')) return Math.round(numeric * 1_000_000);
+  if (text.endsWith('K')) return Math.round(numeric * 1_000);
+  return Math.round(numeric);
+}
+
 export async function getDownloadInfo(req, res) {
   const { slug } = req.params;
   const { mirror } = req.query;
@@ -74,14 +85,38 @@ export async function getDownloadInfo(req, res) {
     }
   }
 
-  await prisma.cpsDownload.create({
-    data: {
-      softwareSlug: slug,
-      downloadUrl: finalDownloadUrl,
-      affiliateUrl: finalAffiliateUrl,
-      ipAddress: ip,
-      userAgent
-    }
+  await prisma.$transaction(async (tx) => {
+    const currentApp = await tx.app.findUnique({
+      where: { slug },
+      select: { downloads: true }
+    });
+
+    const nextDownloadCount = String(parseDownloadCount(currentApp?.downloads) + 1);
+
+    await tx.cpsDownload.create({
+      data: {
+        softwareSlug: slug,
+        downloadUrl: finalDownloadUrl,
+        affiliateUrl: finalAffiliateUrl,
+        ipAddress: ip,
+        userAgent
+      }
+    });
+
+    await tx.downloadLog.create({
+      data: {
+        softwareSlug: slug,
+        ip,
+        userAgent
+      }
+    });
+
+    await tx.app.update({
+      where: { slug },
+      data: {
+        downloads: nextDownloadCount
+      }
+    });
   });
 
   return sendSuccess(res, {

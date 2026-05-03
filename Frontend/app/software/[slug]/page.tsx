@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button"
 import DownloadCountdown from "@/components/download/DownloadCountdown"
 import { useAppContext } from "@/components/app-provider"
-import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, request, type AppAccessPayload, type AppSummary, type FavoritesPayload } from "@/lib/api"
+import { ADSENSE_SLOT_IDS, DEFAULT_ADSENSE_SLOT_TOGGLES, fetchAdSenseSlotToggles, request, type AppAccessPayload, type AppSummary, type DownloadInfo, type FavoritesPayload } from "@/lib/api"
 import { buildAuthUrl, resolveAssetUrl } from "@/lib/utils"
 import { AdSenseSlot } from "@/components/ads/AdSenseSlot"
 import { ContentInteractions } from "@/components/content-interactions"
@@ -255,10 +255,26 @@ export default function SoftwareDetailPage() {
     setReportError("")
   }
 
-  const handleDownloadLink = (url: string) => {
-    if (!url || (!countdownReady && !skipDownloadCountdown)) return
+  const handleDownloadLink = async (fallbackUrl: string, mirrorIndex: number) => {
+    if (!slug || !fallbackUrl || (!countdownReady && !skipDownloadCountdown)) return
 
-    window.open(url, "_blank", "noopener,noreferrer")
+    const popup = window.open("", "_blank", "noopener,noreferrer")
+
+    try {
+      const info = await request<DownloadInfo>(`/api/download/${slug}?mirror=${mirrorIndex}`, token ? { token } : {})
+      const targetUrl = info.affiliateLink || info.downloadUrl || fallbackUrl
+
+      if (popup) {
+        popup.location.href = targetUrl
+      } else {
+        window.open(targetUrl, "_blank", "noopener,noreferrer")
+      }
+    } catch (nextError) {
+      if (popup) {
+        popup.close()
+      }
+      setError(nextError instanceof Error ? nextError.message : "下载地址获取失败")
+    }
   }
 
 
@@ -615,11 +631,11 @@ return (
                   {skipDownloadCountdown ? "你当前账号可直接下载。" : "倒计时结束后，下面的下载地址才可以点击。"}
                 </p>
                 <div className="grid gap-3">
-                  {resolvedDownloadLinks.map((item) => (
+                  {resolvedDownloadLinks.map((item, index) => (
                     <button
                       key={item.url}
                       type="button"
-                      onClick={() => handleDownloadLink(item.url)}
+                      onClick={() => void handleDownloadLink(item.url, index)}
                       disabled={!skipDownloadCountdown && !countdownReady}
                       className="inline-flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
                     >

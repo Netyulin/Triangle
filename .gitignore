@@ -23,6 +23,9 @@ graphify-out/
 *.log
 *.pid
 
+# macOS
+.DS_Store
+
 # Archives
 *.tgz
 

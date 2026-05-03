@@ -112,6 +112,12 @@ export function normalizeDownloadLinks(value, fallbackUrl = '') {
   return [];
 }
 
+export function normalizeDownloadCountText(value, fallback = '0') {
+  const normalizedFallback = normalizeString(fallback, '0').trim() || '0';
+  const source = normalizeString(value, '').trim();
+  return source || normalizedFallback;
+}
+
 export function serializeUser(user) {
   if (!user) {
     return null;
@@ -225,6 +231,7 @@ export function serializeApp(app) {
 
   return {
     ...app,
+    downloads: normalizeDownloadCountText(app.downloads),
     compatibility: ensureArray(app.compatibility),
     platforms: ensureArray(app.platforms),
     gallery: ensureArray(app.gallery),

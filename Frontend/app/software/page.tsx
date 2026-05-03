@@ -39,6 +39,11 @@ function accessLabel(level: string) {
   return "免费会员"
 }
 
+function formatDownloadText(value: string) {
+  const source = String(value || "").trim()
+  return source || "0"
+}
+
 function SoftwareCard({ app }: { app: AppSummary }) {
   const useCover = Boolean(app.heroImage) && app.displayMode !== "icon"
 
@@ -76,7 +81,7 @@ function SoftwareCard({ app }: { app: AppSummary }) {
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span>{app.version}</span>
             <span>{app.pricing}</span>
-            <span>{app.downloads} 次下载</span>
+            <span>{formatDownloadText(app.downloads)} 次下载</span>
           </div>
         </div>
       </div>
