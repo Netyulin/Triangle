@@ -8,6 +8,7 @@
 .deploy.env.txt
 backend/.deploy.env
 backend/.env1
+backend/uploads/
 Frontend/.env.local
 Frontend/.env.local.del
 
